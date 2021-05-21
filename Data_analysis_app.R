@@ -17,7 +17,10 @@ ui <- fluidPage(
     sidebarPanel(
       fileInput("Pop_class_file","Choose Population Class file"),
       fileInput("My_data","Choose data file (csv) to analyse"),
-      selectInput("factor","Based on which factor do the analysis",c("Species","Firing_Type"))),
+      fileInput("Source_functions","Choose the source function file"),
+      numericInput("nbfactors","How many possible factors are they?"),
+      uiOutput("factors")),
+      
     
     mainPanel(
       #Display results, plots...
@@ -49,80 +52,92 @@ ui <- fluidPage(
 
 server <- function(input, output){
   solveSimulator <- reactive({
+    source(file=input$Source_functions$input)
+    required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr")
+    have_library(required_packages = required_packages)
     #Download the datasets
-   
-    population_class=read.csv(file=input$Pop_class_file$name,header=T)
-    population_class$Species=as.factor(population_class$Species)
-    population_class$Firing_Type=as.factor((population_class$Firing_Type))
     
+    population_class=read.csv(file=input$Pop_class_file$name,header=T)
     data_file=read.csv(input$My_data$name,header=T)
-    data_file=data_file[2:nrow(data_file),]
+    
+    nbfactors=input$nbfactors
+    full_dataset=create_fulldataset(population_class,data_file,nbfactors)$full_dataset
+    factor_list=create_fulldataset(population_class,data_file,nbfactors)$factor_list
+    output$factors <- renderUI({
+      factor_list=create_fulldataset(population_class,data_file,nbfactors)$factor_list
+      selectInput("factor","Based on which factor do the analysis",factor_list)
+    })
+    # population_class$Species=as.factor(population_class$Species)
+    # population_class$Firing_Type=as.factor((population_class$Firing_Type))
+    # 
+    # data_file=read.csv(input$My_data$name,header=T)
+    # data_file=data_file[2:nrow(data_file),]
     
     #Create a single table containing both the population class and the data
-    full_dataset=data.frame(cbind(population_class[,2:ncol(population_class)],data_file[,2:ncol(data_file)]))
-    column_names=c(colnames(population_class[,2:ncol(population_class)]),
-                  colnames(data_file[,2:ncol(data_file)]))
-    line_names=c(population_class[,1])
-    
-    colnames(full_dataset) <- column_names
-    rownames(full_dataset) <- line_names
-    
-    for (col in seq(3,ncol(full_dataset))){
-      full_dataset[,col]=as.numeric(full_dataset[,col])
-    }
-    
-    factor=input$factor
-    
+    # full_dataset=data.frame(cbind(population_class[,2:ncol(population_class)],data_file[,2:ncol(data_file)]))
+    # column_names=c(colnames(population_class[,2:ncol(population_class)]),
+    #               colnames(data_file[,2:ncol(data_file)]))
+    # line_names=c(population_class[,1])
+    # 
+    # colnames(full_dataset) <- column_names
+    # rownames(full_dataset) <- line_names
+    # 
+    # for (col in seq(3,ncol(full_dataset))){
+    #   full_dataset[,col]=as.numeric(full_dataset[,col])
+    # }
+    # 
+    # factor=input$factor
+    # 
     #Before performing the analysis, we need to verify if the hypothesis are checked for parametric analysis or not, in our case the normal distribution of the data, and the homogeneity of the variances among the groups
     #check normal distribution of the data
-    normality_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-2)))
-    normality_p_value_table=t(normality_p_value_table)
-    normality_p_value_table=rbind(normality_p_value_table,c(rep(0,ncol(full_dataset)-2)))
-    colnames(normality_p_value_table)=colnames(full_dataset[,3:ncol(full_dataset)])
-    
-    homogeneity_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-2)))
-    homogeneity_p_value_table=t(homogeneity_p_value_table)
-    homogeneity_p_value_table=rbind(homogeneity_p_value_table,c(rep(0,ncol(full_dataset)-2)))
-    colnames(homogeneity_p_value_table)=colnames(full_dataset[,3:ncol(full_dataset)])
-    Variance_test=data.frame(c(rep("Anova",ncol(homogeneity_p_value_table))))
-    Variance_test=t(Variance_test)
-    colnames(Variance_test)=colnames(full_dataset[,3:ncol(full_dataset)])
-    
-    
-    Hypothesis_table=rbind(data.frame(normality_p_value_table),data.frame(homogeneity_p_value_table),data.frame(Variance_test))
-    
-    rownames(Hypothesis_table)=c("Normality p_value","Normal distribution","Homogeneity p_values","Variances homogeneous","Variance_test")
-    
-    for (elt in seq(3,ncol(full_dataset))){
-      current_data=full_dataset[-which(full_dataset[,elt]=="NaN"),]
-      current_formula=as.formula(paste0(colnames(current_data[elt])," ~ ",factor))
-      Hypothesis_table[1,elt-2]=shapiro_test(data=current_data[,elt])$p.value
-      
-      if (Hypothesis_table[1,elt-2]>0.05){
-        Hypothesis_table[2,elt-2]="Yes"
-      }
-      else{
-        Hypothesis_table[2,elt-2]="No"
-        Hypothesis_table[5,elt-2]="KW"
-      }
-      current_data=full_dataset[-which(full_dataset[,2]=="Neuron"),]
-      current_data=current_data[-which(current_data[,2]=="Glia"),]
-      current_data=current_data[-which(current_data[,2]=="Unspecified"),]
-      
-      Hypothesis_table[3,elt-2]=levene_test(data=current_data,formula=current_formula)$p
-      
-      if (Hypothesis_table[3,elt-2]>0.05){
-        Hypothesis_table[4,elt-2]="Yes"
-      }
-      
-      else{
-        Hypothesis_table[4,elt-2]="No"
-        Hypothesis_table[5,elt-2]="KW"
-      }
-    }
-    FT_dataset=full_dataset[-which(full_dataset[,2]=="Neuron"),]
-    FT_dataset=FT_dataset[-which(FT_dataset[,2]=="Glia"),]
-    FT_dataset=FT_dataset[-which(FT_dataset[,2]=="Unspecified"),]
+    # normality_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-2)))
+    # normality_p_value_table=t(normality_p_value_table)
+    # normality_p_value_table=rbind(normality_p_value_table,c(rep(0,ncol(full_dataset)-2)))
+    # colnames(normality_p_value_table)=colnames(full_dataset[,3:ncol(full_dataset)])
+    # 
+    # homogeneity_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-2)))
+    # homogeneity_p_value_table=t(homogeneity_p_value_table)
+    # homogeneity_p_value_table=rbind(homogeneity_p_value_table,c(rep(0,ncol(full_dataset)-2)))
+    # colnames(homogeneity_p_value_table)=colnames(full_dataset[,3:ncol(full_dataset)])
+    # Variance_test=data.frame(c(rep("Anova",ncol(homogeneity_p_value_table))))
+    # Variance_test=t(Variance_test)
+    # colnames(Variance_test)=colnames(full_dataset[,3:ncol(full_dataset)])
+    # 
+    # 
+    # Hypothesis_table=rbind(data.frame(normality_p_value_table),data.frame(homogeneity_p_value_table),data.frame(Variance_test))
+    # 
+    # rownames(Hypothesis_table)=c("Normality p_value","Normal distribution","Homogeneity p_values","Variances homogeneous","Variance_test")
+    # 
+    # for (elt in seq(3,ncol(full_dataset))){
+    #   current_data=full_dataset[-which(full_dataset[,elt]=="NaN"),]
+    #   current_formula=as.formula(paste0(colnames(current_data[elt])," ~ ",factor))
+    #   Hypothesis_table[1,elt-2]=shapiro_test(data=current_data[,elt])$p.value
+    #   
+    #   if (Hypothesis_table[1,elt-2]>0.05){
+    #     Hypothesis_table[2,elt-2]="Yes"
+    #   }
+    #   else{
+    #     Hypothesis_table[2,elt-2]="No"
+    #     Hypothesis_table[5,elt-2]="KW"
+    #   }
+    #   current_data=full_dataset[-which(full_dataset[,2]=="Neuron"),]
+    #   current_data=current_data[-which(current_data[,2]=="Glia"),]
+    #   current_data=current_data[-which(current_data[,2]=="Unspecified"),]
+    #   
+    #   Hypothesis_table[3,elt-2]=levene_test(data=current_data,formula=current_formula)$p
+    #   
+    #   if (Hypothesis_table[3,elt-2]>0.05){
+    #     Hypothesis_table[4,elt-2]="Yes"
+    #   }
+    #   
+    #   else{
+    #     Hypothesis_table[4,elt-2]="No"
+    #     Hypothesis_table[5,elt-2]="KW"
+    #   }
+    # }
+    # FT_dataset=full_dataset[-which(full_dataset[,2]=="Neuron"),]
+    # FT_dataset=FT_dataset[-which(FT_dataset[,2]=="Glia"),]
+    # FT_dataset=FT_dataset[-which(FT_dataset[,2]=="Unspecified"),]
   
     
     return(list('full_dataset'=full_dataset,
@@ -135,6 +150,8 @@ server <- function(input, output){
   
   
 #outputs
+  
+  
   output$Parametric_hypothesis <- renderTable({
     sol=solveSimulator()
     Hypothesis_table=sol$hypothesis_table
