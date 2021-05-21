@@ -11,7 +11,7 @@ library(ggpubr)
 
 ui <- fluidPage(
   #Application title
-  titlePanel("Mean variance analysis"),
+  titlePanel("Application Mean variance analysis"),
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
