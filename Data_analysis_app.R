@@ -15,47 +15,56 @@ ui <- fluidPage(
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
-      fileInput("Pop_class_file","Choose Population Class file"),
       fileInput("My_data","Choose data file (csv) to analyse"),
+      fileInput("Pop_class_file","Choose Population Class file"),
+      
       fileInput("Source_functions","Choose the source function file"),
-      numericInput("nbfactors","How many possible factors are they?"),
-      uiOutput("factors")),
+      numericInput("nbfactors","How many possible factors are they?",2),
+      selectInput("factor","Based on which factor do the analysis",choices=""),
+      uiOutput("factors"),
+      uiOutput("Variable")),
       
     
     mainPanel(
+      
       #Display results, plots...
       tabsetPanel(
         tabPanel("Parametric Hypothesis",tableOutput("Parametric_hypothesis")),
-        tabPanel("G_Input_Gain_Slope",plotOutput("G_Input_Gain_Slope"),plotlyOutput("G_Input_Gain_Slope_ly")),
-        tabPanel("G_Input_Gain_Intercept",plotOutput("G_Input_Gain_Intercept"),plotlyOutput("G_Input_Gain_Intercept_ly")),
-        tabPanel("G_Input_Gain_Slp.Int",plotOutput("G_Input_Gain_Slp.Int"),plotlyOutput("G_Input_Gain_Slp.Int_ly")),
-        tabPanel("G_Input_Threshold_Slope",plotOutput("G_Input_Threshold_Slope"),plotlyOutput("G_Input_Threshold_Slope_ly")),
-        tabPanel("G_Input_Threshold_Intercept",plotOutput("G_Input_Threshold_Intercept"),plotlyOutput("G_Input_Threshold_Intercept_ly")),
-        tabPanel("G_Input_Threshold_Slp.Int",plotOutput("G_Input_Threshold_Slp.Int"),plotlyOutput("G_Input_Threshold_Slp.Int_ly")),
-        tabPanel("G_Input_Saturation_Slope",plotOutput("G_Input_Saturation_Slope"),plotlyOutput("G_Input_Saturation_Slope_ly")),
-        tabPanel("G_Input_Saturation_Intercept",plotOutput("G_Input_Saturation_Intercept"),plotlyOutput("G_Input_Saturation_Intercept_ly")),
-        tabPanel("G_Input_Saturation_Slp.Int",plotOutput("G_Input_Saturation_Slp.Int"),plotlyOutput("G_Input_Saturation_Slp.Int_ly")),
-        tabPanel("V_subthreshold_Input_Gain_Slope",plotOutput("V_subthreshold_Input_Gain_Slope"),plotlyOutput("V_subthreshold_Input_Gain_Slope_ly")),
-        tabPanel("V_subthreshold_Input_Gain_Intercept",plotOutput("V_subthreshold_Input_Gain_Intercept"),plotlyOutput("V_subthreshold_Input_Gain_Intercept_ly")),
-        tabPanel("V_subthreshold_Input_Gain_Slp.Int",plotOutput("V_subthreshold_Input_Gain_Slp.Int"),plotlyOutput("V_subthreshold_Input_Gain_Slp.Int_ly")),
-        tabPanel("V_subthreshold_Input_Threshold_Slope",plotOutput("V_subthreshold_Input_Threshold_Slope"),plotlyOutput("V_subthreshold_Input_Threshold_Slope_ly")),
-        tabPanel("V_subthreshold_Input_Threshold_Intercept",plotOutput("V_subthreshold_Input_Threshold_Intercept"),plotlyOutput("V_subthreshold_Input_Threshold_Intercept_ly")),
-        tabPanel("V_subthreshold_Input_Threshold_Slp.Int",plotOutput("V_subthreshold_Input_Threshold_Slp.Int"),plotlyOutput("V_subthreshold_Input_Threshold_Slp.Int_ly")),
-        tabPanel("V_subthreshold_Input_Saturation_Slope",plotOutput("V_subthreshold_Input_Saturation_Slope"),plotlyOutput("V_subthreshold_Input_Saturation_Slope_ly")),
-        tabPanel("V_subthreshold_Input_Saturation_Intercept",plotOutput("V_subthreshold_Input_Saturation_Intercept"),plotlyOutput("V_subthreshold_Input_Saturation_Intercept_ly")),
-        tabPanel("V_subthreshold_Input_Saturation_Slp.Int",plotOutput("V_subthreshold_Input_Saturation_Slp.Int"),plotlyOutput("V_subthreshold_Input_Saturation_Slp.Int_ly"))
+        tabPanel("Results",plotOutput("Plot"),plotlyOutput("Plotly"))
+      #   tabPanel("G_Input_Gain_Slope",plotOutput("G_Input_Gain_Slope"),plotlyOutput("G_Input_Gain_Slope_ly")),
+      #   tabPanel("G_Input_Gain_Intercept",plotOutput("G_Input_Gain_Intercept"),plotlyOutput("G_Input_Gain_Intercept_ly")),
+      #   tabPanel("G_Input_Gain_Slp.Int",plotOutput("G_Input_Gain_Slp.Int"),plotlyOutput("G_Input_Gain_Slp.Int_ly")),
+      #   tabPanel("G_Input_Threshold_Slope",plotOutput("G_Input_Threshold_Slope"),plotlyOutput("G_Input_Threshold_Slope_ly")),
+      #   tabPanel("G_Input_Threshold_Intercept",plotOutput("G_Input_Threshold_Intercept"),plotlyOutput("G_Input_Threshold_Intercept_ly")),
+      #   tabPanel("G_Input_Threshold_Slp.Int",plotOutput("G_Input_Threshold_Slp.Int"),plotlyOutput("G_Input_Threshold_Slp.Int_ly")),
+      #   tabPanel("G_Input_Saturation_Slope",plotOutput("G_Input_Saturation_Slope"),plotlyOutput("G_Input_Saturation_Slope_ly")),
+      #   tabPanel("G_Input_Saturation_Intercept",plotOutput("G_Input_Saturation_Intercept"),plotlyOutput("G_Input_Saturation_Intercept_ly")),
+      #   tabPanel("G_Input_Saturation_Slp.Int",plotOutput("G_Input_Saturation_Slp.Int"),plotlyOutput("G_Input_Saturation_Slp.Int_ly")),
+      #   tabPanel("V_subthreshold_Input_Gain_Slope",plotOutput("V_subthreshold_Input_Gain_Slope"),plotlyOutput("V_subthreshold_Input_Gain_Slope_ly")),
+      #   tabPanel("V_subthreshold_Input_Gain_Intercept",plotOutput("V_subthreshold_Input_Gain_Intercept"),plotlyOutput("V_subthreshold_Input_Gain_Intercept_ly")),
+      #   tabPanel("V_subthreshold_Input_Gain_Slp.Int",plotOutput("V_subthreshold_Input_Gain_Slp.Int"),plotlyOutput("V_subthreshold_Input_Gain_Slp.Int_ly")),
+      #   tabPanel("V_subthreshold_Input_Threshold_Slope",plotOutput("V_subthreshold_Input_Threshold_Slope"),plotlyOutput("V_subthreshold_Input_Threshold_Slope_ly")),
+      #   tabPanel("V_subthreshold_Input_Threshold_Intercept",plotOutput("V_subthreshold_Input_Threshold_Intercept"),plotlyOutput("V_subthreshold_Input_Threshold_Intercept_ly")),
+      #   tabPanel("V_subthreshold_Input_Threshold_Slp.Int",plotOutput("V_subthreshold_Input_Threshold_Slp.Int"),plotlyOutput("V_subthreshold_Input_Threshold_Slp.Int_ly")),
+      #   tabPanel("V_subthreshold_Input_Saturation_Slope",plotOutput("V_subthreshold_Input_Saturation_Slope"),plotlyOutput("V_subthreshold_Input_Saturation_Slope_ly")),
+      #   tabPanel("V_subthreshold_Input_Saturation_Intercept",plotOutput("V_subthreshold_Input_Saturation_Intercept"),plotlyOutput("V_subthreshold_Input_Saturation_Intercept_ly")),
+      #   tabPanel("V_subthreshold_Input_Saturation_Slp.Int",plotOutput("V_subthreshold_Input_Saturation_Slp.Int"),plotlyOutput("V_subthreshold_Input_Saturation_Slp.Int_ly"))
       ))
     
     )
 )
 
 
-server <- function(input, output){
+server <- function(session, input, output){
+  
+    observeEvent(
+      input$My_data
+    )
+  #Download the datasets
   solveSimulator <- reactive({
-    source(file=input$Source_functions$input)
+    source(file=input$Source_functions$name)
     required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr")
     have_library(required_packages = required_packages)
-    #Download the datasets
     
     population_class=read.csv(file=input$Pop_class_file$name,header=T)
     data_file=read.csv(input$My_data$name,header=T)
@@ -63,10 +72,22 @@ server <- function(input, output){
     nbfactors=input$nbfactors
     full_dataset=create_fulldataset(population_class,data_file,nbfactors)$full_dataset
     factor_list=create_fulldataset(population_class,data_file,nbfactors)$factor_list
+    
+    
+    
     output$factors <- renderUI({
       factor_list=create_fulldataset(population_class,data_file,nbfactors)$factor_list
       selectInput("factor","Based on which factor do the analysis",factor_list)
     })
+    
+    output$Variable <- renderUI({
+      variable_list=create_fulldataset(population_class,data_file,nbfactors)$variable_list
+      selectInput("variable","Variable to observe",variable_list)
+    })
+    
+    hypothesis_table=parametric_test(full_dataset,input$factor,factor_list)
+    print('hello')
+    print(input$factor)
     # population_class$Species=as.factor(population_class$Species)
     # population_class$Firing_Type=as.factor((population_class$Firing_Type))
     # 
@@ -143,8 +164,8 @@ server <- function(input, output){
     return(list('full_dataset'=full_dataset,
                 'factor'=factor,
                 'normality_table'=normality_p_value_table,
-                'hypothesis_table'=Hypothesis_table,
-                'FT_dataset'=FT_dataset
+                'hypothesis_table'=Hypothesis_table
+               # 'FT_dataset'=FT_dataset
                 ))
   })
   
@@ -158,1637 +179,1646 @@ server <- function(input, output){
     data.frame(Hypothesis_table)
   },rownames = TRUE)
   
-  
-  output$G_Input_Gain_Slope_ly <- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Gain_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Gain_Slope"]=="KW"){
-        G_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
-        labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Gain_Slope"]=="KW"){
-        G_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
-        labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE))
-      
-    }
-    
-    G_Input_Gain_Slope_plot
-  })
-  output$G_Input_Gain_Intercept_ly<- renderPlotly({
-  
-  sol=solveSimulator()
-  Hypothesis_table=sol$hypothesis_table
-  factor=sol$factor
-  formula=as.formula(paste0("G_Input_Gain_Intercept"," ~ ",factor))
-  full_dataset=sol$full_dataset
-  
-  if (factor=="Firing_Type"){
-    FT_dataset=sol$FT_dataset
-    current_dataset=FT_dataset
-    if (Hypothesis_table["Variance_test","G_Input_Gain_Intercept"]=="KW"){
-      G_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
-    }
-    else{
-      G_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
-    }
-    G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
-      labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE))
-    
-  }
-  
-  if(factor=="Species"){
-    current_dataset=full_dataset
-    if (Hypothesis_table["Variance_test","G_Input_Gain_Intercept"]=="KW"){
-      G_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
-    }
-    else{
-      G_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
-    }
-    G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
-      labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE))
-    
-  }
-  
-  G_Input_Gain_Intercept_plot
-  })
-  output$G_Input_Gain_Slp.Int_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Gain_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Gain_Slp.Int"]=="KW"){
-        G_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
-        labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Gain_Slp.Int"]=="KW"){
-        G_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
-        labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE))
-      
-    }
-    
-    G_Input_Gain_Slp.Int_plot
-  })
-  output$G_Input_Threshold_Slope_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Threshold_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Slope"]=="KW"){
-        G_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
-        labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Slope"]=="KW"){
-        G_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
-        labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE))
-      
-    }
-    
-    G_Input_Threshold_Slope_plot
-  })
-  output$G_Input_Threshold_Intercept_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Threshold_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Intercept"]=="KW"){
-        G_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
-        labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Intercept"]=="KW"){
-        G_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
-        labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE))
-      
-    }
-    
-    G_Input_Threshold_Intercept_plot
-  })
-  output$G_Input_Threshold_Slp.Int_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Threshold_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Slp.Int"]=="KW"){
-        G_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
-        labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Slp.Int"]=="KW"){
-        G_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
-        labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE))
-      
-    }
-    
-    G_Input_Threshold_Slp.Int_plot
-  })
-  output$G_Input_Saturation_Slope_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Saturation_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Slope"]=="KW"){
-        G_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
-        labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Slope"]=="KW"){
-        G_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
-        labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE))
-      
-    }
-    
-    G_Input_Saturation_Slope_plot
-  })
-  output$G_Input_Saturation_Intercept_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Saturation_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Intercept"]=="KW"){
-        G_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
-        labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Intercept"]=="KW"){
-        G_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
-        labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE))
-      
-    }
-    
-    G_Input_Saturation_Intercept_plot
-  })
-  output$G_Input_Saturation_Slp.Int_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Saturation_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Slp.Int"]=="KW"){
-        G_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
-        labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Slp.Int"]=="KW"){
-        G_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
-        labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE))
-      
-    }
-    
-    G_Input_Saturation_Slp.Int_plot
-  })
-  output$V_subthreshold_Input_Gain_Slope_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Gain_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slope"]=="KW"){
-        V_subthreshold_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slope"]=="KW"){
-        V_subthreshold_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE))
-     
-    }
-    
-    V_subthreshold_Input_Gain_Slope_plot
-  })
-  output$V_subthreshold_Input_Gain_Intercept_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Gain_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Intercept"]=="KW"){
-        V_subthreshold_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Intercept"]=="KW"){
-        V_subthreshold_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE))
-      
-    }
-    
-    V_subthreshold_Input_Gain_Intercept_plot
-  })
-  output$V_subthreshold_Input_Gain_Slp.Int_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Gain_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE))
-      
-    }
-    
-    V_subthreshold_Input_Gain_Slp.Int_plot
-  })
-  output$V_subthreshold_Input_Threshold_Slope_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Threshold_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slope"]=="KW"){
-        V_subthreshold_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE))
-     
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slope"]=="KW"){
-        V_subthreshold_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE))
-      
-    }
-    
-    V_subthreshold_Input_Threshold_Slope_plot
-  })
-  output$V_subthreshold_Input_Threshold_Intercept_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Threshold_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Intercept"]=="KW"){
-        V_subthreshold_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE))
-     
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Intercept"]=="KW"){
-        V_subthreshold_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE))
-      
-    }
-    
-    V_subthreshold_Input_Threshold_Intercept_plot
-  })
-  output$V_subthreshold_Input_Threshold_Slp.Int_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Threshold_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE))
-     
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE))
-     }
-    
-    
-    V_subthreshold_Input_Threshold_Slp.Int_plot
-  })
-  output$V_subthreshold_Input_Saturation_Slope_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Saturation_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slope"]=="KW"){
-        V_subthreshold_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE))
-     
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slope"]=="KW"){
-        V_subthreshold_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE))
-      
-    }
-    
-    V_subthreshold_Input_Saturation_Slope_plot
-  })
-  output$V_subthreshold_Input_Saturation_Intercept_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Saturation_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Intercept"]=="KW"){
-        V_subthreshold_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE))
-     
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Intercept"]=="KW"){
-        V_subthreshold_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE))
-      
-    }
-    
-    V_subthreshold_Input_Saturation_Intercept_plot
-  })
-  output$V_subthreshold_Input_Saturation_Slp.Int_ly<- renderPlotly({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Saturation_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE))
-      
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
-        labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE))
-      
-    }
-    
-    V_subthreshold_Input_Saturation_Slp.Int_plot
+  output$Plot <- renderPlot({
+    current_plot=generate_plot(hypothesis_table,full_dataset,input$Variable,input$factor)
+    current_plot
   })
   
-  output$G_Input_Gain_Slope<- renderPlot({
-    
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Gain_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Gain_Slope"]=="KW"){
-        G_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Gain_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
-          labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Gain_Slope"]=="KW"){
-        G_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Gain_Slope_test$p<0.05){
-        print("right")
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        View(current_dunn_test)
-        G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        print("lololo")
-        G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
-          labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    G_Input_Gain_Slope_plot
+  output$Plotly <- renderPlotly({
+    current_plotly=generate_plotly(hypothesis_table,full_dataset,input$Variable,input$factor)
+    current_plotly
   })
-  output$G_Input_Gain_Intercept<- renderPlot({
-    
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Gain_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Gain_Intercept"]=="KW"){
-        G_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Gain_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
-          labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Gain_Intercept"]=="KW"){
-        G_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Gain_Intercept_test$p<0.05){
-        print("right")
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        View(current_dunn_test)
-        G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        print("lololo")
-        G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
-          labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    G_Input_Gain_Intercept_plot
-  })
-  output$G_Input_Gain_Slp.Int<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Gain_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Gain_Slp.Int"]=="KW"){
-        G_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Gain_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
-          labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Gain_Slp.Int"]=="KW"){
-        G_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Gain_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
-          labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    G_Input_Gain_Slp.Int_plot
-  })
-  output$G_Input_Threshold_Slope<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Threshold_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Slope"]=="KW"){
-        G_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Threshold_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
-          labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Slope"]=="KW"){
-        G_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Threshold_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
-          labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    G_Input_Threshold_Slope_plot
-  })
-  output$G_Input_Threshold_Intercept<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Threshold_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Intercept"]=="KW"){
-        G_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Threshold_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
-          labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Intercept"]=="KW"){
-        G_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Threshold_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
-          labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    G_Input_Threshold_Intercept_plot
-  })
-  output$G_Input_Threshold_Slp.Int<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Threshold_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Slp.Int"]=="KW"){
-        G_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Threshold_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
-          labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Threshold_Slp.Int"]=="KW"){
-        G_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Threshold_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
-          labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    G_Input_Threshold_Slp.Int_plot
-  })
-  output$G_Input_Saturation_Slope<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Saturation_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Slope"]=="KW"){
-        G_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Saturation_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
-          labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Slope"]=="KW"){
-        G_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Saturation_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
-          labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    G_Input_Saturation_Slope_plot
-  })
-  output$G_Input_Saturation_Intercept<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Saturation_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Intercept"]=="KW"){
-        G_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Saturation_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
-          labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Intercept"]=="KW"){
-        G_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Saturation_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
-          labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    G_Input_Saturation_Intercept_plot
-  })
-  output$G_Input_Saturation_Slp.Int<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("G_Input_Saturation_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Slp.Int"]=="KW"){
-        G_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Saturation_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
-          labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","G_Input_Saturation_Slp.Int"]=="KW"){
-        G_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        G_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (G_Input_Saturation_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
-          labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    G_Input_Saturation_Slp.Int_plot
-  })
-  output$V_subthreshold_Input_Gain_Slope<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Gain_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slope"]=="KW"){
-        V_subthreshold_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Gain_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slope"]=="KW"){
-        V_subthreshold_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Gain_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    V_subthreshold_Input_Gain_Slope_plot
-  })
-  output$V_subthreshold_Input_Gain_Intercept<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Gain_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Intercept"]=="KW"){
-        V_subthreshold_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Gain_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Intercept"]=="KW"){
-        V_subthreshold_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Gain_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    V_subthreshold_Input_Gain_Intercept_plot
-  })
-  output$V_subthreshold_Input_Gain_Slp.Int<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Gain_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Gain_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Gain_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    V_subthreshold_Input_Gain_Slp.Int_plot
-  })
-  output$V_subthreshold_Input_Threshold_Slope<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Threshold_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slope"]=="KW"){
-        V_subthreshold_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Threshold_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slope"]=="KW"){
-        V_subthreshold_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Threshold_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    V_subthreshold_Input_Threshold_Slope_plot
-  })
-  output$V_subthreshold_Input_Threshold_Intercept<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Threshold_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Intercept"]=="KW"){
-        V_subthreshold_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Threshold_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Intercept"]=="KW"){
-        V_subthreshold_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Threshold_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    V_subthreshold_Input_Threshold_Intercept_plot
-  })
-  output$V_subthreshold_Input_Threshold_Slp.Int<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Threshold_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Threshold_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Threshold_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    V_subthreshold_Input_Threshold_Slp.Int_plot
-  })
-  output$V_subthreshold_Input_Saturation_Slope<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Saturation_Slope"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slope"]=="KW"){
-        V_subthreshold_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Saturation_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slope"]=="KW"){
-        V_subthreshold_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Saturation_Slope_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE))
-      }
-    }
-    
-    V_subthreshold_Input_Saturation_Slope_plot
-  })
-  output$V_subthreshold_Input_Saturation_Intercept<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Saturation_Intercept"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Intercept"]=="KW"){
-        V_subthreshold_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Saturation_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Intercept"]=="KW"){
-        V_subthreshold_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Saturation_Intercept_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE))
-      }
-    }
-    
-    V_subthreshold_Input_Saturation_Intercept_plot
-  })
-  output$V_subthreshold_Input_Saturation_Slp.Int<- renderPlot({
-    sol=solveSimulator()
-    Hypothesis_table=sol$hypothesis_table
-    factor=sol$factor
-    formula=as.formula(paste0("V_subthreshold_Input_Saturation_Slp.Int"," ~ ",factor))
-    full_dataset=sol$full_dataset
-    
-    if (factor=="Firing_Type"){
-      FT_dataset=sol$FT_dataset
-      current_dataset=FT_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Saturation_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    if(factor=="Species"){
-      current_dataset=full_dataset
-      if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slp.Int"]=="KW"){
-        V_subthreshold_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
-      }
-      
-      if (V_subthreshold_Input_Saturation_Slp.Int_test$p<0.05){
-        current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
-        current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-        V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
-          stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-      }
-      else{
-        V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
-          labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE))
-      }
-    }
-    
-    V_subthreshold_Input_Saturation_Slp.Int_plot
-  })
+  
+  # output$G_Input_Gain_Slope_ly <- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Gain_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Gain_Slope"]=="KW"){
+  #       G_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
+  #       labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Gain_Slope"]=="KW"){
+  #       G_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
+  #       labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   G_Input_Gain_Slope_plot
+  # })
+  # output$G_Input_Gain_Intercept_ly<- renderPlotly({
+  # 
+  # sol=solveSimulator()
+  # Hypothesis_table=sol$hypothesis_table
+  # factor=sol$factor
+  # formula=as.formula(paste0("G_Input_Gain_Intercept"," ~ ",factor))
+  # full_dataset=sol$full_dataset
+  # 
+  # if (factor=="Firing_Type"){
+  #   FT_dataset=sol$FT_dataset
+  #   current_dataset=FT_dataset
+  #   if (Hypothesis_table["Variance_test","G_Input_Gain_Intercept"]=="KW"){
+  #     G_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #   }
+  #   else{
+  #     G_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
+  #   }
+  #   G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
+  #     labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE))
+  #   
+  # }
+  # 
+  # if(factor=="Species"){
+  #   current_dataset=full_dataset
+  #   if (Hypothesis_table["Variance_test","G_Input_Gain_Intercept"]=="KW"){
+  #     G_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #   }
+  #   else{
+  #     G_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
+  #   }
+  #   G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
+  #     labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE))
+  #   
+  # }
+  # 
+  # G_Input_Gain_Intercept_plot
+  # })
+  # output$G_Input_Gain_Slp.Int_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Gain_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Gain_Slp.Int"]=="KW"){
+  #       G_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Gain_Slp.Int"]=="KW"){
+  #       G_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   G_Input_Gain_Slp.Int_plot
+  # })
+  # output$G_Input_Threshold_Slope_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Threshold_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Slope"]=="KW"){
+  #       G_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
+  #       labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Slope"]=="KW"){
+  #       G_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
+  #       labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   G_Input_Threshold_Slope_plot
+  # })
+  # output$G_Input_Threshold_Intercept_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Threshold_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Intercept"]=="KW"){
+  #       G_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
+  #       labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Intercept"]=="KW"){
+  #       G_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
+  #       labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   G_Input_Threshold_Intercept_plot
+  # })
+  # output$G_Input_Threshold_Slp.Int_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Threshold_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Slp.Int"]=="KW"){
+  #       G_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Slp.Int"]=="KW"){
+  #       G_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   G_Input_Threshold_Slp.Int_plot
+  # })
+  # output$G_Input_Saturation_Slope_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Saturation_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Slope"]=="KW"){
+  #       G_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
+  #       labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Slope"]=="KW"){
+  #       G_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
+  #       labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   G_Input_Saturation_Slope_plot
+  # })
+  # output$G_Input_Saturation_Intercept_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Saturation_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Intercept"]=="KW"){
+  #       G_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
+  #       labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Intercept"]=="KW"){
+  #       G_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
+  #       labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   G_Input_Saturation_Intercept_plot
+  # })
+  # output$G_Input_Saturation_Slp.Int_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Saturation_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Slp.Int"]=="KW"){
+  #       G_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Slp.Int"]=="KW"){
+  #       G_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   G_Input_Saturation_Slp.Int_plot
+  # })
+  # output$V_subthreshold_Input_Gain_Slope_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Gain_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slope"]=="KW"){
+  #       V_subthreshold_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slope"]=="KW"){
+  #       V_subthreshold_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE))
+  #    
+  #   }
+  #   
+  #   V_subthreshold_Input_Gain_Slope_plot
+  # })
+  # output$V_subthreshold_Input_Gain_Intercept_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Gain_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   V_subthreshold_Input_Gain_Intercept_plot
+  # })
+  # output$V_subthreshold_Input_Gain_Slp.Int_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Gain_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   V_subthreshold_Input_Gain_Slp.Int_plot
+  # })
+  # output$V_subthreshold_Input_Threshold_Slope_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Threshold_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slope"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE))
+  #    
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slope"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   V_subthreshold_Input_Threshold_Slope_plot
+  # })
+  # output$V_subthreshold_Input_Threshold_Intercept_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Threshold_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE))
+  #    
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   V_subthreshold_Input_Threshold_Intercept_plot
+  # })
+  # output$V_subthreshold_Input_Threshold_Slp.Int_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Threshold_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE))
+  #    
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE))
+  #    }
+  #   
+  #   
+  #   V_subthreshold_Input_Threshold_Slp.Int_plot
+  # })
+  # output$V_subthreshold_Input_Saturation_Slope_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Saturation_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slope"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE))
+  #    
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slope"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   V_subthreshold_Input_Saturation_Slope_plot
+  # })
+  # output$V_subthreshold_Input_Saturation_Intercept_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Saturation_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE))
+  #    
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   V_subthreshold_Input_Saturation_Intercept_plot
+  # })
+  # output$V_subthreshold_Input_Saturation_Slp.Int_ly<- renderPlotly({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Saturation_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
+  #       labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE))
+  #     
+  #   }
+  #   
+  #   V_subthreshold_Input_Saturation_Slp.Int_plot
+  # })
+  # 
+  # output$G_Input_Gain_Slope<- renderPlot({
+  #   
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Gain_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Gain_Slope"]=="KW"){
+  #       G_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Gain_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Gain_Slope"]=="KW"){
+  #       G_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Gain_Slope_test$p<0.05){
+  #       print("right")
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       View(current_dunn_test)
+  #       G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       print("lololo")
+  #       G_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slope"]))+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   G_Input_Gain_Slope_plot
+  # })
+  # output$G_Input_Gain_Intercept<- renderPlot({
+  #   
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Gain_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Gain_Intercept"]=="KW"){
+  #       G_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Gain_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Gain_Intercept"]=="KW"){
+  #       G_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Gain_Intercept_test$p<0.05){
+  #       print("right")
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       View(current_dunn_test)
+  #       G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       print("lololo")
+  #       G_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Intercept"]))+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   G_Input_Gain_Intercept_plot
+  # })
+  # output$G_Input_Gain_Slp.Int<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Gain_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Gain_Slp.Int"]=="KW"){
+  #       G_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Gain_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Gain_Slp.Int"]=="KW"){
+  #       G_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Gain_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Gain_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(G_Input_Gain_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   G_Input_Gain_Slp.Int_plot
+  # })
+  # output$G_Input_Threshold_Slope<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Threshold_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Slope"]=="KW"){
+  #       G_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Threshold_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Slope"]=="KW"){
+  #       G_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Threshold_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slope"]))+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   G_Input_Threshold_Slope_plot
+  # })
+  # output$G_Input_Threshold_Intercept<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Threshold_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Intercept"]=="KW"){
+  #       G_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Threshold_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Intercept"]=="KW"){
+  #       G_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Threshold_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Intercept"]))+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   G_Input_Threshold_Intercept_plot
+  # })
+  # output$G_Input_Threshold_Slp.Int<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Threshold_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Slp.Int"]=="KW"){
+  #       G_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Threshold_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Threshold_Slp.Int"]=="KW"){
+  #       G_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Threshold_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Threshold_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(G_Input_Threshold_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   G_Input_Threshold_Slp.Int_plot
+  # })
+  # output$G_Input_Saturation_Slope<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Saturation_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Slope"]=="KW"){
+  #       G_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Saturation_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Slope"]=="KW"){
+  #       G_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Saturation_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slope"]))+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   G_Input_Saturation_Slope_plot
+  # })
+  # output$G_Input_Saturation_Intercept<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Saturation_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Intercept"]=="KW"){
+  #       G_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Saturation_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Intercept"]=="KW"){
+  #       G_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Saturation_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Intercept"]))+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   G_Input_Saturation_Intercept_plot
+  # })
+  # output$G_Input_Saturation_Slp.Int<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("G_Input_Saturation_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Slp.Int"]=="KW"){
+  #       G_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Saturation_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","G_Input_Saturation_Slp.Int"]=="KW"){
+  #       G_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (G_Input_Saturation_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       G_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["G_Input_Saturation_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(G_Input_Saturation_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   G_Input_Saturation_Slp.Int_plot
+  # })
+  # output$V_subthreshold_Input_Gain_Slope<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Gain_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slope"]=="KW"){
+  #       V_subthreshold_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Gain_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slope"]=="KW"){
+  #       V_subthreshold_Input_Gain_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Gain_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slope"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   V_subthreshold_Input_Gain_Slope_plot
+  # })
+  # output$V_subthreshold_Input_Gain_Intercept<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Gain_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Gain_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Gain_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Gain_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Intercept"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   V_subthreshold_Input_Gain_Intercept_plot
+  # })
+  # output$V_subthreshold_Input_Gain_Slp.Int<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Gain_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Gain_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Gain_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Gain_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Gain_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Gain_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Gain_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Gain_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   V_subthreshold_Input_Gain_Slp.Int_plot
+  # })
+  # output$V_subthreshold_Input_Threshold_Slope<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Threshold_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slope"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Threshold_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slope"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Threshold_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slope"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   V_subthreshold_Input_Threshold_Slope_plot
+  # })
+  # output$V_subthreshold_Input_Threshold_Intercept<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Threshold_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Threshold_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Threshold_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Intercept"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   V_subthreshold_Input_Threshold_Intercept_plot
+  # })
+  # output$V_subthreshold_Input_Threshold_Slp.Int<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Threshold_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Threshold_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Threshold_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Threshold_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Threshold_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Threshold_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Threshold_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Threshold_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   V_subthreshold_Input_Threshold_Slp.Int_plot
+  # })
+  # output$V_subthreshold_Input_Saturation_Slope<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Saturation_Slope"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slope"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Saturation_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slope"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Slope_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slope_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Saturation_Slope_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slope_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slope"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slope_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   V_subthreshold_Input_Saturation_Slope_plot
+  # })
+  # output$V_subthreshold_Input_Saturation_Intercept<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Saturation_Intercept"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Saturation_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Intercept"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Intercept_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Intercept_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Saturation_Intercept_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Intercept_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Intercept"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Intercept_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   V_subthreshold_Input_Saturation_Intercept_plot
+  # })
+  # output$V_subthreshold_Input_Saturation_Slp.Int<- renderPlot({
+  #   sol=solveSimulator()
+  #   Hypothesis_table=sol$hypothesis_table
+  #   factor=sol$factor
+  #   formula=as.formula(paste0("V_subthreshold_Input_Saturation_Slp.Int"," ~ ",factor))
+  #   full_dataset=sol$full_dataset
+  #   
+  #   if (factor=="Firing_Type"){
+  #     FT_dataset=sol$FT_dataset
+  #     current_dataset=FT_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Saturation_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   if(factor=="Species"){
+  #     current_dataset=full_dataset
+  #     if (Hypothesis_table["Variance_test","V_subthreshold_Input_Saturation_Slp.Int"]=="KW"){
+  #       V_subthreshold_Input_Saturation_Slp.Int_test=kruskal_test(current_dataset,formula = formula)
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slp.Int_test=anova_test(current_dataset,formula = formula)
+  #     }
+  #     
+  #     if (V_subthreshold_Input_Saturation_Slp.Int_test$p<0.05){
+  #       current_dunn_test=dunn_test(current_dataset,formula=formula,p.adjust.method = "bonferroni")
+  #       current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+  #       V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
+  #         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  #     }
+  #     else{
+  #       V_subthreshold_Input_Saturation_Slp.Int_plot=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset["V_subthreshold_Input_Saturation_Slp.Int"]))+
+  #         labs(subtitle=get_test_label(V_subthreshold_Input_Saturation_Slp.Int_test,detailed =TRUE))
+  #     }
+  #   }
+  #   
+  #   V_subthreshold_Input_Saturation_Slp.Int_plot
+  # })
   
 }
 

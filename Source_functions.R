@@ -9,72 +9,124 @@ have_library <- function (required_packages){
 
 create_fulldataset <- function(population_class, data_file, nbfactors){
   #transform the factors columns into factor type
-  for (elt in seq(1,nbfactor)){
-    population_class[,elt]=as.factor(population_class)
+  for (elt in seq(1,nbfactors)){
+    population_class[,elt]=as.factor(population_class[,elt])
   }
   #remove unit line from data_file
   data_file=data_file[2:nrow(data_file),]
   
   #create full dataset
   full_dataset=data.frame(merge(population_class,data_file,all=T))
-  
-  for (elt in seq(nbfactors+2,ncol(full_dataset))){
+  new_row_names=c(full_dataset[,1])
+  full_dataset=full_dataset[,2:(ncol(full_dataset))]
+  rownames(full_dataset)=new_row_names
+  for (elt in seq((nbfactors+1),ncol(full_dataset))){
     full_dataset[,elt]=as.numeric(full_dataset[,elt])
   }
-  factor_list=list(colnames(full_dataset)[1:nbfactors])
+  
+  factor_list=colnames(full_dataset[,1:nbfactors])
+  variable_list=colnames(full_dataset[(nbfactors+1):ncol(full_dataset)])
   return (list("full_dataset"=full_dataset,
-               "factor_list"=factor_list))
+               "factor_list"=factor_list,
+               "variable_list"=variable_list))
 }
 
 
 #Perform tests (data normality and variance homogeneity) to know which test is to be performed
-parametric_test <- function(full_dataset, factor_list){
-  nbfactors=length(factor_list)
-  normality_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-(nbfactors+1))))
-  normality_p_value_table=t(normality_p_value_table)
-  normality_p_value_table=rbind(normality_p_value_table,c(rep(0,ncol(full_dataset)-(nbfactors+1))))
-  colnames(normality_p_value_table)=colnames(full_dataset[,(nbfactors+2):ncol(full_dataset)])
+parametric_test <- function(full_dataset, nbfactors, factor){
   
-  homogeneity_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-(nbfactors+1))))
+  normality_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-(nbfactors))))
+  normality_p_value_table=t(normality_p_value_table)
+  normality_p_value_table=rbind(normality_p_value_table,c(rep(0,ncol(full_dataset)-(nbfactors))))
+  colnames(normality_p_value_table)=colnames(full_dataset[,(nbfactors+1):ncol(full_dataset)])
+  
+  homogeneity_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-(nbfactors))))
   homogeneity_p_value_table=t(homogeneity_p_value_table)
-  homogeneity_p_value_table=rbind(homogeneity_p_value_table,c(rep(0,ncol(full_dataset)-(nbfactors+1))))
-  colnames(homogeneity_p_value_table)=colnames(full_dataset[,(nbfactors+2):ncol(full_dataset)])
+  homogeneity_p_value_table=rbind(homogeneity_p_value_table,c(rep(0,ncol(full_dataset)-(nbfactors))))
+  colnames(homogeneity_p_value_table)=colnames(full_dataset[,(nbfactors+1):ncol(full_dataset)])
   Variance_test=data.frame(c(rep("Anova",ncol(homogeneity_p_value_table))))
   Variance_test=t(Variance_test)
-  colnames(Variance_test)=colnames(full_dataset[,(nbfactors+2):ncol(full_dataset)])
+  colnames(Variance_test)=colnames(full_dataset[,(nbfactors+1):ncol(full_dataset)])
   
   Hypothesis_table=rbind(data.frame(normality_p_value_table),data.frame(homogeneity_p_value_table),data.frame(Variance_test))
   rownames(Hypothesis_table)=c("Normality p_value","Normal distribution","Homogeneity p_values","Variances homogeneous","Variance_test")
   
-  for (elt in seq((nbfactors+2),ncol(full_dataset))){
+  for (elt in seq((nbfactors+1),ncol(full_dataset))){
     current_data=full_dataset[-which(full_dataset[,elt]=="NaN"),]
-    current_data=current_data[-which(current_data[,(nbfactors+1)]=="Neuron"),]
-    current_data=current_data[-which(current_data[,(nbfactors+1)]=="Glia"),]
-    current_data=current_data[-which(current_data[,(nbfactors+1)]=="Unspecified"),]
+    current_data=current_data[-which(current_data[,(nbfactors)]=="Neuron"),]
+    current_data=current_data[-which(current_data[,(nbfactors)]=="Glia"),]
+    current_data=current_data[-which(current_data[,(nbfactors)]=="Unspecified"),]
     
-    current_formula=as.formula(paste0(colnames(current_data[elt])," ~ ",factor))
+    current_formula=as.formula(paste0(colnames(current_data[,elt])," ~ ",factor))
     #test normality of the data
-    Hypothesis_table[1,elt-3]=shapiro_test(data=current_data[,elt])$p.value
+    Hypothesis_table[1,elt-2]=round(shapiro_test(data=current_data[,elt])$p.value,digits=3)
     
-    if (Hypothesis_table[1,elt-3]>0.05){
-      Hypothesis_table[2,elt-3]="Yes"
+    if (Hypothesis_table[1,elt-2]>0.05){
+      Hypothesis_table[2,elt-2]="Yes"
     }
     else{
-      Hypothesis_table[2,elt-3]="No"
-      Hypothesis_table[5,elt-3]="KW"
+      Hypothesis_table[2,elt-2]="No"
+      Hypothesis_table[5,elt-2]="KW"
     }
     
     #test variance homogeneity
-    Hypothesis_table[3,elt-3]=levene_test(data=current_data,formula=current_formula)$p
+    Hypothesis_table[3,elt-2]=round(levene_test(data=current_data,formula=current_formula)$p,digits=3)
     
-    if (Hypothesis_table[3,elt-3]>0.05){
-      Hypothesis_table[4,elt-3]="Yes"
+    if (Hypothesis_table[3,elt-2]>0.05){
+      Hypothesis_table[4,elt-2]="Yes"
     }
     
     else{
-      Hypothesis_table[4,elt-3]="No"
-      Hypothesis_table[5,elt-3]="KW"
+      Hypothesis_table[4,elt-2]="No"
+      Hypothesis_table[5,elt-2]="KW"
     }
   }
+  Hypothesis_table=data.frame(Hypothesis_table)
   return(Hypothesis_table)
 }
+
+generate_plot <- function(Hypothesis_table,dataset,variable,factor){
+  formula=as.formula(paste0(variable," ~ ",factor))
+  if (Hypothesis_table["Variance_test",variable]=="KW"){
+    variable_test=kruskal_test(dataset,formula = formula)
+  }
+  else{
+    variable_test=anova_test(dataset,formula = formula)
+  }
+  
+  if (variable_test$p<0.05){
+    current_dunn_test=dunn_test(dataset,formula=formula,p.adjust.method = "bonferroni")
+    current_dunn_test=add_xy_position(current_dunn_test,x=factor)
+    variable_plot=ggboxplot(dataset,x=factor,y=colnames(dataset[variable]))+
+      stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+      labs(subtitle=get_test_label(variable_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+  }
+  else{
+    variable_plot=ggboxplot(dataset,x=factor,y=colnames(dataset[variable]))+
+      labs(subtitle=get_test_label(variable_test,detailed =TRUE))
+  }
+  
+  return (list("variable_plot"=variable_plot))
+}
+
+
+generate_plotly <- function(Hypothesis_table,dataset,variable,factor){
+  print(paste0(variable," ~ ",factor))
+  formula=as.formula(paste0(variable," ~ ",factor))
+  
+  if (Hypothesis_table["Variance_test",variable]=="KW"){
+    variable_test=kruskal_test(dataset,formula = formula)
+  }
+  else{
+    variable_test=anova_test(dataset,formula = formula)
+  }
+  variable_plotly=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset[variable]))+
+    labs(subtitle=get_test_label(variable_test,detailed =TRUE))
+  
+  return(list("variable_plotly"=variable_plotly))
+}
+
+
+
+
+
