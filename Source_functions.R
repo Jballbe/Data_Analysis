@@ -23,6 +23,11 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
   for (elt in seq((nbfactors+1),ncol(full_dataset))){
     full_dataset[,elt]=as.numeric(full_dataset[,elt])
   }
+  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Neuron"),]
+  print('her')
+  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Glia"),]
+  print('okok')
+  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Unspecified"),]
   
   factor_list=colnames(full_dataset[,1:nbfactors])
   variable_list=colnames(full_dataset[(nbfactors+1):ncol(full_dataset)])
@@ -35,6 +40,7 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
 #Perform tests (data normality and variance homogeneity) to know which test is to be performed
 parametric_test <- function(full_dataset, nbfactors, factor){
   
+  
   normality_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-(nbfactors))))
   normality_p_value_table=t(normality_p_value_table)
   normality_p_value_table=rbind(normality_p_value_table,c(rep(0,ncol(full_dataset)-(nbfactors))))
@@ -44,6 +50,7 @@ parametric_test <- function(full_dataset, nbfactors, factor){
   homogeneity_p_value_table=t(homogeneity_p_value_table)
   homogeneity_p_value_table=rbind(homogeneity_p_value_table,c(rep(0,ncol(full_dataset)-(nbfactors))))
   colnames(homogeneity_p_value_table)=colnames(full_dataset[,(nbfactors+1):ncol(full_dataset)])
+  
   Variance_test=data.frame(c(rep("Anova",ncol(homogeneity_p_value_table))))
   Variance_test=t(Variance_test)
   colnames(Variance_test)=colnames(full_dataset[,(nbfactors+1):ncol(full_dataset)])
@@ -52,13 +59,9 @@ parametric_test <- function(full_dataset, nbfactors, factor){
   rownames(Hypothesis_table)=c("Normality p_value","Normal distribution","Homogeneity p_values","Variances homogeneous","Variance_test")
   
   for (elt in seq((nbfactors+1),ncol(full_dataset))){
-    current_data=full_dataset[-which(full_dataset[,elt]=="NaN"),]
-    current_data=current_data[-which(current_data[,(nbfactors)]=="Neuron"),]
-    current_data=current_data[-which(current_data[,(nbfactors)]=="Glia"),]
-    current_data=current_data[-which(current_data[,(nbfactors)]=="Unspecified"),]
-    
-    current_formula=as.formula(paste0(colnames(current_data[,elt])," ~ ",factor))
+    current_data=full_dataset
     #test normality of the data
+    
     Hypothesis_table[1,elt-2]=round(shapiro_test(data=current_data[,elt])$p.value,digits=3)
     
     if (Hypothesis_table[1,elt-2]>0.05){
@@ -70,6 +73,8 @@ parametric_test <- function(full_dataset, nbfactors, factor){
     }
     
     #test variance homogeneity
+    
+    current_formula=as.formula(paste0(colnames(full_dataset[elt])," ~ ",factor))
     Hypothesis_table[3,elt-2]=round(levene_test(data=current_data,formula=current_formula)$p,digits=3)
     
     if (Hypothesis_table[3,elt-2]>0.05){
@@ -85,46 +90,7 @@ parametric_test <- function(full_dataset, nbfactors, factor){
   return(Hypothesis_table)
 }
 
-generate_plot <- function(Hypothesis_table,dataset,variable,factor){
-  formula=as.formula(paste0(variable," ~ ",factor))
-  if (Hypothesis_table["Variance_test",variable]=="KW"){
-    variable_test=kruskal_test(dataset,formula = formula)
-  }
-  else{
-    variable_test=anova_test(dataset,formula = formula)
-  }
-  
-  if (variable_test$p<0.05){
-    current_dunn_test=dunn_test(dataset,formula=formula,p.adjust.method = "bonferroni")
-    current_dunn_test=add_xy_position(current_dunn_test,x=factor)
-    variable_plot=ggboxplot(dataset,x=factor,y=colnames(dataset[variable]))+
-      stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-      labs(subtitle=get_test_label(variable_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-  }
-  else{
-    variable_plot=ggboxplot(dataset,x=factor,y=colnames(dataset[variable]))+
-      labs(subtitle=get_test_label(variable_test,detailed =TRUE))
-  }
-  
-  return (list("variable_plot"=variable_plot))
-}
 
-
-generate_plotly <- function(Hypothesis_table,dataset,variable,factor){
-  print(paste0(variable," ~ ",factor))
-  formula=as.formula(paste0(variable," ~ ",factor))
-  
-  if (Hypothesis_table["Variance_test",variable]=="KW"){
-    variable_test=kruskal_test(dataset,formula = formula)
-  }
-  else{
-    variable_test=anova_test(dataset,formula = formula)
-  }
-  variable_plotly=ggboxplot(current_dataset,x=factor,y=colnames(current_dataset[variable]))+
-    labs(subtitle=get_test_label(variable_test,detailed =TRUE))
-  
-  return(list("variable_plotly"=variable_plotly))
-}
 
 
 
