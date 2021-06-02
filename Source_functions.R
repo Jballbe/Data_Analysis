@@ -8,11 +8,14 @@ have_library <- function (required_packages){
   }
   print("All required packages loaded")
 }
+required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
+#Check if the user have all required libraries and if not, install them
+have_library(required_packages = required_packages)
 
 #This function create the full dataset table 
 create_fulldataset <- function(population_class, data_file, nbfactors){
   #transform the factors columns into factor type
-  for (elt in seq(1,nbfactors)){
+  for (elt in seq(1,(nbfactors+1))){
     population_class[,elt]=as.factor(population_class[,elt])
   }
   #remove unit line from data_file
@@ -42,57 +45,104 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
 
 
 #Perform tests (data normality and variance homogeneity) to know which test is to be performed
+
+
+
 parametric_test <- function(full_dataset, nbfactors, myfactor){
-  
+  #options(scipen = -100, digits=3)
+  variable_list=colnames(full_dataset[(nbfactors+1):ncol(full_dataset)])
   #Create a table for normality test
-  normality_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-(nbfactors))))
+  normality_p_value_table=data.frame(c(rep(0,length(variable_list))))
   normality_p_value_table=t(normality_p_value_table)
-  normality_p_value_table=rbind(normality_p_value_table,c(rep(0,ncol(full_dataset)-(nbfactors))))
-  colnames(normality_p_value_table)=colnames(full_dataset[,(nbfactors+1):ncol(full_dataset)])
+  normality_p_value_table=rbind(normality_p_value_table,c(rep(0,length(variable_list))))
+  colnames(normality_p_value_table)=variable_list
   #Create a table for homogeneity test
-  homogeneity_p_value_table=data.frame(c(rep(0,ncol(full_dataset)-(nbfactors))))
+  homogeneity_p_value_table=data.frame(c(rep(0,length(variable_list))))
   homogeneity_p_value_table=t(homogeneity_p_value_table)
-  homogeneity_p_value_table=rbind(homogeneity_p_value_table,c(rep(0,ncol(full_dataset)-(nbfactors))))
-  colnames(homogeneity_p_value_table)=colnames(full_dataset[,(nbfactors+1):ncol(full_dataset)])
+  homogeneity_p_value_table=rbind(homogeneity_p_value_table,c(rep(0,length(variable_list))))
+  colnames(homogeneity_p_value_table)=variable_list
   #Create a table to indicate the required test
-  Variance_test=data.frame(c(rep("Anova",ncol(homogeneity_p_value_table))))
+  Variance_test=data.frame(c(rep("Anova",length(variable_list))))
   Variance_test=t(Variance_test)
-  colnames(Variance_test)=colnames(full_dataset[,(nbfactors+1):ncol(full_dataset)])
+  colnames(Variance_test)=variable_list
+
+  Mean_Difference=data.frame(c(rep("No",length(variable_list))))
+  Mean_Difference=t(Mean_Difference)
+  colnames(Mean_Difference)=variable_list
+
+  Which_groups=data.frame(c(rep("None",length(variable_list))))
+  Which_groups=t(Which_groups)
+  colnames(Which_groups)=variable_list
   #Gather all the table into Hypothesis_table
-  Hypothesis_table=rbind(data.frame(normality_p_value_table),data.frame(homogeneity_p_value_table),data.frame(Variance_test))
-  rownames(Hypothesis_table)=c("Normality p_value","Normal distribution","Homogeneity p_values","Variances homogeneous","Variance_test")
-  
-  for (elt in seq((nbfactors+1),ncol(full_dataset))){
+  Hypothesis_table=rbind(data.frame(normality_p_value_table),data.frame(homogeneity_p_value_table),data.frame(Variance_test),data.frame(Mean_Difference),data.frame(Which_groups))
+  rownames(Hypothesis_table)=c("Normality p_value","Normal distribution","Homogeneity p_values","Variances homogeneous","Variance_test","Is there Mean difference?","Between")
+
+
+  for (current_variable in variable_list){
     current_data=full_dataset
     #test normality of the data
-    
-    Hypothesis_table[1,elt-2]=round(shapiro_test(data=current_data[,elt])$p.value,digits=3)
-    
-    if (Hypothesis_table[1,elt-2]>0.05){
-      Hypothesis_table[2,elt-2]="Yes"
+    current_shapiro_test=shapiro_test(data=current_data[,current_variable])$p.value
+    Hypothesis_table["Normality p_value",current_variable]=formatC(current_shapiro_test,digits=3,format='e')
+
+    if (current_shapiro_test>0.05){
+      Hypothesis_table["Normal distribution",current_variable]="Yes"
     }
     else{
-      Hypothesis_table[2,elt-2]="No"
-      Hypothesis_table[5,elt-2]="KW"
+      Hypothesis_table["Normal distribution",current_variable]="No"
+      Hypothesis_table["Variance_test",current_variable]="KW"
     }
-    
+
     #test variance homogeneity
-    
-    current_formula=as.formula(paste0(colnames(full_dataset[elt])," ~ ",myfactor))
-    Hypothesis_table[3,elt-2]=round(levene_test(data=current_data,formula=current_formula)$p,digits=3)
-    
-    if (Hypothesis_table[3,elt-2]>0.05){
-      Hypothesis_table[4,elt-2]="Yes"
+
+    current_formula=as.formula(paste0(current_variable," ~ ",myfactor))
+    current_levene_test=levene_test(data=current_data,formula=current_formula)$p
+    Hypothesis_table["Homogeneity p_values",current_variable]=formatC(current_levene_test,digits=3,format='e')
+
+    if (current_levene_test>0.05){
+      Hypothesis_table["Variances homogeneous",current_variable]="Yes"
     }
-    
+
     else{
-      Hypothesis_table[4,elt-2]="No"
-      Hypothesis_table[5,elt-2]="KW"
+      Hypothesis_table["Variances homogeneous",current_variable]="No"
+      Hypothesis_table["Variance_test",current_variable]="KW"
+    }
+
+   
+    #Perform Mean difference test (KW or ANOVA)
+    if (Hypothesis_table["Variance_test",current_variable]=="KW"){
+      variable_test=kruskal_test(current_data,formula = current_formula)
+      
+    }
+    else{
+      anova_test(current_data,formula = current_formula)
+      variable_test=anova_test(full_dataset,formula = current_formula)
+    }
+
+    # If applicable, perform pair-wise comparison
+    if (variable_test$p<0.05){
+      Hypothesis_table["Is there Mean difference?",current_variable]="Yes"
+      current_dunn_test=dunn_test(current_data,formula=current_formula,p.adjust.method = "bonferroni")
+      
+
+    # Get the group name and significance level
+      all_pair=""
+    for (pwc in seq(nrow(current_dunn_test))){
+      
+      if (current_dunn_test[pwc,"p.adj"]<0.05){
+        current_pair=as.character(paste0(current_dunn_test[pwc,"group1"],current_dunn_test[pwc,"p.adj.signif"],current_dunn_test[pwc,"group2"]))
+        all_pair=paste(all_pair,current_pair,sep='\n')
+      }
+    
+    
+    }
+      Hypothesis_table["Between",current_variable]=all_pair
     }
   }
   Hypothesis_table=data.frame(Hypothesis_table)
   return(Hypothesis_table)
 }
+
+
 
 #This function saves the plots selected by the user
 saveallfigures <- function(Hypothesis_table, full_dataset,saving_path, file_name, nbfactors, myfactor, variable_to_save, which_plot){
@@ -132,13 +182,10 @@ saveallfigures <- function(Hypothesis_table, full_dataset,saving_path, file_name
   }
   
   
-  #ggsave(filename = paste0(file_name,".pdf"),plot=myplot,path=saving_path)
-  #dev.off()
-}
-
-savethisfigure <- function(Hypothesis_table, full_dataset, file_name,variable, nbfactors, myfactor){
   
 }
+
+
 
 count_samples <- function (full_dataset,nbfactors,myfactor,nbvariable){
   
@@ -154,7 +201,7 @@ count_samples <- function (full_dataset,nbfactors,myfactor,nbvariable){
       current_data=full_dataset[-which(full_dataset[,myfactor]!=mylevel),]
       
       for (current_variable in colnames(table_count)){
-        table_count[mylevel,current_variable]=nrow(current_data[-which(current_data[,current_variable]=="NaN"),])
+        table_count[mylevel,current_variable]=round(nrow(current_data[-which(current_data[,current_variable]=="NaN"),]),digits = 0)
     
     }
     }

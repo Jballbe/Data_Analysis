@@ -1,7 +1,11 @@
 library(shiny)
-
-
-
+required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
+install.packages(setdiff(required_packages,rownames(installed.packages())))
+print ("All required packages installed")
+for (package_name in required_packages){
+  library(package_name,character.only =TRUE);
+}
+print("All required packages loaded")
 
 ui <- fluidPage(
   titlePanel("Application Mean variance analysis"),
@@ -13,8 +17,8 @@ ui <- fluidPage(
       fileInput("Pop_class_file","Choose Population Class file"),
       textOutput("files"),
       numericInput("nbfactors","How many possible factors are they?",2),
-      selectInput("myfactor","Based on which factor do the analysis",choices=""),
-      selectInput("Variable","Select the variable to observe",choices=""),
+      selectInput("myfactor","Factor of analysis",choices=""),
+      selectInput("Variable","Variable to observe",choices=""),
       checkboxInput("points","Display points in plotly"),
       selectInput("save","Select saving mode",choices=c("All","Some","Current one")),
       checkboxGroupInput("Select_variable","Select_variable",choices=""),
@@ -50,7 +54,7 @@ server <- function(session,input, output) {
     #These lines only execute when the files are selected
     req(input$Source_functions$name,input$My_data$name,input$Pop_class_file$name)
     source(file=input$Source_functions$name)
-    required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles")
+    required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
     #Check if the user have all required libraries and if not, install them
     have_library(required_packages = required_packages)
     # Prepare the full data table
@@ -68,8 +72,8 @@ server <- function(session,input, output) {
     myenv$nbvariable=length(variable_list)
     
     #Update the choice selection for factor and variable according to input files
-    updateSelectInput(session,"myfactor","myfactor",choices=factor_list)
-    updateSelectInput(session,"Variable","Variable",choices=variable_list)
+    updateSelectInput(session,"myfactor","Factor of analysis",choices=factor_list)
+    updateSelectInput(session,"Variable","Variable to observe",choices=variable_list)
     
     
     # If you want to save only some variable plot, display a checkbox list to select the variables
@@ -98,13 +102,14 @@ server <- function(session,input, output) {
   
   output$counterglobal <- renderTable({
     req(input$myfactor,input$nbfactors)
+    full_dataset=myenv$full_dataset
     table_count=count_samples(full_dataset = full_dataset,nbfactor=input$nbfactors,myfactor=input$myfactor,nbvariable = myenv$nbvariable)
     data.frame(table_count)
   },rownames=TRUE)
   
   output$countervariable <- renderTable({
     req(input$myfactor,input$nbfactors,input$Variable)
-    
+    full_dataset=myenv$full_dataset
     variable_table=count_samples(full_dataset = full_dataset,nbfactor=input$nbfactors,myfactor=input$myfactor,nbvariable = myenv$nbvariable)[input$Variable]
     
     data.frame(variable_table)
