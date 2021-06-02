@@ -18,14 +18,14 @@ ui <- fluidPage(
       textOutput("files"),
       numericInput("nbfactors","How many possible factors are they?",2),
       selectInput("myfactor","Factor of analysis",choices=""),
-      selectInput("Variable","Variable to observe",choices=""),
+      selectInput("Variable","Select variable to observe",choices=""),
       checkboxInput("points","Display points in plotly"),
       selectInput("save","Select saving mode",choices=c("All","Some","Current one")),
       checkboxGroupInput("Select_variable","Select_variable",choices=""),
       
       
       
-      textInput("file_name", label= "Enter file name (without variable_name.pdf)"),
+      textInput("file_name", label= "Enter file name (without variable_name_by_factor.pdf)"),
       
       actionButton("execute_saving","Save as pdf"),
       
@@ -73,7 +73,7 @@ server <- function(session,input, output) {
     
     #Update the choice selection for factor and variable according to input files
     updateSelectInput(session,"myfactor","Factor of analysis",choices=factor_list)
-    updateSelectInput(session,"Variable","Variable to observe",choices=variable_list)
+    updateSelectInput(session,"Variable","Select variable to observe",choices=variable_list)
     
     
     # If you want to save only some variable plot, display a checkbox list to select the variables

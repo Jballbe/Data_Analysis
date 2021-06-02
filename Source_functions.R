@@ -177,7 +177,7 @@ saveallfigures <- function(Hypothesis_table, full_dataset,saving_path, file_name
     }
     myplot=ggarrange(variable_plot,ncol=1,nrow=1)
     #Save the plot in landscape format
-    ggsave(filename = paste0(file_name,variable,".pdf"),plot=myplot,path=saving_path,device = cairo_pdf,width=297,height = 210,units="mm")
+    ggsave(filename = paste0(file_name,"_",variable,"_by_",myfactor,".pdf"),plot=myplot,path=saving_path,device = cairo_pdf,width=297,height = 210,units="mm")
     
   }
   
@@ -201,7 +201,7 @@ count_samples <- function (full_dataset,nbfactors,myfactor,nbvariable){
       current_data=full_dataset[-which(full_dataset[,myfactor]!=mylevel),]
       
       for (current_variable in colnames(table_count)){
-        table_count[mylevel,current_variable]=round(nrow(current_data[-which(current_data[,current_variable]=="NaN"),]),digits = 0)
+        table_count[mylevel,current_variable]=round(nrow(current_data[-which(current_data[,current_variable]=="NaN"),]),digits = 1)
     
     }
     }
