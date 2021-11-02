@@ -77,6 +77,7 @@ parametric_test <- function(full_dataset, nbfactors, myfactor){
   Hypothesis_table=rbind(data.frame(normality_p_value_table),data.frame(homogeneity_p_value_table),data.frame(Variance_test),data.frame(Mean_Difference),data.frame(Which_groups))
   rownames(Hypothesis_table)=c("Normality p_value","Normal distribution","Homogeneity p_values","Variances homogeneous","Variance_test","Is there Mean difference?","Between")
 
+  
 
   for (current_variable in variable_list){
     current_data=full_dataset
@@ -120,6 +121,7 @@ parametric_test <- function(full_dataset, nbfactors, myfactor){
 
     # If applicable, perform pair-wise comparison
     if (variable_test$p<0.05){
+      if (Hypothesis_table["Variance_test",current_variable]=="KW"){
       Hypothesis_table["Is there Mean difference?",current_variable]="Yes"
       current_dunn_test=dunn_test(current_data,formula=current_formula,p.adjust.method = "bonferroni")
       
@@ -131,11 +133,33 @@ parametric_test <- function(full_dataset, nbfactors, myfactor){
       if (current_dunn_test[pwc,"p.adj"]<0.05){
         current_pair=as.character(paste0(current_dunn_test[pwc,"group1"],current_dunn_test[pwc,"p.adj.signif"],current_dunn_test[pwc,"group2"]))
         all_pair=paste(all_pair,current_pair,sep='\n')
+        
       }
     
     
     }
       Hypothesis_table["Between",current_variable]=all_pair
+      }
+      
+      if (Hypothesis_table["Variance_test",current_variable]=="Anova"){
+        Hypothesis_table["Is there Mean difference?",current_variable]="Yes"
+       # current_Tukey_test=tukey_hsd(current_data,formula=current_formula,p.adjust.method = "bonferroni")
+        current_Tukey_test=tukey_hsd(current_data,formula=current_formula)
+        print(current_Tukey_test)
+        # Get the group name and significance level
+        all_pair=""
+        for (pwc in seq(nrow(current_Tukey_test))){
+          
+          if (current_Tukey_test[pwc,"p.adj"]<0.05){
+            current_pair=as.character(paste0(current_Tukey_test[pwc,"group1"],current_Tukey_test[pwc,"p.adj.signif"],current_Tukey_test[pwc,"group2"]))
+            all_pair=paste(all_pair,current_pair,sep='\n')
+            
+          }
+          
+          
+        }
+        Hypothesis_table["Between",current_variable]=all_pair
+      }
     }
   }
   Hypothesis_table=data.frame(Hypothesis_table)
@@ -165,23 +189,33 @@ saveallfigures <- function(Hypothesis_table, full_dataset,saving_path, file_name
     }
     
     if (variable_test$p<0.05){
+      if (Hypothesis_table["Variance_test",variable]=="KW"){
       current_dunn_test=dunn_test(full_dataset,formula=formula,p.adjust.method = "bonferroni")
       current_dunn_test=add_xy_position(current_dunn_test,x=myfactor)
       variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable]))+
         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
         labs(subtitle=get_test_label(variable_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+      }
+      if (Hypothesis_table["Variance_test",variable]=="Anova"){
+        current_Tukey_test=tukey_hsd(current_data,formula=formula)
+        current_Tukey_test=add_xy_position(current_Tukey_test,x=myfactor)
+        variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable]))+
+          stat_pvalue_manual(current_Tukey_test,hide.ns = TRUE)+
+          labs(subtitle=get_test_label(variable_test,detailed =TRUE),caption=get_pwc_label(current_Tukey_test))
+      }
     }
     else{
       variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable]))+
         labs(subtitle=get_test_label(variable_test,detailed =TRUE))
     }
+    
     myplot=ggarrange(variable_plot,ncol=1,nrow=1)
     #Save the plot in landscape format
     ggsave(filename = paste0(file_name,"_",variable,"_by_",myfactor,".pdf"),plot=myplot,path=saving_path,device = cairo_pdf,width=297,height = 210,units="mm")
     
+  
+  
   }
-  
-  
   
 }
 
@@ -209,5 +243,52 @@ count_samples <- function (full_dataset,nbfactors,myfactor,nbvariable){
   return(table_count)
 }
 
+get_basic_stat <- function(full_dataset, nbfactors, myfactor){
+ 
+  variable_list=colnames(full_dataset[(nbfactors+1):ncol(full_dataset)])
+  levels_list=levels(full_dataset[,myfactor])
+  mean_stat_table=data.frame(matrix(0,nrow =length(levels_list), ncol=length(variable_list)))
+  
+  
+  colnames(mean_stat_table)=variable_list
+  rownames(mean_stat_table)=c(levels_list)
+  
+  sd_stat_table=data.frame(matrix(0,nrow =length(levels_list), ncol=length(variable_list)))
+  colnames(sd_stat_table)=variable_list
+  rownames(sd_stat_table)=c(levels_list)
+  for (variable in variable_list){
+    
+    current_data=full_dataset[-which(full_dataset[,variable]=="NaN"),]
+    
+    for (level in levels_list){
+      
+      
+      mean_stat_table[level,variable]=mean(current_data[which(current_data[,myfactor]==level),variable])
+      sd_stat_table[level,variable]=sd(current_data[which(current_data[,myfactor]==level),variable])
+    }
+  }
+  full_stat_table=rbind(mean_stat_table,sd_stat_table)
+  
+  Stat=c(rep("Mean",length(levels_list)),rep("SD",length(levels_list)))
+  
+  stat_table=data.frame(cbind(Stat,full_stat_table))
+  
+  if(myfactor=="Firing_Type"){
+    toremove=c("Neuron","Glia","Unspecified","Neuron1","Glia1","Unspecified1")
+    
+    stat_table=stat_table[!(rownames(stat_table) %in% toremove),]
+    
+    
+    mean_stat_table=mean_stat_table[!(rownames(mean_stat_table) %in% toremove),]
+    
+    sd_stat_table=sd_stat_table[!(rownames(sd_stat_table) %in% toremove),]
+    
+  }
+  
+  
+  return(list("stat_table"=stat_table,
+              "mean_table"=mean_stat_table,
+              "sd_table"=sd_stat_table))
+}
 
 

@@ -1,5 +1,5 @@
 library(shiny)
-required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
+required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
 install.packages(setdiff(required_packages,rownames(installed.packages())))
 print ("All required packages installed")
 for (package_name in required_packages){
@@ -8,7 +8,7 @@ for (package_name in required_packages){
 print("All required packages loaded")
 
 ui <- fluidPage(
-  titlePanel("Application Mean variance analysis"),
+  titlePanel("Application Data Analysis"),
   
   sidebarLayout(
     sidebarPanel(
@@ -19,6 +19,10 @@ ui <- fluidPage(
       numericInput("nbfactors","How many possible factors are they?",2),
       selectInput("myfactor","Factor of analysis",choices=""),
       selectInput("Variable","Select variable to observe",choices=""),
+
+      textInput("stat_name", label= "Enter file name (without _analysis.csv)"),
+      actionButton("save_table","Save stat Table"),
+      textOutput("dwlstat_table"),
       checkboxInput("points","Display points in plotly"),
       selectInput("save","Select saving mode",choices=c("All","Some","Current one")),
       checkboxGroupInput("Select_variable","Select_variable",choices=""),
@@ -29,12 +33,19 @@ ui <- fluidPage(
       
       actionButton("execute_saving","Save as pdf"),
       
-      textOutput("dwlFigures")
+      textOutput("dwlFigures"),
+      
+      fileInput("threeDarray","Choose 3D array file"),
+      
+      selectInput("Variabletoshow","Select Variable to display",choices=""),
+      sliderTextInput("whichtime","Time response:",choices="",animate=TRUE)
+      
     ),
     mainPanel(
       tabsetPanel(
-        tabPanel("General informations",tableOutput("Hypothesis"),tableOutput("counterglobal")),
-        tabPanel("Current variable",tableOutput("countervariable"),plotOutput("plot"),plotlyOutput("plotly"))
+        tabPanel("General informations",tableOutput("Hypothesis"),tableOutput("counterglobal"), tableOutput("basic_stats")),
+        tabPanel("Current variable",tableOutput("countervariable"),plotOutput("plot"),plotlyOutput("plotly")),
+        tabPanel("3D plot",plotlyOutput("plotthreeD"))
       ),
       
       
@@ -49,6 +60,9 @@ server <- function(session,input, output) {
   #Create a local environment to pass variable across different functions
   myenv=new.env()
   myenv$previous_value=0
+  myenv$previous_stat_value=0
+  myarray=readRDS("Full_response_array")
+  myenv$myarray=myarray
   
   output$files <- renderText({
     #These lines only execute when the files are selected
@@ -84,6 +98,68 @@ server <- function(session,input, output) {
     
   })
   
+  output$plotthreeD <- renderPlotly({
+    req(input$threeDarray$name)
+    print('here')
+    
+    myarray=myenv$myarray
+    variable=dimnames(myarray)[[2]]
+    time=c("5","10","25", "50","100","250","500")
+    dimnames(myarray)[[3]]=time
+    
+    updateSliderTextInput(session,"whichtime","whichtime",choices=time)
+    updateSelectInput(session,"Variabletoshow","Variabletoshow",choices=variable)
+    
+    
+    # Current_hypothesis_table=parametric_test(myarray[,,input$whichtime],nbfactors = 1, myfactor="Firing_Type")
+    # 
+    # formula=as.formula(paste0(input$Variabletoshow," ~Firing_Type"))
+    # 
+    # if (Current_hypothesis_table["Variance_test",input$Variabletoshow]=="KW"){
+    #   variable_test=kruskal_test(myarray[,,input$whichtime],formula = formula)
+    # }
+    # else{
+    #   variable_test=anova_test(myarray[,,input$whichtime],formula = formula)
+    # }
+    # 
+    # #If the test result is significant, perform a pair-wise comparison to know which means are different and create a plot
+    # if (variable_test$p<0.05){
+    #   current_dunn_test=dunn_test(myarray[,,input$whichtime],formula=formula,p.adjust.method = "bonferroni")
+    #   current_dunn_test=add_xy_position(current_dunn_test,x="Firing_Type")
+    #   variable_plot=ggboxplot(myarray[,,input$whichtime],x="Firing_Type",y=colnames(myarray[,,input$whichtime][input$Variabletoshow]))+
+    #     stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
+    #     labs(subtitle=get_test_label(variable_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
+    # }
+    # else{
+    #   variable_plot=ggboxplot(myarray[,,input$whichtime],x="Firing_Type",y=colnames(myarray[,,input$whichtime][input$Variabletoshow]))+
+    #     labs(subtitle=get_test_label(variable_test,detailed =TRUE))
+    # }
+    
+    #variable_plot
+    
+    current_time_data=data.frame((myarray[,,as.character(input$whichtime)]))
+    
+    
+      #myarray[,1,elt]=as.factor(myarray[,1,elt])
+      for (col in seq(2,length(colnames(current_time_data)))){
+        current_time_data[,col]=as.numeric(current_time_data[,col])
+      }
+    
+    variable=input$Variabletoshow
+    print(typeof(current_time_data[12,2]))
+    print(variable)
+    variable_plotly=ggboxplot(current_time_data,x="Firing_Type",y="G_Input_Gain_Slope")
+      
+    
+    if (input$points == TRUE){
+      variable_plotly=variable_plotly+geom_jitter(shape=16,position=position_jitter(0.2))
+    }
+    #Display an interactive plot
+    variable_plotly
+    
+    
+  })
+  
   output$Hypothesis <- renderTable( {
     #only begin when the full data table is created
     req(input$myfactor,myenv$full_dataset,input$nbfactors)
@@ -97,6 +173,20 @@ server <- function(session,input, output) {
     #Display the table
     
     data.frame(Hypothesis_table)
+    
+  },rownames=TRUE)
+  
+  output$basic_stats <- renderTable({
+    req(input$myfactor,myenv$full_dataset,input$nbfactors)
+    myfactor=input$myfactor
+    full_dataset=myenv$full_dataset
+    nbfactors=input$nbfactors
+    basic_stats=get_basic_stat(full_dataset = full_dataset, nbfactors = nbfactors, myfactor = myfactor)
+    stat_table=basic_stats$stat_table
+    myenv$stat_table=basic_stats$stat_table
+    myenv$mean_table=basic_stats$mean_table
+    myenv$sd_table=basic_stats$sd_table
+    data.frame(stat_table)
     
   },rownames=TRUE)
   
@@ -212,6 +302,32 @@ server <- function(session,input, output) {
       saveallfigures(Hypothesis_table = Hypothesis_table, full_dataset = full_dataset, saving_path=saving_path ,file_name = file_name, nbfactors = nbfactors,myfactor = myfactor,variable_to_save=variable_to_save, which_plot)
       myenv$previous_value=input$execute_saving
       print(paste0("Files succesfully saved"))
+    }
+    
+    
+  })
+  
+  output$dwlstat_table<- renderText({
+    #Only begin when the user have entered the file name and pushed the button
+    req(input$save_table,input$stat_name)
+    
+    stat_name=input$stat_name
+    
+    
+    mean_table=myenv$mean_table
+    sd_table=myenv$sd_table
+    
+    
+    
+    
+    which_plot=input$save
+    
+    #Save the selected plots only when the user clicks the button
+    if(input$save_table !=0 && input$save_table != myenv$previous_stat_value){
+      write.csv(mean_table,file=paste0(stat_name,"_mean.csv"),row.names = TRUE)
+      write.csv(sd_table,file=paste0(stat_name,"_sd.csv"),row.names = TRUE)
+      myenv$previous_stat_value=input$save_table
+      print(paste0("Tables succesfully saved"))
     }
     
     
