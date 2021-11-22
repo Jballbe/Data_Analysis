@@ -8,7 +8,7 @@ have_library <- function (required_packages){
   }
   print("All required packages loaded")
 }
-required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
+required_packages=c("shiny","plyr","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
 #Check if the user have all required libraries and if not, install them
 have_library(required_packages = required_packages)
 

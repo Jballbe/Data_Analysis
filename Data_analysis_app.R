@@ -7,14 +7,34 @@ for (package_name in required_packages){
 }
 print("All required packages loaded")
 
+#UI
+
 ui <- fluidPage(
   titlePanel("Application Data Analysis"),
-  
+ 
   sidebarLayout(
     sidebarPanel(
       fileInput("Source_functions","Choose the source function file"),
-      fileInput("My_data","Choose data file (csv) to analyse"),
       fileInput("Pop_class_file","Choose Population Class file"),
+      selectInput("Which_Analysis","Single or Multpile Files analysis",choices=c("","Single File","Multiple Files")),
+      conditionalPanel(condition = "input.Which_Analysis == 'Single File'",
+                       fileInput("My_data","Choose data file (csv) to analyse")
+                       ),
+      
+      conditionalPanel(condition = "input.Which_Analysis == 'Multiple Files'",
+                       numericInput("Number_of_Files",label = 'Number of files to upload',value = 2,min=2,max=7),
+                       fileInput("5ms","5ms data file (csv)"),
+                       fileInput("10ms","10ms data file (csv)"),
+                       fileInput("25ms","25ms data file (csv)"),
+                       fileInput("50ms","50ms data file (csv)"),
+                       fileInput("100ms","100ms data file (csv)"),
+                       fileInput("250ms","250ms data file (csv)"),
+                       fileInput("500ms","500ms data file (csv)"),
+                       actionButton("proceed_to_multiple_analysis","Proceed")
+                       ),
+      
+      
+      
       textOutput("files"),
       numericInput("nbfactors","How many possible factors are they?",2),
       selectInput("myfactor","Factor of analysis",choices=""),
@@ -24,16 +44,18 @@ ui <- fluidPage(
       actionButton("save_table","Save stat Table"),
       textOutput("dwlstat_table"),
       checkboxInput("points","Display points in plotly"),
-      selectInput("save","Select saving mode",choices=c("All","Some","Current one")),
-      checkboxGroupInput("Select_variable","Select_variable",choices=""),
+      checkboxInput("want_to_save","Save"),
+      conditionalPanel(condition = "input.want_to_save == true",
+                       selectInput("save","Select saving mode",choices=c("All","Some","Current one")),
+                       checkboxGroupInput("Select_variable","Select_variable",choices=""),
+                       textInput("file_name", label= "Enter file name (without variable_name_by_factor.pdf)"),
+                       actionButton("execute_saving","Save as pdf"),
+                       textOutput("dwlFigures"),),
       
       
       
-      textInput("file_name", label= "Enter file name (without variable_name_by_factor.pdf)"),
       
-      actionButton("execute_saving","Save as pdf"),
       
-      textOutput("dwlFigures"),
       
       fileInput("threeDarray","Choose 3D array file"),
       
@@ -57,7 +79,7 @@ ui <- fluidPage(
 )
 
 server <- function(session,input, output) {
-  #Create a local environment to pass variable across different functions
+  #Create a local environment (myenv) to pass variable across different functions
   myenv=new.env()
   myenv$previous_value=0
   myenv$previous_stat_value=0
@@ -65,15 +87,17 @@ server <- function(session,input, output) {
   myenv$myarray=myarray
   
   output$files <- renderText({
-    #These lines only execute when the files are selected
-    req(input$Source_functions$name,input$My_data$name,input$Pop_class_file$name)
-    source(file=input$Source_functions$name)
+    #The following lines only execute when the files are selected
+    req(input$Source_functions$datapath,input$My_data$datapath,input$Pop_class_file$datapath)
+    
+    source(file=input$Source_functions$datapath)
     required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
     #Check if the user have all required libraries and if not, install them
     have_library(required_packages = required_packages)
     # Prepare the full data table
-    data_file=read.csv(input$My_data$name,header=T)
-    population_class=read.csv(file=input$Pop_class_file$name,header=T)
+    
+    data_file=read.csv(input$My_data$datapath,header=T)
+    population_class=read.csv(file=input$Pop_class_file$datapath,header=T)
     
     nbfactors=input$nbfactors
     factor_list=create_fulldataset(population_class,data_file,nbfactors)$factor_list
