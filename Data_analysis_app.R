@@ -11,46 +11,89 @@ print("All required packages loaded")
 
 ui <- fluidPage(
   titlePanel("Application Data Analysis"),
- 
-  sidebarLayout(
-    sidebarPanel(
-      fileInput("Source_functions","Choose the source function file"),
-      fileInput("Pop_class_file","Choose Population Class file"),
-      selectInput("Which_Analysis","Single or Multpile Files analysis",choices=c("","Single File","Multiple Files")),
-      conditionalPanel(condition = "input.Which_Analysis == 'Single File'",
-                       fileInput("My_data","Choose data file (csv) to analyse")
-                       ),
+  navbarPage(title = "Files",
+             ##1
+    tabPanel("Files",
+      sidebarLayout(
+       sidebarPanel(
+        fileInput("Source_functions","Choose the source function file"),
+        fileInput("Pop_class_file","Choose Population Class file"),
+        selectInput("Which_Analysis","Single or Multpile Files analysis",choices=c("","Single File","Multiple Files")),
+        numericInput("nbfactors","How many possible factors are they?",2),
+        conditionalPanel(condition = "input.Which_Analysis == 'Single File'",
+                         fileInput("My_data","Choose data file (csv) to analyse")
+        ),
+        
+        conditionalPanel(condition = "input.Which_Analysis == 'Multiple Files'",
+                        
+                         checkboxInput("isfive",'5ms'),
+                         checkboxInput("isten",'10ms'),
+                         checkboxInput("istwentyfive",'25ms'),
+                         checkboxInput("isfifty",'50ms'),
+                         checkboxInput("ishundred",'100ms'),
+                         checkboxInput("istwohundredfifty",'250ms'),
+                         checkboxInput("isfivehundred",'500ms'),
+                         
+                         fileInput("fivems","5ms data file (csv)"),
+                         fileInput("tenms","10ms data file (csv)"),
+                         fileInput("twentyfivems","25ms data file (csv)"),
+                         fileInput("fiftyms","50ms data file (csv)"),
+                         fileInput("hundredms","100ms data file (csv)"),
+                         fileInput("twohundredfiftyms","250ms data file (csv)"),
+                         fileInput("fivehundredms","500ms data file (csv)"),
+                         
+                         actionButton("proceed_to_multiple_analysis","Proceed")
+        ),
+        ),
+      mainPanel(textOutput("files"),textOutput("multiplefiles"))
+  ),
+  
+    ),##1
+  ##2
+      tabPanel(title = "Single File",
+               sidebarLayout(sidebarPanel(
+                 selectInput("myfactor","Factor of analysis",choices=""),
+                 selectInput("Variable","Select variable to observe",choices=""),
+                 actionButton("save_table","Save stat Table"),
+                 textOutput("dwlstat_table"),
+                 conditionalPanel(condition = "input.save_table == true",
+                                  textInput("stat_name", label= "Enter file name (without _analysis.csv)")),
+                 checkboxInput("points","Display points in plotly"),
+                 checkboxInput("want_to_save","Save"),
+                 conditionalPanel(condition = "input.want_to_save == true",
+                                  selectInput("save","Select saving mode",choices=c("All","Some","Current one")),
+                                  checkboxGroupInput("Select_variable","Select_variable",choices=""),
+                                  textInput("file_name", label= "Enter file name (without variable_name_by_factor.pdf)"),
+                                  actionButton("execute_saving","Save as pdf"),
+                                  textOutput("dwlFigures"),),
+               ),
+               mainPanel(tabsetPanel(tabPanel(title = "General",tableOutput("Hypothesis"),tableOutput("counterglobal"), tableOutput("basic_stats")),
+                                     tabPanel(title = "Current variable",tableOutput("countervariable"),plotOutput("plot"),plotlyOutput("plotly")),
+                 )),
+               ),
       
-      conditionalPanel(condition = "input.Which_Analysis == 'Multiple Files'",
-                       numericInput("Number_of_Files",label = 'Number of files to upload',value = 2,min=2,max=7),
-                       fileInput("5ms","5ms data file (csv)"),
-                       fileInput("10ms","10ms data file (csv)"),
-                       fileInput("25ms","25ms data file (csv)"),
-                       fileInput("50ms","50ms data file (csv)"),
-                       fileInput("100ms","100ms data file (csv)"),
-                       fileInput("250ms","250ms data file (csv)"),
-                       fileInput("500ms","500ms data file (csv)"),
-                       actionButton("proceed_to_multiple_analysis","Proceed")
-                       ),
+      ),
+      ##2
       
-      
-      
-      textOutput("files"),
-      numericInput("nbfactors","How many possible factors are they?",2),
-      selectInput("myfactor","Factor of analysis",choices=""),
-      selectInput("Variable","Select variable to observe",choices=""),
-
-      textInput("stat_name", label= "Enter file name (without _analysis.csv)"),
-      actionButton("save_table","Save stat Table"),
-      textOutput("dwlstat_table"),
-      checkboxInput("points","Display points in plotly"),
-      checkboxInput("want_to_save","Save"),
-      conditionalPanel(condition = "input.want_to_save == true",
-                       selectInput("save","Select saving mode",choices=c("All","Some","Current one")),
-                       checkboxGroupInput("Select_variable","Select_variable",choices=""),
-                       textInput("file_name", label= "Enter file name (without variable_name_by_factor.pdf)"),
-                       actionButton("execute_saving","Save as pdf"),
-                       textOutput("dwlFigures"),),
+      ##3
+      tabPanel(title = "Multiple Files",
+               sidebarLayout(
+                 sidebarPanel(selectInput("Variabletoshow","Select Variable to display",choices=""),
+                              selectInput("multiple_file_factor","Factor of analysis",choices=""),
+                             
+                              
+                 ),
+                 mainPanel(tabsetPanel(
+                   tabPanel(title = "Plots",plotlyOutput("time_evol")),
+                   tabPanel(title = "Stats")  
+                 )
+                   
+                 ),
+               )
+        
+      ),
+      ##3
+     
       
       
       
@@ -59,24 +102,22 @@ ui <- fluidPage(
       
       fileInput("threeDarray","Choose 3D array file"),
       
-      selectInput("Variabletoshow","Select Variable to display",choices=""),
-      sliderTextInput("whichtime","Time response:",choices="",animate=TRUE)
       
-    ),
-    mainPanel(
-      tabsetPanel(
-        tabPanel("General informations",tableOutput("Hypothesis"),tableOutput("counterglobal"), tableOutput("basic_stats")),
-        tabPanel("Current variable",tableOutput("countervariable"),plotOutput("plot"),plotlyOutput("plotly")),
-        tabPanel("3D plot",plotlyOutput("plotthreeD"))
+      sliderTextInput("whichtime","Time response:",choices="",animate=TRUE),
+      
+   
+    # mainPanel(
+    #   tabsetPanel(
+    #     tabPanel("General informations",tableOutput("Hypothesis"),tableOutput("counterglobal"), tableOutput("basic_stats")),
+    #     tabPanel("Current variable",tableOutput("countervariable"),plotOutput("plot"),plotlyOutput("plotly")),
+    #     tabPanel("3D plot",plotlyOutput("plotthreeD"))
       ),
       
       
       
       
     )
-  )
   
-)
 
 server <- function(session,input, output) {
   #Create a local environment (myenv) to pass variable across different functions
@@ -98,7 +139,8 @@ server <- function(session,input, output) {
     
     data_file=read.csv(input$My_data$datapath,header=T)
     population_class=read.csv(file=input$Pop_class_file$datapath,header=T)
-    
+    Species=population_class[,2]
+    FT=population_class[,3]
     nbfactors=input$nbfactors
     factor_list=create_fulldataset(population_class,data_file,nbfactors)$factor_list
     variable_list=create_fulldataset(population_class,data_file,nbfactors)$variable_list
@@ -108,6 +150,8 @@ server <- function(session,input, output) {
     myenv$full_dataset=full_dataset
     myenv$variable_list=variable_list
     myenv$nbvariable=length(variable_list)
+    myenv$Species=Species
+    myenv$FT=FT
     
     #Update the choice selection for factor and variable according to input files
     updateSelectInput(session,"myfactor","Factor of analysis",choices=factor_list)
@@ -122,64 +166,116 @@ server <- function(session,input, output) {
     
   })
   
-  output$plotthreeD <- renderPlotly({
-    req(input$threeDarray$name)
-    print('here')
-    
-    myarray=myenv$myarray
-    variable=dimnames(myarray)[[2]]
-    time=c("5","10","25", "50","100","250","500")
-    dimnames(myarray)[[3]]=time
-    
-    updateSliderTextInput(session,"whichtime","whichtime",choices=time)
-    updateSelectInput(session,"Variabletoshow","Variabletoshow",choices=variable)
-    
-    
-    # Current_hypothesis_table=parametric_test(myarray[,,input$whichtime],nbfactors = 1, myfactor="Firing_Type")
-    # 
-    # formula=as.formula(paste0(input$Variabletoshow," ~Firing_Type"))
-    # 
-    # if (Current_hypothesis_table["Variance_test",input$Variabletoshow]=="KW"){
-    #   variable_test=kruskal_test(myarray[,,input$whichtime],formula = formula)
-    # }
-    # else{
-    #   variable_test=anova_test(myarray[,,input$whichtime],formula = formula)
-    # }
-    # 
-    # #If the test result is significant, perform a pair-wise comparison to know which means are different and create a plot
-    # if (variable_test$p<0.05){
-    #   current_dunn_test=dunn_test(myarray[,,input$whichtime],formula=formula,p.adjust.method = "bonferroni")
-    #   current_dunn_test=add_xy_position(current_dunn_test,x="Firing_Type")
-    #   variable_plot=ggboxplot(myarray[,,input$whichtime],x="Firing_Type",y=colnames(myarray[,,input$whichtime][input$Variabletoshow]))+
-    #     stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
-    #     labs(subtitle=get_test_label(variable_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
-    # }
-    # else{
-    #   variable_plot=ggboxplot(myarray[,,input$whichtime],x="Firing_Type",y=colnames(myarray[,,input$whichtime][input$Variabletoshow]))+
-    #     labs(subtitle=get_test_label(variable_test,detailed =TRUE))
-    # }
-    
-    #variable_plot
-    
-    current_time_data=data.frame((myarray[,,as.character(input$whichtime)]))
-    
-    
-      #myarray[,1,elt]=as.factor(myarray[,1,elt])
-      for (col in seq(2,length(colnames(current_time_data)))){
-        current_time_data[,col]=as.numeric(current_time_data[,col])
-      }
-    
-    variable=input$Variabletoshow
-    print(typeof(current_time_data[12,2]))
-    print(variable)
-    variable_plotly=ggboxplot(current_time_data,x="Firing_Type",y="G_Input_Gain_Slope")
-      
-    
-    if (input$points == TRUE){
-      variable_plotly=variable_plotly+geom_jitter(shape=16,position=position_jitter(0.2))
+  output$multiplefiles <- renderText({
+    req(input$proceed_to_multiple_analysis)
+    time_list=c()
+    population_class=read.csv(file=input$Pop_class_file$datapath,header=T)
+    nb_of_files=0
+    fullarray=c()
+    if (input$isfive == TRUE){
+      nb_of_files=nb_of_files+1
+      FR_5ms=read.csv(file = input$fivems$datapath,header=T)
+      FR_5ms=create_fulldataset(data_file=FR_5ms,nbfactors=2,population_class = populationclass)$full_dataset
+      FR_5ms=FR_5ms[,2:length(colnames(FR_5ms))]
+      time_list=c(time_list,"5ms")
+      fullarray=abind(fullarray,FR_5ms,along=3)
     }
-    #Display an interactive plot
-    variable_plotly
+    
+    if (input$isten == TRUE){
+      nb_of_files=nb_of_files+1
+      FR_10ms=read.csv(file = input$tenms$datapath,header=T)
+      FR_10ms=create_fulldataset(data_file=FR_10ms,nbfactors=2,population_class = populationclass)$full_dataset
+      FR_10ms=FR_10ms[,2:length(colnames(FR_10ms))]
+      time_list=c(time_list,"10ms")
+      fullarray=abind(fullarray,FR_10ms,along=3)
+    }
+    
+    if (input$istwentyfive == TRUE){
+      nb_of_files=nb_of_files+1
+      FR_25ms=read.csv(file = input$twentyfivems$datapath,header=T)
+      FR_25ms=create_fulldataset(data_file=FR_25ms,nbfactors=2,population_class = populationclass)$full_dataset
+      FR_25ms=FR_25ms[,2:length(colnames(FR_25ms))]
+      time_list=c(time_list,"25ms")
+      fullarray=abind(fullarray,FR_25ms,along=3)
+    }
+    
+    if (input$isfifty == TRUE){
+      nb_of_files=nb_of_files+1
+      FR_50ms=read.csv(file = input$fiftyms$datapath,header=T)
+      FR_50ms=create_fulldataset(data_file=FR_50ms,nbfactors=2,population_class = populationclass)$full_dataset
+      FR_50ms=FR_50ms[,2:length(colnames(FR_50ms))]
+      time_list=c(time_list,"50ms")
+      fullarray=abind(fullarray,FR_50ms,along=3)
+    }
+    
+    if (input$ishundred == TRUE){
+      nb_of_files=nb_of_files+1
+      FR_100ms=read.csv(file = input$hundredms$datapath,header=T)
+      FR_100ms=create_fulldataset(data_file=FR_100ms,nbfactors=2,population_class = populationclass)$full_dataset
+      FR_100ms=FR_100ms[,2:length(colnames(FR_100ms))]
+      time_list=c(time_list,"100ms")
+      fullarray=abind(fullarray,FR_100ms,along=3)
+    }
+    
+    if (input$istwohundredfifty == TRUE){
+      nb_of_files=nb_of_files+1
+      FR_250ms=read.csv(file = input$twohundredfiftyms$datapath,header=T)
+      FR_250ms=create_fulldataset(data_file=FR_250ms,nbfactors=2,population_class = populationclass)$full_dataset
+      FR_250ms=FR_250ms[,2:length(colnames(FR_250ms))]
+      time_list=c(time_list,"250ms")
+      fullarray=abind(fullarray,FR_250ms,along=3)
+    }
+    
+    if (input$isfivehundred == TRUE){
+      nb_of_files=nb_of_files+1
+      FR_500ms=read.csv(file = input$fivehundredms$datapath,header=T)
+      FR_500ms=create_fulldataset(data_file= FR_500ms,nbfactors=2,population_class = populationclass)$full_dataset
+      FR_500ms=FR_500ms[,2:length(colnames(FR_500ms))]
+      time_list=c(time_list,"500ms")
+      fullarray=abind(fullarray,FR_500ms,along=3)
+    }
+    
+    threeDarray=create_3D_array(fullarray)
+    myenv$threeDarray=threeDarray
+    myenv$time_list=time_list
+    factor_list=myenv$factor_list
+    variable_list=myenv$variable_list
+    
+    print("multiple file analysis ready")
+  })
+  
+  output$time_evol <- renderPlotly({
+    req(input$proceed_to_multiple_analysis)
+    updateSelectInput(session,"Variabletoshow","Variabletoshow",choices=variable_list)
+    updateSelectInput(session,"multiple_file_factor","Factor of analysis",choices=factor_list)
+    factor_list=myenv$factor_list
+    variable_list=myenv$variable_list
+    time_list=myenv$time_list
+    threeDarray=myenv$threeDarray
+    variable=dimnames(threeDarray)[[2]]
+    
+    dimnames(threeDarray)[[3]]=time_list
+    factor_list=myenv$factor_list
+    
+    #updateSliderTextInput(session,"whichtime","whichtime",choices=time_list)
+    
+    current_data=threeDarray[,as.character(input$Variabletoshow),]
+    if (input$multiple_file_factor == "Species"){
+      factor=myenv$Species
+    }
+    if (input$multiple_file_factor == "Firing_Type"){
+      factor=myenv$FT
+    }
+    time_list=myenv$time_list
+    variable_to_analyse=input$VariabletoShow
+    prepare_for_ggplot(current_data,factor,time_list,variable_to_analyse)
+    
+    
+    
+    
+    current_time_data=data.frame((threeDarray[,,as.character(input$whichtime)]))
+    
+    
     
     
   })

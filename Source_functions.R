@@ -44,6 +44,27 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
 }
 
 
+
+
+create_3D_array <- function(fullarray){
+  nbrow=dim(fullarray)[1]
+  nbcol=dim(fullarray)[2]
+  nbpage=dim(fullarray)[3]
+  myfullarray=array(NA,dim=c(nbrow,nbcol,nbpage))
+  for(page in seq(nbpage)){
+    for (col in seq(nbcol)){
+      for(row in seq(nbrow)){
+        myfullarray[row,col,page]=as.numeric(fullarray[row,col,page])
+      }
+    }
+  }
+  
+  return(myfullarray)
+            
+}
+
+
+
 #Perform tests (data normality and variance homogeneity) to know which test is to be performed
 
 
@@ -291,4 +312,30 @@ get_basic_stat <- function(full_dataset, nbfactors, myfactor){
               "sd_table"=sd_stat_table))
 }
 
+prepare_for_ggplot <- function(datatable,myfactor,time_list,variable_to_analyse){
+  nbcol=dim(datatable[2])
+  factorcol=data.frame(myfactor)
+  Factor=c()
+  Time=c()
+  ggdatatable=c()
+  
+  for (elt in time_list){
+    current_time=data.frame(rep(elt,nbcol))
+    colnames(current_time)="Time"
+    Time=data.frame(rbind(data.frame(Time),data.frame(current_time)))
+    
+    colnames(factorcol)="Factor"
+    Factor=data.frame(rbind(data.frame(Factor),data.frame(factorcol)))
+  }
+  ggdatatable=data.frame(cbind(data.frame(Time),data.frame(Factor)))
+  
+  for (elt in seq(nbcol)){
+    current_col=data.frame(datatable[elt])
+    colnames(current_col)=as.character(variable_to_analyse)
+    ggdatatable=data.frame(rbind(data.frame(ggdatatable),data.frame(current_col)))
+  }
+  
+  return(list("ggdatatable"=ggdatatable))
+  
+}
 
