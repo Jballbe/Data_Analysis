@@ -34,13 +34,14 @@ ui <- fluidPage(
                          checkboxInput("istwohundredfifty",'250ms'),
                          checkboxInput("isfivehundred",'500ms'),
                          
-                         fileInput("fivems","5ms data file (csv)"),
-                         fileInput("tenms","10ms data file (csv)"),
-                         fileInput("twentyfivems","25ms data file (csv)"),
-                         fileInput("fiftyms","50ms data file (csv)"),
-                         fileInput("hundredms","100ms data file (csv)"),
-                         fileInput("twohundredfiftyms","250ms data file (csv)"),
-                         fileInput("fivehundredms","500ms data file (csv)"),
+                         conditionalPanel("input.isfive == true",fileInput("fivems","5ms data file (csv)")),
+                         conditionalPanel("input.isten == true",fileInput("tenms","10ms data file (csv)")),
+                         conditionalPanel("input.istwentyfive == true",fileInput("twentyfivems","25ms data file (csv")),
+                         conditionalPanel("input.isfifty == true",fileInput("fiftyms","50ms data file (csv")),
+                         conditionalPanel("input.ishundred == true",fileInput("hundredms","100ms data file (csv")),
+                         conditionalPanel("input.istwohundredfifty == true",fileInput("twohundredfiftyms","250ms data file (csv")),
+                         conditionalPanel("input.isfivehundred == true",fileInput("fivehundredms","500ms data file (csv")),
+                         
                          
                          actionButton("proceed_to_multiple_analysis","Proceed")
         ),
@@ -80,6 +81,7 @@ ui <- fluidPage(
                sidebarLayout(
                  sidebarPanel(selectInput("Variabletoshow","Select Variable to display",choices=""),
                               selectInput("multiple_file_factor","Factor of analysis",choices=""),
+                              sliderTextInput("whichtime","Time response:",choices="",animate=TRUE),
                              
                               
                  ),
@@ -100,10 +102,10 @@ ui <- fluidPage(
       
       
       
-      fileInput("threeDarray","Choose 3D array file"),
+      fileInput("threeDarray","Choose 3D array file")
       
       
-      sliderTextInput("whichtime","Time response:",choices="",animate=TRUE),
+      
       
    
     # mainPanel(
@@ -173,8 +175,7 @@ server <- function(session,input, output) {
     population_class=read.csv(file=input$Pop_class_file$datapath,header=T)
     nb_of_files=0
     file_list=list(NA)
-    
-    #fullarray=c()
+
     Species_MF=population_class[,2]
     FT_MF=population_class[,3]
     nbfactors=input$nbfactors
@@ -306,11 +307,15 @@ server <- function(session,input, output) {
     myenv$time_list_MF=time_list
     myenv$factor_list_MF=factor_list_MF
     myenv$variable_list_MF=variable_list_MF
+    
+    factor_columns=data.frame(cbind(data.frame(Species_MF),data.frame(FT_MF)))
+    colnames(factor_columns)=c("Species","Firing_Type")
+    myenv$factor_columns=factor_columns
     updateSelectInput(session,"Variabletoshow","Variabletoshow",choices=variable_list_MF)
     updateSelectInput(session,"multiple_file_factor","Factor of analysis",choices=factor_list_MF)
     
     
-    print("multiple file analysis ready")
+    print("Multiple file analysis ready")
   })
   
   output$time_evol <- renderPlotly({
@@ -323,31 +328,32 @@ server <- function(session,input, output) {
     variable=dimnames(threeDarray)[[2]]
     
     dimnames(threeDarray)[[3]]=time_list_MF
-     
-    #updateSliderTextInput(session,"whichtime","whichtime",choices=time_list)
-    threeDarray
-    print(input$Variabletoshow)
-    print(typeof(input$Variabletoshow))
+    updateSliderTextInput(session,"whichtime","whichtime",choices=time_list_MF)
+    
+    
     current_data=threeDarray[,as.character(input$Variabletoshow),]
+    factor_columns=myenv$factor_columns
+    current_data=cbind(factor_columns,current_data)
+    
     if (input$multiple_file_factor == "Species"){
       factor_col=myenv$Species
     }
     if (input$multiple_file_factor == "Firing_Type"){
       factor_col=myenv$FT
     }
-    time_list=myenv$time_list
-    variable_to_analyse=input$VariabletoShow
-    prepare_for_ggplot(current_data,factor,time_list,variable_to_analyse)
     
+    variable_to_analyse=input$Variabletoshow
+   
+    nbfactors=input$nbfactors
+    ggplotdatatable=prepare_for_ggplot(current_data,time_list_MF,variable_to_analyse,nbfactors)$ggdatatable
     
-    
-    
-    current_time_data=data.frame((threeDarray[,,as.character(input$whichtime)]))
+    print(ggplotdatatable)
     
     
     
     
   })
+  
   
   output$Hypothesis <- renderTable( {
     #only begin when the full data table is created

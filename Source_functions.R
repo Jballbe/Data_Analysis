@@ -324,29 +324,29 @@ get_basic_stat <- function(full_dataset, nbfactors, myfactor){
               "sd_table"=sd_stat_table))
 }
 
-prepare_for_ggplot <- function(datatable,myfactor,time_list,variable_to_analyse){
-  nbcol=dim(datatable[2])
-  factorcol=data.frame(myfactor)
-  Factor=c()
-  Time=c()
-  ggdatatable=c()
-  
-  for (elt in time_list){
-    current_time=data.frame(rep(elt,nbcol))
-    colnames(current_time)="Time"
-    Time=data.frame(rbind(data.frame(Time),data.frame(current_time)))
-    
-    colnames(factorcol)="Factor"
-    Factor=data.frame(rbind(data.frame(Factor),data.frame(factorcol)))
-  }
-  ggdatatable=data.frame(cbind(data.frame(Time),data.frame(Factor)))
-  
-  for (elt in seq(nbcol)){
-    current_col=data.frame(datatable[elt])
-    colnames(current_col)=as.character(variable_to_analyse)
-    ggdatatable=data.frame(rbind(data.frame(ggdatatable),data.frame(current_col)))
+prepare_for_ggplot <- function(datatable,time_list,variable_to_analyse,nbfactors){
+  ggdatatable=data.frame(matrix(0,nrow=(length(time_list)*nrow(datatable)),ncol=nbfactors))
+  colname=c()
+  time_col=c()
+  data_col=c()
+  for (elt in seq(nbfactors)){
+    ggdatatable[,elt]=data.frame(rep(datatable[,elt]),length(time_list))
+    colname=c(colname,colnames(datatable)[elt])
   }
   
+  for (elt in seq((nbfactors+1),ncol(datatable))){
+  current_time_col=rep(colnames(datatable)[elt],nrow(datatable))
+  time_col=c(time_col,current_time_col)
+  current_data_col=datatable[,elt]
+  data_col=c(data_col,current_data_col) 
+  }
+  
+  colname=c(colname,"Time",as.character(variable_to_analyse))
+  ggdatatable=data.frame(cbind(data.frame(ggdatatable),
+                               data.frame(time_col),
+                               data.frame(data_col)))
+  
+  colnames(ggdatatable)=colname
   return(list("ggdatatable"=ggdatatable))
   
 }
