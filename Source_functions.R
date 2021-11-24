@@ -38,23 +38,35 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
   
   factor_list=colnames(full_dataset[,1:nbfactors])
   variable_list=colnames(full_dataset[(nbfactors+1):ncol(full_dataset)])
+  Firing_Type=full_dataset[,2]
+  Species=full_dataset[,1]
   return (list("full_dataset"=full_dataset,
                "factor_list"=factor_list,
+               "Firing_Type"=Firing_Type,
+               "Species"=Species,
                "variable_list"=variable_list))
 }
 
 
 
 
-create_3D_array <- function(fullarray){
+
+
+create_3D_array <- function(fullarray,nbfactors){
   nbrow=dim(fullarray)[1]
   nbcol=dim(fullarray)[2]
   nbpage=dim(fullarray)[3]
   myfullarray=array(NA,dim=c(nbrow,nbcol,nbpage))
   for(page in seq(nbpage)){
-    for (col in seq(nbcol)){
-      for(row in seq(nbrow)){
+    for (row in seq(nbrow)){
+      for(col in seq(nbcol)){
+        if (col <= nbfactors){
+          myfullarray[row,col,page]=as.factor(fullarray[row,col,page])
+        }
+        
+        if (col > nbfactors){
         myfullarray[row,col,page]=as.numeric(fullarray[row,col,page])
+        }
       }
     }
   }

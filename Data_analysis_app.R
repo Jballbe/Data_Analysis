@@ -1,5 +1,5 @@
 library(shiny)
-required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
+required_packages=c("abind","plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
 install.packages(setdiff(required_packages,rownames(installed.packages())))
 print ("All required packages installed")
 for (package_name in required_packages){
@@ -168,103 +168,172 @@ server <- function(session,input, output) {
   
   output$multiplefiles <- renderText({
     req(input$proceed_to_multiple_analysis)
+    source(file=input$Source_functions$datapath)
     time_list=c()
     population_class=read.csv(file=input$Pop_class_file$datapath,header=T)
     nb_of_files=0
-    fullarray=c()
+    file_list=list(NA)
+    
+    #fullarray=c()
+    Species_MF=population_class[,2]
+    FT_MF=population_class[,3]
+    nbfactors=input$nbfactors
+    isfactor_variable_ok=0
+    
     if (input$isfive == TRUE){
       nb_of_files=nb_of_files+1
       FR_5ms=read.csv(file = input$fivems$datapath,header=T)
-      FR_5ms=create_fulldataset(data_file=FR_5ms,nbfactors=2,population_class = populationclass)$full_dataset
-      FR_5ms=FR_5ms[,2:length(colnames(FR_5ms))]
+      results_from_createfulldataset=create_fulldataset(data_file=FR_5ms,nbfactors=nbfactors,population_class = population_class)
+      FR_5ms=results_from_createfulldataset$full_dataset
+      factor_list_MF=results_from_createfulldataset$factor_list
+      variable_list_MF=results_from_createfulldataset$variable_list
+      isfactor_variable_ok=1
+      FR_5ms=FR_5ms[,1:length(colnames(FR_5ms))]
       time_list=c(time_list,"5ms")
-      fullarray=abind(fullarray,FR_5ms,along=3)
+      file_list[[nb_of_files]] <- FR_5ms
+      Species_MF=results_from_createfulldataset$Species
+      FT_MF=results_from_createfulldataset$Firing_Type
+      
     }
     
     if (input$isten == TRUE){
       nb_of_files=nb_of_files+1
       FR_10ms=read.csv(file = input$tenms$datapath,header=T)
-      FR_10ms=create_fulldataset(data_file=FR_10ms,nbfactors=2,population_class = populationclass)$full_dataset
-      FR_10ms=FR_10ms[,2:length(colnames(FR_10ms))]
+      results_from_createfulldataset=create_fulldataset(data_file=FR_10ms,nbfactors=nbfactors,population_class = population_class)
+      FR_10ms=results_from_createfulldataset$full_dataset
+      if (isfactor_variable_ok == 0){
+        factor_list_MF=results_from_createfulldataset$factor_list
+        variable_list_MF=results_from_createfulldataset$variable_list
+        isfactor_variable_ok=1
+        Species_MF=results_from_createfulldataset$Species
+        FT_MF=results_from_createfulldataset$Firing_Type
+      }
+      FR_10ms=FR_10ms[,1:length(colnames(FR_10ms))]
       time_list=c(time_list,"10ms")
-      fullarray=abind(fullarray,FR_10ms,along=3)
+      file_list[[nb_of_files]] <- FR_10ms
+      
+      
     }
     
     if (input$istwentyfive == TRUE){
       nb_of_files=nb_of_files+1
       FR_25ms=read.csv(file = input$twentyfivems$datapath,header=T)
-      FR_25ms=create_fulldataset(data_file=FR_25ms,nbfactors=2,population_class = populationclass)$full_dataset
-      FR_25ms=FR_25ms[,2:length(colnames(FR_25ms))]
+      results_from_createfulldataset=create_fulldataset(data_file=FR_25ms,nbfactors=nbfactors,population_class = population_class)
+      FR_25ms=results_from_createfulldataset$full_dataset
+      if (isfactor_variable_ok == 0){
+        factor_list_MF=results_from_createfulldataset$factor_list
+        variable_list_MF=results_from_createfulldataset$variable_list
+        isfactor_variable_ok=1
+        Species_MF=results_from_createfulldataset$Species
+        FT_MF=results_from_createfulldataset$Firing_Type
+      }
+      FR_25ms=FR_25ms[,1:length(colnames(FR_25ms))]
       time_list=c(time_list,"25ms")
-      fullarray=abind(fullarray,FR_25ms,along=3)
+      file_list[[nb_of_files]] <- FR_25ms
     }
     
     if (input$isfifty == TRUE){
       nb_of_files=nb_of_files+1
       FR_50ms=read.csv(file = input$fiftyms$datapath,header=T)
-      FR_50ms=create_fulldataset(data_file=FR_50ms,nbfactors=2,population_class = populationclass)$full_dataset
-      FR_50ms=FR_50ms[,2:length(colnames(FR_50ms))]
+      results_from_createfulldataset=create_fulldataset(data_file=FR_50ms,nbfactors=nbfactors,population_class = population_class)
+      FR_50ms=results_from_createfulldataset$full_dataset
+      if (isfactor_variable_ok == 0){
+        factor_list_MF=results_from_createfulldataset$factor_list
+        variable_list_MF=results_from_createfulldataset$variable_list
+        isfactor_variable_ok=1
+        Species_MF=results_from_createfulldataset$Species
+        FT_MF=results_from_createfulldataset$Firing_Type
+      }
+      FR_50ms=FR_50ms[,1:length(colnames(FR_50ms))]
       time_list=c(time_list,"50ms")
-      fullarray=abind(fullarray,FR_50ms,along=3)
+      file_list[[nb_of_files]] <- FR_50ms
     }
     
     if (input$ishundred == TRUE){
       nb_of_files=nb_of_files+1
       FR_100ms=read.csv(file = input$hundredms$datapath,header=T)
-      FR_100ms=create_fulldataset(data_file=FR_100ms,nbfactors=2,population_class = populationclass)$full_dataset
-      FR_100ms=FR_100ms[,2:length(colnames(FR_100ms))]
+      results_from_createfulldataset=create_fulldataset(data_file=FR_100ms,nbfactors=nbfactors,population_class = population_class)
+      FR_100ms=results_from_createfulldataset$full_dataset
+      if (isfactor_variable_ok == 0){
+        factor_list_MF=results_from_createfulldataset$factor_list
+        variable_list_MF=results_from_createfulldataset$variable_list
+        isfactor_variable_ok=1
+        Species_MF=results_from_createfulldataset$Species
+        FT_MF=results_from_createfulldataset$Firing_Type
+      }
+      FR_100ms=FR_100ms[,1:length(colnames(FR_100ms))]
       time_list=c(time_list,"100ms")
-      fullarray=abind(fullarray,FR_100ms,along=3)
+      file_list[[nb_of_files]] <- FR_100ms
     }
     
     if (input$istwohundredfifty == TRUE){
       nb_of_files=nb_of_files+1
       FR_250ms=read.csv(file = input$twohundredfiftyms$datapath,header=T)
-      FR_250ms=create_fulldataset(data_file=FR_250ms,nbfactors=2,population_class = populationclass)$full_dataset
-      FR_250ms=FR_250ms[,2:length(colnames(FR_250ms))]
+      results_from_createfulldataset=create_fulldataset(data_file=FR_250ms,nbfactors=nbfactors,population_class = population_class)
+      FR_250ms=results_from_createfulldataset$full_dataset
+      if (isfactor_variable_ok == 0){
+        factor_list_MF=results_from_createfulldataset$factor_list
+        variable_list_MF=results_from_createfulldataset$variable_list
+        isfactor_variable_ok=1
+        Species_MF=results_from_createfulldataset$Species
+        FT_MF=results_from_createfulldataset$Firing_Type
+      }
+      FR_250ms=FR_250ms[,1:length(colnames(FR_250ms))]
       time_list=c(time_list,"250ms")
-      fullarray=abind(fullarray,FR_250ms,along=3)
+      file_list[[nb_of_files]] <- FR_250ms
     }
     
     if (input$isfivehundred == TRUE){
       nb_of_files=nb_of_files+1
       FR_500ms=read.csv(file = input$fivehundredms$datapath,header=T)
-      FR_500ms=create_fulldataset(data_file= FR_500ms,nbfactors=2,population_class = populationclass)$full_dataset
-      FR_500ms=FR_500ms[,2:length(colnames(FR_500ms))]
+      results_from_createfulldataset=create_fulldataset(data_file=FR_500ms,nbfactors=nbfactors,population_class = population_class)
+      FR_500ms=results_from_createfulldataset$full_dataset
+      if (isfactor_variable_ok == 0){
+        factor_list_MF=results_from_createfulldataset$factor_list
+        variable_list_MF=results_from_createfulldataset$variable_list
+        isfactor_variable_ok=1
+        Species_MF=results_from_createfulldataset$Species
+        FT_MF=results_from_createfulldataset$Firing_Type
+      }
+      FR_500ms=FR_500ms[,1:length(colnames(FR_500ms))]
       time_list=c(time_list,"500ms")
-      fullarray=abind(fullarray,FR_500ms,along=3)
+      file_list[[nb_of_files]] <- FR_500ms
     }
     
-    threeDarray=create_3D_array(fullarray)
+    threeDarray=abind(file_list,along=3)
+    
     myenv$threeDarray=threeDarray
-    myenv$time_list=time_list
-    factor_list=myenv$factor_list
-    variable_list=myenv$variable_list
+    myenv$time_list_MF=time_list
+    myenv$factor_list_MF=factor_list_MF
+    myenv$variable_list_MF=variable_list_MF
+    updateSelectInput(session,"Variabletoshow","Variabletoshow",choices=variable_list_MF)
+    updateSelectInput(session,"multiple_file_factor","Factor of analysis",choices=factor_list_MF)
+    
     
     print("multiple file analysis ready")
   })
   
   output$time_evol <- renderPlotly({
     req(input$proceed_to_multiple_analysis)
-    updateSelectInput(session,"Variabletoshow","Variabletoshow",choices=variable_list)
-    updateSelectInput(session,"multiple_file_factor","Factor of analysis",choices=factor_list)
-    factor_list=myenv$factor_list
-    variable_list=myenv$variable_list
-    time_list=myenv$time_list
+    variable_list_MF=myenv$variable_list_MF
+    factor_list_MF=myenv$factor_list_MF
+   
+    time_list_MF=myenv$time_list_MF
     threeDarray=myenv$threeDarray
     variable=dimnames(threeDarray)[[2]]
     
-    dimnames(threeDarray)[[3]]=time_list
-    factor_list=myenv$factor_list
-    
+    dimnames(threeDarray)[[3]]=time_list_MF
+     
     #updateSliderTextInput(session,"whichtime","whichtime",choices=time_list)
-    
+    threeDarray
+    print(input$Variabletoshow)
+    print(typeof(input$Variabletoshow))
     current_data=threeDarray[,as.character(input$Variabletoshow),]
     if (input$multiple_file_factor == "Species"){
-      factor=myenv$Species
+      factor_col=myenv$Species
     }
     if (input$multiple_file_factor == "Firing_Type"){
-      factor=myenv$FT
+      factor_col=myenv$FT
     }
     time_list=myenv$time_list
     variable_to_analyse=input$VariabletoShow
