@@ -8,7 +8,7 @@ have_library <- function (required_packages){
   }
   print("All required packages loaded")
 }
-required_packages=c("shiny","plyr","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
+required_packages=c("dplyr","stringr","shiny","plyr","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
 #Check if the user have all required libraries and if not, install them
 have_library(required_packages = required_packages)
 
@@ -19,6 +19,8 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
     population_class[,elt]=as.factor(population_class[,elt])
   }
   #remove unit line from data_file
+  unit_dict=data_file[1,2:ncol(data_file)]
+  
   data_file=data_file[2:nrow(data_file),]
   
   #create full dataset
@@ -44,7 +46,8 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
                "factor_list"=factor_list,
                "Firing_Type"=Firing_Type,
                "Species"=Species,
-               "variable_list"=variable_list))
+               "variable_list"=variable_list,
+               "unit_dict"=unit_dict))
 }
 
 
@@ -330,14 +333,16 @@ prepare_for_ggplot <- function(datatable,time_list,variable_to_analyse,nbfactors
   time_col=c()
   data_col=c()
   for (elt in seq(nbfactors)){
-    ggdatatable[,elt]=data.frame(rep(datatable[,elt]),length(time_list))
+    ggdatatable[,elt]=data.frame(rep(datatable[,elt]),
+                                 length(time_list))
     colname=c(colname,colnames(datatable)[elt])
   }
   
   for (elt in seq((nbfactors+1),ncol(datatable))){
-  current_time_col=rep(colnames(datatable)[elt],nrow(datatable))
+  time_point=as.numeric(str_remove(colnames(datatable)[elt],"ms"))
+  current_time_col=rep(time_point,nrow(datatable))
   time_col=c(time_col,current_time_col)
-  current_data_col=datatable[,elt]
+  current_data_col=as.numeric(datatable[,elt])
   data_col=c(data_col,current_data_col) 
   }
   
@@ -350,4 +355,45 @@ prepare_for_ggplot <- function(datatable,time_list,variable_to_analyse,nbfactors
   return(list("ggdatatable"=ggdatatable))
   
 }
+
+getsd <- function(ggdatatable,myfactor,variable_to_analyse,perTimeonly=FALSE){
+  
+  
+  ggdatatable=data.frame(ggdatatable)
+  ggdatatable[,4]=as.numeric(ggdatatable[,4])
+  
+  if (perTimeonly ==TRUE){
+    sd_table <- ggdatatable %>%
+      group_by(.data[["Time"]]) %>%
+      summarise(mysd=sd(.data[[variable_to_analyse]],na.rm=TRUE))
+  }
+  
+  if (perTimeonly ==FALSE){
+    print('heh')
+    sd_table <- ggdatatable %>%
+      group_by(.data[["Time"]],.data[[myfactor]]) %>% 
+    summarise(ggdatatable=sd(.data[[variable_to_analyse]],na.rm=TRUE))
+    
+    
+  }
+  
+  return(list("sd_table"=sd_table))
+}
+
+getmean <- function(ggdatatable,myfactor,variable_to_analyse,perTimeonly=FALSE){
+  if (perTimeonly ==TRUE){
+    mean_table <- ggdatatable %>%
+      group_by(.data[["Time"]]) %>%
+      summarise(variable_to_analyse=mean(variable_to_analyse,na.rm=TRUE))
+  }
+  
+  if (perTimeonly ==FALSE){
+    mean_table <- ggdatatable %>%
+      group_by(.data[["Time"]],.data[[myfactor]]) %>% 
+      summarise(ggdatatable=mean(.data[[variable_to_analyse]],na.rm=TRUE))
+  }
+  
+  return(list("mean_table"=mean_table))
+}
+
 

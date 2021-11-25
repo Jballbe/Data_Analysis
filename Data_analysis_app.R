@@ -1,5 +1,5 @@
 library(shiny)
-required_packages=c("abind","plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
+required_packages=c("dplyr","stringr","abind","plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
 install.packages(setdiff(required_packages,rownames(installed.packages())))
 print ("All required packages installed")
 for (package_name in required_packages){
@@ -82,11 +82,17 @@ ui <- fluidPage(
                  sidebarPanel(selectInput("Variabletoshow","Select Variable to display",choices=""),
                               selectInput("multiple_file_factor","Factor of analysis",choices=""),
                               sliderTextInput("whichtime","Time response:",choices="",animate=TRUE),
+                              checkboxInput("Additional_Info","Addational Info"),
+                              conditionalPanel(condition="input.Additional_Info == true",
+                                               checkboxInput("is.sd","Standard Deviation"),
+                                               checkboxInput("is.mean","Mean"),
+                                               checkboxInput("perTimeonly","Group per Time Only"))
                              
                               
                  ),
                  mainPanel(tabsetPanel(
                    tabPanel(title = "Plots",plotlyOutput("time_evol")),
+                   #tabPanel(title = "Time Box plot", plotOutput()),
                    tabPanel(title = "Stats")  
                  )
                    
@@ -181,6 +187,7 @@ server <- function(session,input, output) {
     nbfactors=input$nbfactors
     isfactor_variable_ok=0
     
+    
     if (input$isfive == TRUE){
       nb_of_files=nb_of_files+1
       FR_5ms=read.csv(file = input$fivems$datapath,header=T)
@@ -194,6 +201,7 @@ server <- function(session,input, output) {
       file_list[[nb_of_files]] <- FR_5ms
       Species_MF=results_from_createfulldataset$Species
       FT_MF=results_from_createfulldataset$Firing_Type
+      unit_dict=results_from_createfulldataset$unit_dict
       
     }
     
@@ -208,6 +216,7 @@ server <- function(session,input, output) {
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
+        unit_dict=results_from_createfulldataset$unit_dict
       }
       FR_10ms=FR_10ms[,1:length(colnames(FR_10ms))]
       time_list=c(time_list,"10ms")
@@ -227,6 +236,7 @@ server <- function(session,input, output) {
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
+        unit_dict=results_from_createfulldataset$unit_dict
       }
       FR_25ms=FR_25ms[,1:length(colnames(FR_25ms))]
       time_list=c(time_list,"25ms")
@@ -244,6 +254,7 @@ server <- function(session,input, output) {
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
+        unit_dict=results_from_createfulldataset$unit_dict
       }
       FR_50ms=FR_50ms[,1:length(colnames(FR_50ms))]
       time_list=c(time_list,"50ms")
@@ -261,6 +272,7 @@ server <- function(session,input, output) {
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
+        unit_dict=results_from_createfulldataset$unit_dict
       }
       FR_100ms=FR_100ms[,1:length(colnames(FR_100ms))]
       time_list=c(time_list,"100ms")
@@ -278,6 +290,7 @@ server <- function(session,input, output) {
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
+        unit_dict=results_from_createfulldataset$unit_dict
       }
       FR_250ms=FR_250ms[,1:length(colnames(FR_250ms))]
       time_list=c(time_list,"250ms")
@@ -295,6 +308,7 @@ server <- function(session,input, output) {
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
+        unit_dict=results_from_createfulldataset$unit_dict
       }
       FR_500ms=FR_500ms[,1:length(colnames(FR_500ms))]
       time_list=c(time_list,"500ms")
@@ -303,6 +317,7 @@ server <- function(session,input, output) {
     
     threeDarray=abind(file_list,along=3)
     
+    myenv$unit_dict=unit_dict
     myenv$threeDarray=threeDarray
     myenv$time_list_MF=time_list
     myenv$factor_list_MF=factor_list_MF
@@ -345,13 +360,50 @@ server <- function(session,input, output) {
     variable_to_analyse=input$Variabletoshow
    
     nbfactors=input$nbfactors
-    ggplotdatatable=prepare_for_ggplot(current_data,time_list_MF,variable_to_analyse,nbfactors)$ggdatatable
+    ggdatatable=prepare_for_ggplot(current_data,time_list_MF,variable_to_analyse,nbfactors)$ggdatatable
+    unit_dict=myenv$unit_dict
     
-    print(ggplotdatatable)
+    #myplot=ggplot(data=ggdatatable,aes_string(x=ggdatatable[,"Time"],y=ggdatatable[,(nbfactors+2)],color=as.character(input$multiple_file_factor)))+
+    myplot=ggplot(data=ggdatatable,aes(x=Time,y=G_Input_Gain_Slope,color=Species))+
+      geom_point(alpha=0.3)
+    if (input$is.sd ==TRUE){
+      if (input$perTimeonly==TRUE){
+      sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=TRUE)$sd_table
+      }
+      
+      if (input$perTimeonly==FALSE){
+        sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse)$sd_table
+      }
+     
+      colnames(sd_table)[3]=as.character(colnames(ggdatatable)[(nbfactors+2)])
+      print(sd_table)
+      print(typeof(sd_table[1,3]))
+      print(typeof(sd_table[2,3]))
+     
+      myplot <- myplot+geom_line(data=sd_table,aes(x=sd_table[,1],y=sd_table[,3]),size=.7,na.rm=TRUE)
+      #geom_line(data=sd_table,size=0.7,aes(x=sd_table[,"Time"],y=sd_table[,"mysd"]))
+      
+      print("coucou")
+      #geom_line(data=gd,aes(color=FT),size=.7)+
+    }
+    
+    if (input$is.mean == TRUE){
+      if (input$perTimeonly==TRUE){
+        mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=TRUE)$mean_table
+      }
+      
+      if (input$perTimeonly==FALSE){
+        mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse)$mean_table
+      }
+      print(mean_table)
+      myplot=myplot+geom_line(data=mean_table,size=0.7)
+    }
     
     
+    myplot=myplot+labs(y=as.character(unit_dict[variable_to_analyse]),x='Time(ms)')
+    print("oajdoaid")
     
-    
+    myplot
   })
   
   
