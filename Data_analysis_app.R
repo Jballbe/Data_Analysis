@@ -363,45 +363,26 @@ server <- function(session,input, output) {
     ggdatatable=prepare_for_ggplot(current_data,time_list_MF,variable_to_analyse,nbfactors)$ggdatatable
     unit_dict=myenv$unit_dict
     
-    #myplot=ggplot(data=ggdatatable,aes_string(x=ggdatatable[,"Time"],y=ggdatatable[,(nbfactors+2)],color=as.character(input$multiple_file_factor)))+
-    myplot=ggplot(data=ggdatatable,aes(x=Time,y=G_Input_Gain_Slope,color=Species))+
-      geom_point(alpha=0.3)
-    if (input$is.sd ==TRUE){
-      if (input$perTimeonly==TRUE){
-      sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=TRUE)$sd_table
-      }
-      
-      if (input$perTimeonly==FALSE){
-        sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse)$sd_table
-      }
-     
-      colnames(sd_table)[3]=as.character(colnames(ggdatatable)[(nbfactors+2)])
-      print(sd_table)
-      print(typeof(sd_table[1,3]))
-      print(typeof(sd_table[2,3]))
-     
-      myplot <- myplot+geom_line(data=sd_table,aes(x=sd_table[,1],y=sd_table[,3]),size=.7,na.rm=TRUE)
-      #geom_line(data=sd_table,size=0.7,aes(x=sd_table[,"Time"],y=sd_table[,"mysd"]))
-      
-      print("coucou")
-      #geom_line(data=gd,aes(color=FT),size=.7)+
+    if (input$perTimeonly == TRUE){
+      myplot=ggplot(data=ggdatatable,aes(x=Time,y=.data[[input$Variabletoshow]]))+
+             geom_point(alpha=0.3)
     }
-    
+    else{
+      myplot=ggplot(data=ggdatatable,aes(x=Time,y=.data[[input$Variabletoshow]],color=.data[[input$multiple_file_factor]]))+
+        geom_point(alpha=0.3)
+    }
+    if (input$is.sd == TRUE){
+        sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=input$perTimeonly)$sd_table
+        myplot <- myplot+geom_line(data = sd_table,aes(x=Time,y=SD))
+      }
+      
     if (input$is.mean == TRUE){
-      if (input$perTimeonly==TRUE){
-        mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=TRUE)$mean_table
+        mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=input$perTimeonly)$mean_table
+        myplot=myplot+geom_line(data = mean_table,aes(x=Time,y=Mean))
       }
-      
-      if (input$perTimeonly==FALSE){
-        mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse)$mean_table
-      }
-      print(mean_table)
-      myplot=myplot+geom_line(data=mean_table,size=0.7)
-    }
-    
-    
+  
     myplot=myplot+labs(y=as.character(unit_dict[variable_to_analyse]),x='Time(ms)')
-    print("oajdoaid")
+    
     
     myplot
   })

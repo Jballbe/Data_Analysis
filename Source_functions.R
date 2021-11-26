@@ -352,6 +352,7 @@ prepare_for_ggplot <- function(datatable,time_list,variable_to_analyse,nbfactors
                                data.frame(data_col)))
   
   colnames(ggdatatable)=colname
+  
   return(list("ggdatatable"=ggdatatable))
   
 }
@@ -365,14 +366,14 @@ getsd <- function(ggdatatable,myfactor,variable_to_analyse,perTimeonly=FALSE){
   if (perTimeonly ==TRUE){
     sd_table <- ggdatatable %>%
       group_by(.data[["Time"]]) %>%
-      summarise(mysd=sd(.data[[variable_to_analyse]],na.rm=TRUE))
+      summarise(SD=sd(.data[[variable_to_analyse]],na.rm=TRUE))
   }
   
   if (perTimeonly ==FALSE){
-    print('heh')
+    
     sd_table <- ggdatatable %>%
       group_by(.data[["Time"]],.data[[myfactor]]) %>% 
-    summarise(ggdatatable=sd(.data[[variable_to_analyse]],na.rm=TRUE))
+    summarise(SD=sd(.data[[variable_to_analyse]],na.rm=TRUE))
     
     
   }
@@ -384,13 +385,13 @@ getmean <- function(ggdatatable,myfactor,variable_to_analyse,perTimeonly=FALSE){
   if (perTimeonly ==TRUE){
     mean_table <- ggdatatable %>%
       group_by(.data[["Time"]]) %>%
-      summarise(variable_to_analyse=mean(variable_to_analyse,na.rm=TRUE))
+      summarise(Mean=mean(.data[[variable_to_analyse]],na.rm=TRUE))
   }
   
   if (perTimeonly ==FALSE){
     mean_table <- ggdatatable %>%
       group_by(.data[["Time"]],.data[[myfactor]]) %>% 
-      summarise(ggdatatable=mean(.data[[variable_to_analyse]],na.rm=TRUE))
+      summarise(Mean=mean(.data[[variable_to_analyse]],na.rm=TRUE))
   }
   
   return(list("mean_table"=mean_table))
