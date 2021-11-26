@@ -1,5 +1,5 @@
 library(shiny)
-required_packages=c("dplyr","stringr","abind","plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
+required_packages=c("Cairo","dplyr","stringr","abind","plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
 install.packages(setdiff(required_packages,rownames(installed.packages())))
 print ("All required packages installed")
 for (package_name in required_packages){
@@ -36,11 +36,11 @@ ui <- fluidPage(
                          
                          conditionalPanel("input.isfive == true",fileInput("fivems","5ms data file (csv)")),
                          conditionalPanel("input.isten == true",fileInput("tenms","10ms data file (csv)")),
-                         conditionalPanel("input.istwentyfive == true",fileInput("twentyfivems","25ms data file (csv")),
-                         conditionalPanel("input.isfifty == true",fileInput("fiftyms","50ms data file (csv")),
-                         conditionalPanel("input.ishundred == true",fileInput("hundredms","100ms data file (csv")),
-                         conditionalPanel("input.istwohundredfifty == true",fileInput("twohundredfiftyms","250ms data file (csv")),
-                         conditionalPanel("input.isfivehundred == true",fileInput("fivehundredms","500ms data file (csv")),
+                         conditionalPanel("input.istwentyfive == true",fileInput("twentyfivems","25ms data file (csv)")),
+                         conditionalPanel("input.isfifty == true",fileInput("fiftyms","50ms data file (csv)")),
+                         conditionalPanel("input.ishundred == true",fileInput("hundredms","100ms data file (csv)")),
+                         conditionalPanel("input.istwohundredfifty == true",fileInput("twohundredfiftyms","250ms data file (csv)")),
+                         conditionalPanel("input.isfivehundred == true",fileInput("fivehundredms","500ms data file (csv)")),
                          
                          
                          actionButton("proceed_to_multiple_analysis","Proceed")
@@ -82,16 +82,21 @@ ui <- fluidPage(
                  sidebarPanel(selectInput("Variabletoshow","Select Variable to display",choices=""),
                               selectInput("multiple_file_factor","Factor of analysis",choices=""),
                               sliderTextInput("whichtime","Time response:",choices="",animate=TRUE),
-                              checkboxInput("Additional_Info","Addational Info"),
+                              checkboxInput("Additional_Info","Additional Info"),
                               conditionalPanel(condition="input.Additional_Info == true",
                                                checkboxInput("is.sd","Standard Deviation"),
                                                checkboxInput("is.mean","Mean"),
-                                               checkboxInput("perTimeonly","Group per Time Only"))
+                                               checkboxInput("perTimeonly","Group per Time Only")),
+                              actionButton("wanttosave_current_plot_MF","Save Current Plot"),
+                              conditionalPanel(condition="input.wanttosave_current_plot_MF == true",
+                                               textInput("file_name_MF", label= "Enter file name (without .pdf)"),
+                                               textInput("saving_directory","Write path to saving folder (finish with /)"),
+                                               actionButton("execute_saving_MF","Save"))
                              
                               
                  ),
                  mainPanel(tabsetPanel(
-                   tabPanel(title = "Plots",plotlyOutput("time_evol")),
+                   tabPanel(title = "Plots",plotlyOutput("time_evol"),textOutput("dwlPlot_MF")),
                    #tabPanel(title = "Time Box plot", plotOutput()),
                    tabPanel(title = "Stats")  
                  )
@@ -131,6 +136,7 @@ server <- function(session,input, output) {
   #Create a local environment (myenv) to pass variable across different functions
   myenv=new.env()
   myenv$previous_value=0
+  myenv$previous_value_MF=0
   myenv$previous_stat_value=0
   myarray=readRDS("Full_response_array")
   myenv$myarray=myarray
@@ -370,6 +376,7 @@ server <- function(session,input, output) {
     else{
       myplot=ggplot(data=ggdatatable,aes(x=Time,y=.data[[input$Variabletoshow]],color=.data[[input$multiple_file_factor]]))+
         geom_point(alpha=0.3)
+        
     }
     if (input$is.sd == TRUE){
         sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=input$perTimeonly)$sd_table
@@ -378,15 +385,27 @@ server <- function(session,input, output) {
       
     if (input$is.mean == TRUE){
         mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=input$perTimeonly)$mean_table
-        myplot=myplot+geom_line(data = mean_table,aes(x=Time,y=Mean))
+        myplot=myplot+geom_line(data = mean_table,aes(x=Time,y=Mean),linetype="dashed")
       }
   
-    myplot=myplot+labs(y=as.character(unit_dict[variable_to_analyse]),x='Time(ms)')
+    myplot=myplot+
+      labs(y=as.character(unit_dict[variable_to_analyse]),x='Time(ms)')
+      
     
-    
+    myenv$plot_MF=myplot
     myplot
   })
-  
+  output$dwlPlot_MF <- renderText({
+    
+    
+    if (input$execute_saving_MF !=0 && input$execute_saving_MF != myenv$previous_value_MF){
+      myplot=myenv$plot_MF
+      ggsave(filename = paste0(input$file_name_MF,".pdf"),plot=myplot,path=input$saving_directory,device = cairo_pdf,width=200,height = 100,units="mm")
+      myenv$previous_value_MF=input$execute_saving_MF
+      
+    }
+    print("Plot saved!")
+  })
   
   output$Hypothesis <- renderTable( {
     #only begin when the full data table is created
