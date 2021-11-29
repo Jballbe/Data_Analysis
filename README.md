@@ -1,4 +1,4 @@
-# Data_Analysis
+# Data_Analysis (to be updated)
 
 The application is based on Shiny Library, and thus composed of a "ui" and a "server" part.
 Before lauchingg the app, make sure the files to analyse, and the "Source function.R" file are in the same folder than "Data_analysis_app.R"
