@@ -1,5 +1,5 @@
 library(shiny)
-required_packages=c("Cairo","dplyr","stringr","abind","plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
+required_packages=c("Cairo","plyr","stringr","abind","dplyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
 install.packages(setdiff(required_packages,rownames(installed.packages())))
 print ("All required packages installed")
 for (package_name in required_packages){
@@ -18,118 +18,77 @@ ui <- fluidPage(
        sidebarPanel(
         fileInput("Source_functions","Choose the source function file"),
         fileInput("Pop_class_file","Choose Population Class file"),
-        selectInput("Which_Analysis","Single or Multpile Files analysis",choices=c("","Single File","Multiple Files")),
-        numericInput("nbfactors","How many possible factors are they?",2),
-        conditionalPanel(condition = "input.Which_Analysis == 'Single File'",
-                         fileInput("My_data","Choose data file (csv) to analyse")
-        ),
         
-        conditionalPanel(condition = "input.Which_Analysis == 'Multiple Files'",
+        numericInput("nbfactors","How many possible factors are they?",2),
+        
+       
                         
-                         checkboxInput("isfive",'5ms'),
-                         checkboxInput("isten",'10ms'),
-                         checkboxInput("istwentyfive",'25ms'),
-                         checkboxInput("isfifty",'50ms'),
-                         checkboxInput("ishundred",'100ms'),
-                         checkboxInput("istwohundredfifty",'250ms'),
-                         checkboxInput("isfivehundred",'500ms'),
-                         
-                         conditionalPanel("input.isfive == true",fileInput("fivems","5ms data file (csv)")),
-                         conditionalPanel("input.isten == true",fileInput("tenms","10ms data file (csv)")),
-                         conditionalPanel("input.istwentyfive == true",fileInput("twentyfivems","25ms data file (csv)")),
-                         conditionalPanel("input.isfifty == true",fileInput("fiftyms","50ms data file (csv)")),
-                         conditionalPanel("input.ishundred == true",fileInput("hundredms","100ms data file (csv)")),
-                         conditionalPanel("input.istwohundredfifty == true",fileInput("twohundredfiftyms","250ms data file (csv)")),
-                         conditionalPanel("input.isfivehundred == true",fileInput("fivehundredms","500ms data file (csv)")),
-                         
-                         
-                         actionButton("proceed_to_multiple_analysis","Proceed")
+         checkboxInput("isfive",'5ms'),
+         checkboxInput("isten",'10ms'),
+         checkboxInput("istwentyfive",'25ms'),
+         checkboxInput("isfifty",'50ms'),
+         checkboxInput("ishundred",'100ms'),
+         checkboxInput("istwohundredfifty",'250ms'),
+         checkboxInput("isfivehundred",'500ms'),
+         
+         conditionalPanel("input.isfive == true",fileInput("fivems","5ms data file (csv)")),
+         conditionalPanel("input.isten == true",fileInput("tenms","10ms data file (csv)")),
+         conditionalPanel("input.istwentyfive == true",fileInput("twentyfivems","25ms data file (csv)")),
+         conditionalPanel("input.isfifty == true",fileInput("fiftyms","50ms data file (csv)")),
+         conditionalPanel("input.ishundred == true",fileInput("hundredms","100ms data file (csv)")),
+         conditionalPanel("input.istwohundredfifty == true",fileInput("twohundredfiftyms","250ms data file (csv)")),
+         conditionalPanel("input.isfivehundred == true",fileInput("fivehundredms","500ms data file (csv)")),
+         
+         
+         actionButton("proceed_to_multiple_analysis","Proceed")
+        
         ),
-        ),
-      mainPanel(textOutput("files"),textOutput("multiplefiles"))
+      mainPanel(textOutput("checklibraries"),textOutput("multiplefiles"))
   ),
   
     ),##1
-  ##2
-      tabPanel(title = "Single File",
-               sidebarLayout(sidebarPanel(
-                 selectInput("myfactor","Factor of analysis",choices=""),
-                 selectInput("Variable","Select variable to observe",choices=""),
-                 actionButton("save_table","Save stat Table"),
-                 textOutput("dwlstat_table"),
-                 conditionalPanel(condition = "input.save_table == true",
-                                  textInput("stat_name", label= "Enter file name (without _analysis.csv)")),
-                 checkboxInput("points","Display points in plotly"),
-                 checkboxInput("want_to_save","Save"),
-                 conditionalPanel(condition = "input.want_to_save == true",
-                                  selectInput("save","Select saving mode",choices=c("All","Some","Current one")),
-                                  checkboxGroupInput("Select_variable","Select_variable",choices=""),
-                                  textInput("file_name", label= "Enter file name (without variable_name_by_factor.pdf)"),
-                                  actionButton("execute_saving","Save as pdf"),
-                                  textOutput("dwlFigures"),),
-               ),
-               mainPanel(tabsetPanel(tabPanel(title = "General",tableOutput("Hypothesis"),tableOutput("counterglobal"), tableOutput("basic_stats")),
-                                     tabPanel(title = "Current variable",tableOutput("countervariable"),plotOutput("plot"),plotlyOutput("plotly")),
-                 )),
-               ),
-      
-      ),
-      ##2
+ 
       
       ##3
-      tabPanel(title = "Multiple Files",
+      tabPanel(title = "Data Analysis",
                sidebarLayout(
-                 sidebarPanel(selectInput("Variabletoshow","Select Variable to display",choices=""),
-                              selectInput("multiple_file_factor","Factor of analysis",choices=""),
+                 sidebarPanel(selectInput("multiple_file_factor","Factor of analysis",choices=""),
+                              selectInput("Variabletoshow","Select Variable to display",choices=""),
+                              selectInput("Which_time_file","Select time to show",choices=""),
                               sliderTextInput("whichtime","Time response:",choices="",animate=TRUE),
                               checkboxInput("Additional_Info","Additional Info"),
                               conditionalPanel(condition="input.Additional_Info == true",
                                                checkboxInput("is.sd","Standard Deviation"),
                                                checkboxInput("is.mean","Mean"),
-                                               checkboxInput("perTimeonly","Group per Time Only")),
-                              actionButton("wanttosave_current_plot_MF","Save Current Plot"),
-                              conditionalPanel(condition="input.wanttosave_current_plot_MF == true",
-                                               textInput("file_name_MF", label= "Enter file name (without .pdf)"),
-                                               textInput("saving_directory","Write path to saving folder (finish with /)"),
-                                               actionButton("execute_saving_MF","Save"))
+                                               checkboxInput("perTimeonly","Group per Time Only"))
+                              
                              
                               
                  ),
                  mainPanel(tabsetPanel(
-                   tabPanel(title = "Plots",plotlyOutput("time_evol"),textOutput("dwlPlot_MF")),
-                   #tabPanel(title = "Time Box plot", plotOutput()),
-                   tabPanel(title = "Stats")  
+                   tabPanel(title = "Over TIme",plotlyOutput("time_evol"),actionButton("time_plot_saving","Save plot"),textOutput("save_time_plot")),
+                   
+                   tabPanel(title = "Single Time Point",
+                            tabsetPanel(
+                              tabPanel(title="Stats",tableOutput("Hypothesis"),tableOutput("basic_stats")),
+                              tabPanel(title="Plots",tableOutput("countervariable"),plotOutput("plot"),plotlyOutput("plotly"),checkboxInput("points","Display points in plotly"),actionButton("save_variable_plot","Save plot")),
+                                       textOutput("save_var_plot"),)
+                                )
                  )
                    
                  ),
                )
+               )
         
-      ),
+      )
       ##3
-     
+  
+      )
       
       
       
       
-      
-      
-      fileInput("threeDarray","Choose 3D array file")
-      
-      
-      
-      
-   
-    # mainPanel(
-    #   tabsetPanel(
-    #     tabPanel("General informations",tableOutput("Hypothesis"),tableOutput("counterglobal"), tableOutput("basic_stats")),
-    #     tabPanel("Current variable",tableOutput("countervariable"),plotOutput("plot"),plotlyOutput("plotly")),
-    #     tabPanel("3D plot",plotlyOutput("plotthreeD"))
-      ),
-      
-      
-      
-      
-    )
+    
   
 
 server <- function(session,input, output) {
@@ -141,41 +100,19 @@ server <- function(session,input, output) {
   myarray=readRDS("Full_response_array")
   myenv$myarray=myarray
   
-  output$files <- renderText({
+  
+  
+  output$checklibraries <- renderText({
     #The following lines only execute when the files are selected
-    req(input$Source_functions$datapath,input$My_data$datapath,input$Pop_class_file$datapath)
+    req(input$Source_functions$datapath,input$proceed_to_multiple_analysis)
     
     source(file=input$Source_functions$datapath)
     required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
     #Check if the user have all required libraries and if not, install them
     have_library(required_packages = required_packages)
-    # Prepare the full data table
-    
-    data_file=read.csv(input$My_data$datapath,header=T)
-    population_class=read.csv(file=input$Pop_class_file$datapath,header=T)
-    Species=population_class[,2]
-    FT=population_class[,3]
+
     nbfactors=input$nbfactors
-    factor_list=create_fulldataset(population_class,data_file,nbfactors)$factor_list
-    variable_list=create_fulldataset(population_class,data_file,nbfactors)$variable_list
-    full_dataset=create_fulldataset(population_class,data_file,nbfactors)$full_dataset
-    
-    myenv$factor_list=factor_list
-    myenv$full_dataset=full_dataset
-    myenv$variable_list=variable_list
-    myenv$nbvariable=length(variable_list)
-    myenv$Species=Species
-    myenv$FT=FT
-    
-    #Update the choice selection for factor and variable according to input files
-    updateSelectInput(session,"myfactor","Factor of analysis",choices=factor_list)
-    updateSelectInput(session,"Variable","Select variable to observe",choices=variable_list)
-    
-    
-    # If you want to save only some variable plot, display a checkbox list to select the variables
-    if (input$save == 'Some'){
-      
-      updateCheckboxGroupInput(session,"Select_variable","Select_variable",choices=variable_list)}
+  
     print('Libraries and files successfully loaded')
     
   })
@@ -186,7 +123,7 @@ server <- function(session,input, output) {
     time_list=c()
     population_class=read.csv(file=input$Pop_class_file$datapath,header=T)
     nb_of_files=0
-    file_list=list(NA)
+    file_list=list()
 
     Species_MF=population_class[,2]
     FT_MF=population_class[,3]
@@ -201,10 +138,14 @@ server <- function(session,input, output) {
       FR_5ms=results_from_createfulldataset$full_dataset
       factor_list_MF=results_from_createfulldataset$factor_list
       variable_list_MF=results_from_createfulldataset$variable_list
+      myenv$nbvariable=length(variable_list_MF)
       isfactor_variable_ok=1
-      FR_5ms=FR_5ms[,1:length(colnames(FR_5ms))]
+     
+      
       time_list=c(time_list,"5ms")
-      file_list[[nb_of_files]] <- FR_5ms
+      current_list=list("FR_5ms"=FR_5ms)
+      file_list=append(file_list,current_list)
+      
       Species_MF=results_from_createfulldataset$Species
       FT_MF=results_from_createfulldataset$Firing_Type
       unit_dict=results_from_createfulldataset$unit_dict
@@ -219,14 +160,17 @@ server <- function(session,input, output) {
       if (isfactor_variable_ok == 0){
         factor_list_MF=results_from_createfulldataset$factor_list
         variable_list_MF=results_from_createfulldataset$variable_list
+        myenv$nbvariable=length(variable_list_MF)
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
         unit_dict=results_from_createfulldataset$unit_dict
       }
-      FR_10ms=FR_10ms[,1:length(colnames(FR_10ms))]
+     
       time_list=c(time_list,"10ms")
-      file_list[[nb_of_files]] <- FR_10ms
+      current_list=list("FR_10ms"=FR_10ms)
+      file_list=append(file_list,current_list)
+     
       
       
     }
@@ -239,14 +183,17 @@ server <- function(session,input, output) {
       if (isfactor_variable_ok == 0){
         factor_list_MF=results_from_createfulldataset$factor_list
         variable_list_MF=results_from_createfulldataset$variable_list
+        myenv$nbvariable=length(variable_list_MF)
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
         unit_dict=results_from_createfulldataset$unit_dict
       }
-      FR_25ms=FR_25ms[,1:length(colnames(FR_25ms))]
+     
       time_list=c(time_list,"25ms")
-      file_list[[nb_of_files]] <- FR_25ms
+      
+      current_list=list("FR_25ms"=FR_25ms)
+      file_list=append(file_list,current_list)
     }
     
     if (input$isfifty == TRUE){
@@ -257,14 +204,17 @@ server <- function(session,input, output) {
       if (isfactor_variable_ok == 0){
         factor_list_MF=results_from_createfulldataset$factor_list
         variable_list_MF=results_from_createfulldataset$variable_list
+        myenv$nbvariable=length(variable_list_MF)
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
         unit_dict=results_from_createfulldataset$unit_dict
       }
-      FR_50ms=FR_50ms[,1:length(colnames(FR_50ms))]
+     
       time_list=c(time_list,"50ms")
-      file_list[[nb_of_files]] <- FR_50ms
+      
+      current_list=list("FR_50ms"=FR_50ms)
+      file_list=append(file_list,current_list)
     }
     
     if (input$ishundred == TRUE){
@@ -275,14 +225,17 @@ server <- function(session,input, output) {
       if (isfactor_variable_ok == 0){
         factor_list_MF=results_from_createfulldataset$factor_list
         variable_list_MF=results_from_createfulldataset$variable_list
+        myenv$nbvariable=length(variable_list_MF)
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
         unit_dict=results_from_createfulldataset$unit_dict
       }
-      FR_100ms=FR_100ms[,1:length(colnames(FR_100ms))]
+    
       time_list=c(time_list,"100ms")
-      file_list[[nb_of_files]] <- FR_100ms
+      
+      current_list=list("FR_100ms"=FR_100ms)
+      file_list=append(file_list,current_list)
     }
     
     if (input$istwohundredfifty == TRUE){
@@ -293,14 +246,18 @@ server <- function(session,input, output) {
       if (isfactor_variable_ok == 0){
         factor_list_MF=results_from_createfulldataset$factor_list
         variable_list_MF=results_from_createfulldataset$variable_list
+        myenv$nbvariable=length(variable_list_MF)
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
         unit_dict=results_from_createfulldataset$unit_dict
       }
-      FR_250ms=FR_250ms[,1:length(colnames(FR_250ms))]
+    
       time_list=c(time_list,"250ms")
-      file_list[[nb_of_files]] <- FR_250ms
+      
+      current_list=list("FR_250ms"=FR_250ms)
+      file_list=append(file_list,current_list)
+      
     }
     
     if (input$isfivehundred == TRUE){
@@ -311,30 +268,41 @@ server <- function(session,input, output) {
       if (isfactor_variable_ok == 0){
         factor_list_MF=results_from_createfulldataset$factor_list
         variable_list_MF=results_from_createfulldataset$variable_list
+        myenv$nbvariable=length(variable_list_MF)
         isfactor_variable_ok=1
         Species_MF=results_from_createfulldataset$Species
         FT_MF=results_from_createfulldataset$Firing_Type
         unit_dict=results_from_createfulldataset$unit_dict
       }
-      FR_500ms=FR_500ms[,1:length(colnames(FR_500ms))]
+    
       time_list=c(time_list,"500ms")
-      file_list[[nb_of_files]] <- FR_500ms
+      
+      current_list=list("FR_500ms"=FR_500ms)
+      file_list=append(file_list,current_list)
     }
     
     threeDarray=abind(file_list,along=3)
     
+    
+    
+    factor_columns=data.frame(cbind(data.frame(Species_MF),data.frame(FT_MF)))
+    colnames(factor_columns)=c("Species","Firing_Type")
+    
+    updateSelectInput(session,"Variabletoshow","Variable to show",choices=variable_list_MF)
+    updateSelectInput(session,"multiple_file_factor","Factor of analysis",choices=factor_list_MF)
+    
+    myenv$factor_columns=factor_columns
     myenv$unit_dict=unit_dict
     myenv$threeDarray=threeDarray
     myenv$time_list_MF=time_list
     myenv$factor_list_MF=factor_list_MF
     myenv$variable_list_MF=variable_list_MF
-    
-    factor_columns=data.frame(cbind(data.frame(Species_MF),data.frame(FT_MF)))
-    colnames(factor_columns)=c("Species","Firing_Type")
-    myenv$factor_columns=factor_columns
-    updateSelectInput(session,"Variabletoshow","Variabletoshow",choices=variable_list_MF)
-    updateSelectInput(session,"multiple_file_factor","Factor of analysis",choices=factor_list_MF)
-    
+    myenv$file_list=file_list
+    file_list_name=list()
+    for (elt in seq((length(file_list)))){
+      file_list_name=append(file_list_name,names(file_list)[elt])
+    }
+    updateSelectInput(session,"Which_time_file","Select time to show",choices=file_list_name)
     
     print("Multiple file analysis ready")
   })
@@ -395,26 +363,67 @@ server <- function(session,input, output) {
     myenv$plot_MF=myplot
     myplot
   })
-  output$dwlPlot_MF <- renderText({
+  
+  
+  time_plot_saving_vals <- reactiveValues(
+    saving_path=NULL,
+    saving_name=NULL
+  )
+  save_time_plot <- function(failed=FALSE){
+    modalDialog(
+      
+      textInput("folder_to_save_time_plot","Saving folder (ending with / or \ "),
+      
+      textInput("file_name_time_plot", label= "File name (without .pdf)"),
+      
+      span('Please select a directory,',' and file name for saving'),
+      if (failed)
+        div(tags$b("Please enter all required information")),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("execute_time_plot_saving","Save plot as pdf"),
+      )
+    )
+  }
+  observeEvent(input$time_plot_saving,{
     
+    showModal(save_time_plot())
+  })
+  observeEvent(input$execute_time_plot_saving,{
     
-    if (input$execute_saving_MF !=0 && input$execute_saving_MF != myenv$previous_value_MF){
-      myplot=myenv$plot_MF
-      ggsave(filename = paste0(input$file_name_MF,".pdf"),plot=myplot,path=input$saving_directory,device = cairo_pdf,width=200,height = 100,units="mm")
-      myenv$previous_value_MF=input$execute_saving_MF
+    if (input$folder_to_save_time_plot != "" && input$file_name_time_plot != "" ){
+      
+      time_plot_saving_vals$saving_path <- input$folder_to_save_time_plot
+      time_plot_saving_vals$saving_name <- input$file_name_time_plot
+      
+      removeModal()
       
     }
-    print("Plot saved!")
+    else{
+      showModal(save_time_plot(failed=TRUE))
+    }
+  })
+  
+  output$save_time_plot <- renderText({
+    
+    req(time_plot_saving_vals$saving_path,time_plot_saving_vals$saving_name)
+    
+    ggsave(filename = paste0(time_plot_saving_vals$saving_name,".pdf"),plot=myenv$plot_MF,path=time_plot_saving_vals$saving_path,device = cairo_pdf,width=200,height = 100,units="mm")
+    
+    print(paste0(time_plot_saving_vals$saving_name,".pdf ","succesfully saved!"))
   })
   
   output$Hypothesis <- renderTable( {
     #only begin when the full data table is created
-    req(input$myfactor,myenv$full_dataset,input$nbfactors)
-    myfactor=input$myfactor
-    full_dataset=myenv$full_dataset
+    #req(input$myfactor,myenv$full_dataset,input$nbfactors)
+    myfactor=input$multiple_file_factor
+    file_list=myenv$file_list
+    
     nbfactors=input$nbfactors
-    #Perform the test to know which parametric test has to be perfomed for each variable
-    Hypothesis_table=parametric_test(full_dataset,nbfactors,myfactor)
+    current_time_dataset=file_list[[input$Which_time_file]]
+    myenv$current_time_dataset=current_time_dataset
+    #Perform the test to know which parametric test has to be performed for each variable
+    Hypothesis_table=parametric_test(current_time_dataset,nbfactors,myfactor)
     myenv$Hypothesis_table=Hypothesis_table
     
     #Display the table
@@ -424,11 +433,11 @@ server <- function(session,input, output) {
   },rownames=TRUE)
   
   output$basic_stats <- renderTable({
-    req(input$myfactor,myenv$full_dataset,input$nbfactors)
-    myfactor=input$myfactor
-    full_dataset=myenv$full_dataset
+    req(input$multiple_file_factor,myenv$current_time_dataset,input$nbfactors)
+    myfactor=input$multiple_file_factor
+    current_time_dataset=myenv$current_time_dataset
     nbfactors=input$nbfactors
-    basic_stats=get_basic_stat(full_dataset = full_dataset, nbfactors = nbfactors, myfactor = myfactor)
+    basic_stats=get_basic_stat(current_time_dataset, nbfactors = nbfactors, myfactor = myfactor)
     stat_table=basic_stats$stat_table
     myenv$stat_table=basic_stats$stat_table
     myenv$mean_table=basic_stats$mean_table
@@ -438,26 +447,26 @@ server <- function(session,input, output) {
   },rownames=TRUE)
   
   output$counterglobal <- renderTable({
-    req(input$myfactor,input$nbfactors)
-    full_dataset=myenv$full_dataset
-    table_count=count_samples(full_dataset = full_dataset,nbfactor=input$nbfactors,myfactor=input$myfactor,nbvariable = myenv$nbvariable)
+    req(input$multiple_file_factor,input$nbfactors)
+    current_time_dataset=myenv$current_time_dataset
+    table_count=count_samples(current_time_dataset,nbfactor=input$nbfactors,myfactor=input$multiple_file_factor,nbvariable = myenv$nbvariable)
     data.frame(table_count)
   },rownames=TRUE)
   
   output$countervariable <- renderTable({
-    req(input$myfactor,input$nbfactors,input$Variable)
-    full_dataset=myenv$full_dataset
-    variable_table=count_samples(full_dataset = full_dataset,nbfactor=input$nbfactors,myfactor=input$myfactor,nbvariable = myenv$nbvariable)[input$Variable]
+    req(input$multiple_file_factor,input$nbfactors,input$Variabletoshow)
+    current_time_dataset=myenv$current_time_dataset
+    variable_table=count_samples(current_time_dataset,nbfactor=input$nbfactors,myfactor=input$multiple_file_factor,nbvariable = myenv$nbvariable)[input$Variabletoshow]
     
     data.frame(variable_table)
   },rownames=TRUE)
   
   output$plot <- renderPlot({
     #Only begin when the parametric tests have been performed, or when the factor of analysis is changed
-    req(input$myfactor,myenv$full_dataset,input$nbfactors,myenv$Hypothesis_table)
-    myfactor=input$myfactor
-    variable=input$Variable
-    full_dataset=myenv$full_dataset
+    req(input$multiple_file_factor,myenv$current_time_dataset,input$nbfactors,myenv$Hypothesis_table)
+    myfactor=input$multiple_file_factor
+    variable=input$Variabletoshow
+    current_time_dataset=myenv$current_time_dataset
     nbfactors=input$nbfactors
     Hypothesis_table=myenv$Hypothesis_table
     
@@ -465,22 +474,22 @@ server <- function(session,input, output) {
     
     #Perform the required variance test; Kruskal-Wallis or ANOVA
     if (Hypothesis_table["Variance_test",variable]=="KW"){
-      variable_test=kruskal_test(full_dataset,formula = formula)
+      variable_test=kruskal_test(current_time_dataset,formula = formula)
     }
     else{
-      variable_test=anova_test(full_dataset,formula = formula)
+      variable_test=anova_test(current_time_dataset,formula = formula)
     }
     
     #If the test result is significant, perform a pair-wise comparison to know which means are different and create a plot
     if (variable_test$p<0.05){
-      current_dunn_test=dunn_test(full_dataset,formula=formula,p.adjust.method = "bonferroni")
+      current_dunn_test=dunn_test(current_time_dataset,formula=formula,p.adjust.method = "bonferroni")
       current_dunn_test=add_xy_position(current_dunn_test,x=myfactor)
-      variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable]))+
+      variable_plot=ggboxplot(current_time_dataset,x=myfactor,y=colnames(current_time_dataset[variable]))+
         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
         labs(subtitle=get_test_label(variable_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
     }
     else{
-      variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable]))+
+      variable_plot=ggboxplot(current_time_dataset,x=myfactor,y=colnames(current_time_dataset[variable]))+
         labs(subtitle=get_test_label(variable_test,detailed =TRUE))
     }
     myenv$current_plot=variable_plot
@@ -491,23 +500,23 @@ server <- function(session,input, output) {
   
   output$plotly <- renderPlotly({
     #Only begin when the parametric tests have been performed, or when the factor of analysis is changed
-    req(input$myfactor,input$Variable,myenv$full_dataset,input$nbfactors,myenv$Hypothesis_table)
-    myfactor=input$myfactor
-    variable=input$Variable
-    full_dataset=myenv$full_dataset
+    req(input$multiple_file_factor,input$Variabletoshow,myenv$current_time_dataset,input$nbfactors,myenv$Hypothesis_table)
+    myfactor=input$multiple_file_factor
+    variable=input$Variabletoshow
+    current_time_dataset=myenv$current_time_dataset
     nbfactors=input$nbfactors
     Hypothesis_table=myenv$Hypothesis_table
     formula=as.formula(paste0(variable," ~ ",myfactor))
     
     #Perform the required variance test; Kruskal-Wallis or ANOVA
     if (Hypothesis_table["Variance_test",variable]=="KW"){
-      variable_test=kruskal_test(full_dataset,formula = formula)
+      variable_test=kruskal_test(current_time_dataset,formula = formula)
     }
     else{
-      variable_test=anova_test(full_dataset,formula = formula)
+      variable_test=anova_test(current_time_dataset,formula = formula)
     }
     
-    variable_plotly=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable]))+
+    variable_plotly=ggboxplot(current_time_dataset,x=myfactor,y=colnames(current_time_dataset[variable]))+
       labs(subtitle=get_test_label(variable_test,detailed =TRUE))
     
     if (input$points == TRUE){
@@ -517,42 +526,57 @@ server <- function(session,input, output) {
     variable_plotly
   })
   
-  
-  
-  output$dwlFigures <- renderText({
-    #Only begin when the user have entered the file name and pushed the button
-    req(input$execute_saving,input$file_name)
-    saving_path=input$folder
-    file_name=input$file_name
-    myfactor=input$myfactor
-    full_dataset=myenv$full_dataset
-    Hypothesis_table=myenv$Hypothesis_table
-    nbfactors=input$nbfactors
-    #Select the variable to be saved according to the user's choice
-    if(input$save == 'All'){
-      variable_to_save=myenv$variable_list
-    }
+  observeEvent(input$save_variable_plot,{
     
-    if(input$save == 'Some'){
-      variable_to_save=input$Select_variable
-    }
-    
-    if(input$save == "Current one"){
-      variable_to_save=input$Variable
-    }
-    
-    which_plot=input$save
-    
-    #Save the selected plots only when the user clicks the button
-    if(input$execute_saving !=0 && input$execute_saving != myenv$previous_value){
-      
-      saveallfigures(Hypothesis_table = Hypothesis_table, full_dataset = full_dataset, saving_path=saving_path ,file_name = file_name, nbfactors = nbfactors,myfactor = myfactor,variable_to_save=variable_to_save, which_plot)
-      myenv$previous_value=input$execute_saving
-      print(paste0("Files succesfully saved"))
-    }
-    
-    
+    showModal(save_variable_plot())
   })
+  
+  
+  variable_plot_saving_vals <- reactiveValues(
+    saving_path=NULL,
+    saving_name=NULL
+  )
+  save_variable_plot <- function(failed=FALSE){
+    modalDialog(
+      textInput("folder_to_save_var_plot","Saving folder (ending with / or \ "),
+      textInput("file_name_var", label= "File name (without .pdf)"),
+      
+      span('Please select a directory and file name for saving'),
+      if (failed)
+        div(tags$b("Please enter all required information")),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("execute_variable_plot_saving","Save plot as pdf")
+      )
+    )
+  }
+  observeEvent(input$execute_variable_plot_saving,{
+    if (input$folder_to_save_var_plot != "" && input$file_name_var != "" ){
+      
+      variable_plot_saving_vals$saving_path <- input$folder_to_save_var_plot
+      variable_plot_saving_vals$saving_name <- input$file_name_var
+      removeModal()
+    }
+    else{
+      showModal(save_variable_plot(failed=TRUE))
+    }
+  })
+  
+  output$save_var_plot <- renderText({
+    req(variable_plot_saving_vals$saving_path,
+        variable_plot_saving_vals$saving_name,
+        myenv$Hypothesis_table,
+        input$multiple_file_factor,
+        myenv$current_time_dataset,
+        input$Variabletoshow
+    )
+    saving_path=variable_plot_saving_vals$saving_path
+    file_name=variable_plot_saving_vals$saving_name
+    
+    saveallfigures(Hypothesis_table = myenv$Hypothesis_table, full_dataset = myenv$current_time_dataset, saving_path=saving_path ,file_name = file_name, nbfactors = nbfactors,myfactor = input$multiple_file_factor,variable_to_save=input$Variabletoshow)
+    print(paste0(variable_plot_saving_vals$saving_name,".pdf succesfully saved!"))
+  })
+ 
   
   output$dwlstat_table<- renderText({
     #Only begin when the user have entered the file name and pushed the button

@@ -8,7 +8,7 @@ have_library <- function (required_packages){
   }
   print("All required packages loaded")
 }
-required_packages=c("Cairo","dplyr","stringr","shiny","plyr","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
+required_packages=c("Cairo","plyr","stringr","shiny","dplyr","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
 #Check if the user have all required libraries and if not, install them
 have_library(required_packages = required_packages)
 
@@ -205,19 +205,13 @@ parametric_test <- function(full_dataset, nbfactors, myfactor){
 
 
 #This function saves the plots selected by the user
-saveallfigures <- function(Hypothesis_table, full_dataset,saving_path, file_name, nbfactors, myfactor, variable_to_save, which_plot){
-  all_variables=colnames(full_dataset[(nbfactors+1):ncol(full_dataset)])
+saveallfigures <- function(Hypothesis_table, full_dataset,saving_path, file_name, nbfactors, myfactor, variable_to_save){
   
-  if (which_plot != 'All'){
-  variable_list=intersect(variable_to_save,all_variables)
-  }
-  else{
-    variable_list=all_variables
-  }
+  
   #For each variable selected generate the plot
-  for (variable in variable_list){
-    formula=as.formula(paste0(variable," ~ ",myfactor))
-    if (Hypothesis_table["Variance_test",variable]=="KW"){
+  
+    formula=as.formula(paste0(variable_to_save," ~ ",myfactor))
+    if (Hypothesis_table["Variance_test",variable_to_save]=="KW"){
       variable_test=kruskal_test(full_dataset,formula = formula)
     }
     else{
@@ -225,33 +219,33 @@ saveallfigures <- function(Hypothesis_table, full_dataset,saving_path, file_name
     }
     
     if (variable_test$p<0.05){
-      if (Hypothesis_table["Variance_test",variable]=="KW"){
+      if (Hypothesis_table["Variance_test",variable_to_save]=="KW"){
       current_dunn_test=dunn_test(full_dataset,formula=formula,p.adjust.method = "bonferroni")
       current_dunn_test=add_xy_position(current_dunn_test,x=myfactor)
-      variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable]))+
+      variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable_to_save]))+
         stat_pvalue_manual(current_dunn_test,hide.ns = TRUE)+
         labs(subtitle=get_test_label(variable_test,detailed =TRUE),caption=get_pwc_label(current_dunn_test))
       }
-      if (Hypothesis_table["Variance_test",variable]=="Anova"){
+      if (Hypothesis_table["Variance_test",variable_to_save]=="Anova"){
         current_Tukey_test=tukey_hsd(current_data,formula=formula)
         current_Tukey_test=add_xy_position(current_Tukey_test,x=myfactor)
-        variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable]))+
+        variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable_to_save]))+
           stat_pvalue_manual(current_Tukey_test,hide.ns = TRUE)+
           labs(subtitle=get_test_label(variable_test,detailed =TRUE),caption=get_pwc_label(current_Tukey_test))
       }
     }
     else{
-      variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable]))+
+      variable_plot=ggboxplot(full_dataset,x=myfactor,y=colnames(full_dataset[variable_to_save]))+
         labs(subtitle=get_test_label(variable_test,detailed =TRUE))
     }
     
     myplot=ggarrange(variable_plot,ncol=1,nrow=1)
     #Save the plot in landscape format
-    ggsave(filename = paste0(file_name,"_",variable,"_by_",myfactor,".pdf"),plot=myplot,path=saving_path,device = cairo_pdf,width=297,height = 210,units="mm")
+    ggsave(filename = paste0(file_name,".pdf"),plot=myplot,path=saving_path,device = cairo_pdf,width=297,height = 210,units="mm")
     
   
   
-  }
+  
   
 }
 
