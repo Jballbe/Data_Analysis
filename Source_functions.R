@@ -41,6 +41,7 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
   factor_list=colnames(full_dataset[,1:nbfactors])
   variable_list=colnames(full_dataset[(nbfactors+1):ncol(full_dataset)])
   Firing_Type=full_dataset[,2]
+  
   Species=full_dataset[,1]
   return (list("full_dataset"=full_dataset,
                "factor_list"=factor_list,
@@ -49,36 +50,6 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
                "variable_list"=variable_list,
                "unit_dict"=unit_dict))
 }
-
-
-
-
-
-
-create_3D_array <- function(fullarray,nbfactors){
-  nbrow=dim(fullarray)[1]
-  nbcol=dim(fullarray)[2]
-  nbpage=dim(fullarray)[3]
-  myfullarray=array(NA,dim=c(nbrow,nbcol,nbpage))
-  for(page in seq(nbpage)){
-    for (row in seq(nbrow)){
-      for(col in seq(nbcol)){
-        if (col <= nbfactors){
-          myfullarray[row,col,page]=as.factor(fullarray[row,col,page])
-        }
-        
-        if (col > nbfactors){
-        myfullarray[row,col,page]=as.numeric(fullarray[row,col,page])
-        }
-      }
-    }
-  }
-  
-  return(myfullarray)
-            
-}
-
-
 
 #Perform tests (data normality and variance homogeneity) to know which test is to be performed
 
@@ -181,7 +152,7 @@ parametric_test <- function(full_dataset, nbfactors, myfactor){
         Hypothesis_table["Is there Mean difference?",current_variable]="Yes"
        # current_Tukey_test=tukey_hsd(current_data,formula=current_formula,p.adjust.method = "bonferroni")
         current_Tukey_test=tukey_hsd(current_data,formula=current_formula)
-        print(current_Tukey_test)
+        
         # Get the group name and significance level
         all_pair=""
         for (pwc in seq(nrow(current_Tukey_test))){
@@ -391,4 +362,30 @@ getmean <- function(ggdatatable,myfactor,variable_to_analyse,perTimeonly=FALSE){
   return(list("mean_table"=mean_table))
 }
 
+perform_t_test <- function(full_dataset,myfactor,time_list){
+  
+  mylevels=levels(full_dataset[,as.character(myfactor)])
+  
+  t_test_table=data.frame(matrix(0,
+                                 nrow=length(time_list),
+                                 ncol=(length(mylevels)+1)))
+  rownames(t_test_table)=time_list
+  colnames(t_test_table)=c(mylevels,"All Categories")
+  full_dataset=data.frame(full_dataset)
+  for(elt in time_list){
+    full_dataset[,elt]=as.numeric(full_dataset[,elt])
+  }
+ print("elkrfgne")
+ print(t_test_table)
+  for(current_time in time_list){
+    for (current_level in mylevels){
+      print(current_time)
+      print(current_level)
+      t_test_table[current_time,current_level]=t.test(full_dataset[which(full_dataset[,myfactor]==current_level),current_time])$p.value
+    }
+    t_test_table[current_time,"All Categories"]=t.test(full_dataset[,current_time])$p.value
+  }
+
+  print(t_test_table)
+}
 
