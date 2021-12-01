@@ -286,7 +286,7 @@ get_basic_stat <- function(full_dataset, nbfactors, myfactor){
     
   }
   
-  
+  mean_stat_table=data.frame(mean_stat_table)
   return(list("stat_table"=stat_table,
               "mean_table"=mean_stat_table,
               "sd_table"=sd_stat_table))
@@ -395,3 +395,38 @@ perform_t_test <- function(full_dataset,myfactor,time_list){
   print(t_test_table)
 }
 
+overtime_basic_stat <- function(dataset,myfactor,time_list){
+  mylevels=levels(dataset[,as.character(myfactor)])
+  mean_table=data.frame(matrix(0,nrow=length(time_list),
+                               ncol=(length(mylevels)+1)))
+  rownames(mean_table)=time_list
+  colnames(mean_table)=c(mylevels,"All Categories")
+  dataset=data.frame(dataset)
+  for(elt in time_list){
+    dataset[,elt]=as.numeric(dataset[,elt])
+  }
+  
+  sd_table=data.frame(matrix(0,nrow=length(time_list),
+                             ncol=(length(mylevels)+1)))
+  rownames(sd_table)=time_list
+  colnames(sd_table)=c(mylevels,"All Categories")
+  
+  for(current_time in time_list){
+    for (current_level in mylevels){
+      print(mean(dataset[which(dataset[,myfactor]==current_level),current_time]))
+      mean_table[current_time,current_level] <- mean(dataset[which(dataset[,myfactor]==current_level),current_time],na.rm=TRUE)
+      sd_table[current_time,current_level] <- sd(dataset[which(dataset[,myfactor]==current_level),current_time],na.rm=TRUE)
+    }
+    mean_table[current_time,"All Categories"] <- mean(dataset[,current_time],na.rm=TRUE)
+    sd_table[current_time,"All Categories"] <- sd(dataset[,current_time],na.rm=TRUE)
+  }
+  stat_mean=c(rep("Mean",length(time_list)))
+  
+  stat_sd=c(rep("SD",length(time_list)))
+  mean_table=data.frame(cbind(data.frame(stat_mean),data.frame(mean_table)))
+  colnames(mean_table)[1] <- "Stat"
+  sd_table=data.frame(cbind(data.frame(stat_sd),data.frame(sd_table)))
+  colnames(sd_table)[1] <- "Stat"
+  return(list("mean_table"=mean_table,
+              "sd_table"=sd_table))
+}

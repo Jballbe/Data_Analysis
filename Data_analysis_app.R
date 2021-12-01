@@ -65,9 +65,9 @@ ui <- fluidPage(
                             tableOutput("t_test"),
                             actionButton("save_t_test_table","Save t-test table"),
                             textOutput("function_to_save_t_test_table"),
-                            tableOutput("basic_stats"),
-                            actionButton("save_stat_table","Save stat table"),
-                            textOutput("save_time_plot")),
+                            tableOutput("overtime_stat_mean"),
+                            tableOutput("overtime_stat_sd")
+                            ),
                    
                    tabPanel(title = "Single Time Point",
                             tabsetPanel(
@@ -75,7 +75,10 @@ ui <- fluidPage(
                                        tableOutput("Hypothesis"),
                                        actionButton("save_hypo_table","Save Hypothesis table"),
                                        textOutput("dwlhypo_table"),
-                                       textOutput("dwlstat_table")),
+                                       textOutput("dwlstat_table"),
+                                       tableOutput("basic_stats"),
+                                       actionButton("save_stat_table","Save stat table"),
+                                       textOutput("save_time_plot")),
                               tabPanel(title="Plots",
                                        tableOutput("countervariable"),
                                        plotOutput("plot"),
@@ -371,6 +374,28 @@ server <- function(session,input, output) {
   },rownames = TRUE,
   digits=-4,align = 'c')
    
+  output$overtime_stat_mean <- renderTable({
+    threeDarray=myenv$threeDarray
+    myfactor=input$multiple_file_factor
+    my_time_list=names(myenv$file_list)
+    stat_dataset=threeDarray[,as.character(input$Variabletoshow),]
+    stat_dataset=data.frame(cbind(data.frame(myenv$factor_columns),data.frame(stat_dataset)))
+    stat_dataset[,"Firing_Type"]=droplevels(stat_dataset[,"Firing_Type"])
+    
+    overtime_mean_table=overtime_basic_stat(stat_dataset,myfactor,my_time_list)$mean_table
+    overtime_sd_table=overtime_basic_stat(stat_dataset,myfactor,my_time_list)$sd_table
+    myenv$overtime_sd_table=overtime_sd_table
+    overtime_mean_table
+  },rownames = TRUE,
+  digits=4,align = 'c')
+  
+  output$overtime_stat_sd <- renderTable({
+    req(myenv$overtime_sd_table)
+    overtime_sd_table=myenv$overtime_sd_table
+    overtime_sd_table
+  },rownames = TRUE,
+  digits=4,align = 'c')
+  
   output$time_evol <- renderPlotly({
     req(input$proceed_to_multiple_analysis)
     variable_list=myenv$variable_list
@@ -515,9 +540,11 @@ server <- function(session,input, output) {
     myenv$stat_table=basic_stats$stat_table
     myenv$mean_table=basic_stats$mean_table
     myenv$sd_table=basic_stats$sd_table
-    data.frame(stat_table)
     
-  },rownames=TRUE)
+    print(stat_table)
+    
+    
+  },rownames=TRUE,digits=4,align = 'c')
   
   output$counterglobal <- renderTable({
     req(input$multiple_file_factor,input$nbfactors)
