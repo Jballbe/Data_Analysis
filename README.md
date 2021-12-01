@@ -39,6 +39,6 @@ Then you will find a first boxplot for the selected variable. If statistical dif
 Plot bellow represents the same data but in an interactive way,  in which you can display all the data points
 
 ### Saving Parameters
-When you click on a saving button (for plots, or table), you are invited to enter a directory in which to save the file. **Be careful**, on macOS, the path you enter must en by "/" in windows, it must end in \"\"\.
+When you click on a saving button (for plots, or table), you are invited to enter a directory in which to save the file. **Be careful**, on macOS, the path you enter must en by "/" in windows, it must end in \\\.
 You then have to enter a name and click on the save button
 
