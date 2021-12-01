@@ -54,14 +54,7 @@ ui <- fluidPage(
                sidebarLayout(
                  sidebarPanel(selectInput("multiple_file_factor","Factor of analysis",choices=""),
                               selectInput("Variabletoshow","Select Variable to display",choices=""),
-                              selectInput("Which_time_file","Select time to show",choices=""),
-                              checkboxInput("Additional_Info","Additional Info"),
-                              conditionalPanel(condition="input.Additional_Info == true",
-                                               checkboxInput("is.sd","Standard Deviation"),
-                                               checkboxInput("is.mean","Mean"),
-                                               checkboxInput("perTimeonly","Group per Time Only"))
-                              
-                             
+                              selectInput("Which_time_file","Select time to show",choices="")
                               
                  ),
                  mainPanel(tabsetPanel(
@@ -315,7 +308,7 @@ server <- function(session,input, output) {
   })
  
   output$t_test_name <- renderPrint({
-    print("Statistical mean difference from 0 (one-sample t-test, p.val<0.05 = significantly different")
+    print("Statistical mean difference from 0 (one-sample t-test, p.val<0.05 = significantly different; X= not enough observation to compute t-test")
   })
   t_test_table_vals <- reactiveValues(
     saving_path=NULL,
@@ -376,7 +369,7 @@ server <- function(session,input, output) {
     myenv$my_t_test_table=my_t_test_table
     my_t_test_table
   },rownames = TRUE,
-  digits=-4)
+  digits=-4,align = 'c')
    
   output$time_evol <- renderPlotly({
     req(input$proceed_to_multiple_analysis)
@@ -403,7 +396,7 @@ server <- function(session,input, output) {
     ggdatatable=prepare_for_ggplot(current_data,time_list_MF,variable_to_analyse,nbfactors)$ggdatatable
     unit_dict=myenv$unit_dict
     
-    if (input$perTimeonly == TRUE){
+    if (parameters_ggplot$is.perTimeonly == TRUE){
       myplot=ggplot(data=ggdatatable,aes(x=Time,y=.data[[input$Variabletoshow]]))+
              geom_point(alpha=parameters_ggplot$alpha.geompoint,
                         size=parameters_ggplot$size.geompoint)
@@ -414,16 +407,16 @@ server <- function(session,input, output) {
                    size=parameters_ggplot$size.geompoint)
         
     }
-    if (input$is.sd == TRUE){
-        sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=input$perTimeonly)$sd_table
+    if (parameters_ggplot$is.sd == TRUE){
+        sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=parameters_ggplot$is.perTimeonly)$sd_table
         myplot <- myplot+geom_line(data = sd_table,aes(x=Time,y=SD),
                                    linetype= parameters_ggplot$line_type.sd,
                                    alpha=parameters_ggplot$alpha.geomlinesd,
                                    size=parameters_ggplot$size.geomlinesd)
       }
       
-    if (input$is.mean == TRUE){
-        mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=input$perTimeonly)$mean_table
+    if (parameters_ggplot$is.mean == TRUE){
+        mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=parameters_ggplot$is.perTimeonly)$mean_table
         myplot=myplot+geom_line(data = mean_table,aes(x=Time,y=Mean),
                                 linetype= parameters_ggplot$line_type.mean,
                                 alpha=parameters_ggplot$alpha.geomlinemean,
@@ -528,14 +521,16 @@ server <- function(session,input, output) {
   
   output$counterglobal <- renderTable({
     req(input$multiple_file_factor,input$nbfactors)
-    current_time_dataset=myenv$current_time_dataset
+    file_list=myenv$file_list
+    current_time_dataset=file_list[[input$Which_time_file]]
     table_count=count_samples(current_time_dataset,nbfactor=input$nbfactors,myfactor=input$multiple_file_factor,nbvariable = myenv$nbvariable)
     data.frame(table_count)
   },rownames=TRUE)
   
   output$countervariable <- renderTable({
     req(input$multiple_file_factor,input$nbfactors,input$Variabletoshow)
-    current_time_dataset=myenv$current_time_dataset
+    file_list=myenv$file_list
+    current_time_dataset=file_list[[input$Which_time_file]]
     variable_table=count_samples(current_time_dataset,nbfactor=input$nbfactors,myfactor=input$multiple_file_factor,nbvariable = myenv$nbvariable)[input$Variabletoshow]
     
     data.frame(variable_table)
@@ -543,10 +538,11 @@ server <- function(session,input, output) {
   
   output$plot <- renderPlot({
     #Only begin when the parametric tests have been performed, or when the factor of analysis is changed
-    req(input$multiple_file_factor,myenv$current_time_dataset,input$nbfactors,myenv$Hypothesis_table)
+    req(input$multiple_file_factor,input$Which_time_file,input$nbfactors,myenv$Hypothesis_table)
     myfactor=input$multiple_file_factor
     variable=input$Variabletoshow
-    current_time_dataset=myenv$current_time_dataset
+    file_list=myenv$file_list
+    current_time_dataset=file_list[[input$Which_time_file]]
     nbfactors=input$nbfactors
     Hypothesis_table=myenv$Hypothesis_table
     
@@ -588,10 +584,11 @@ server <- function(session,input, output) {
   
   output$plotly <- renderPlotly({
     #Only begin when the parametric tests have been performed, or when the factor of analysis is changed
-    req(input$multiple_file_factor,input$Variabletoshow,myenv$current_time_dataset,input$nbfactors,myenv$Hypothesis_table)
+    req(input$multiple_file_factor,input$Variabletoshow,input$Which_time_file,input$nbfactors,myenv$Hypothesis_table)
     myfactor=input$multiple_file_factor
     variable=input$Variabletoshow
-    current_time_dataset=myenv$current_time_dataset
+    file_list=myenv$file_list
+    current_time_dataset=file_list[[input$Which_time_file]]
     nbfactors=input$nbfactors
     Hypothesis_table=myenv$Hypothesis_table
     formula=as.formula(paste0(variable," ~ ",myfactor))
@@ -773,12 +770,15 @@ server <- function(session,input, output) {
     is.logscale=FALSE,
     alpha.geompoint=0.3,
     size.geompoint=1,
-    
+    is.perTimeonly=FALSE,
+    is.sd=FALSE,
     size.geomlinesd=1,
-    size.geomlinemean=1,
     alpha.geomlinesd=1,
-    alpha.geomlinemean=1,
     line_type.sd="solid",
+    
+    is.mean=FALSE,
+    size.geomlinemean=1,
+    alpha.geomlinemean=1,
     line_type.mean="dashed"
   )
   
@@ -788,14 +788,16 @@ server <- function(session,input, output) {
   update_parameters_ggplot <- function(failed=FALSE){
     modalDialog(
       checkboxInput("is.logscale","Display x axis in log scale",value = parameters_ggplot$is.logscale),
-      
+      checkboxInput('is.perTimeonly',"Group only per time",value=parameters_ggplot$is.perTimeonly),
       sliderInput("size.geompoint","Point size",min=0,max=1,value=parameters_ggplot$size.geompoint,step=0.05),
       sliderInput("alpha.geompoint","Point opacity",min=0,max=1,step=0.05,value=parameters_ggplot$alpha.geompoint),
       
+      checkboxInput("is.sd","Display Standard Deviation",value=parameters_ggplot$is.sd),
       selectInput("line_type.sd","Type of line for SD",choices=c("solid","twodash","longdash","dotted","dotdash","dashed"),selected=parameters_ggplot$line_type.sd),
       sliderInput("size.geomlinesd","Standard deviation line size",min=0,max=1,step=0.05,value=parameters_ggplot$size.geomlinesd),
       sliderInput("alpha.geomlinesd","Standard deviation line opacity",min=0,max=1,value=parameters_ggplot$alpha.geomlinesd,step=0.05),
       
+      checkboxInput("is.mean",'Display Mean',value=parameters_ggplot$is.mean),
       selectInput("line_type.mean","Type of line for mean",choices=c("solid","twodash","longdash","dotted","dotdash","dashed"),selected=parameters_ggplot$line_type.mean),
       sliderInput("size.geomlinemean","Mean line size",min=0,max=1,value=parameters_ggplot$size.geomlinemean,step=0.05),
       sliderInput("alpha.geomlinemean","Mean line opacity",min=0,max=1,value=parameters_ggplot$alpha.geomlinemean,step=0.05),
@@ -819,6 +821,9 @@ server <- function(session,input, output) {
     parameters_ggplot$line_type.mean <- input$line_type.mean
     parameters_ggplot$size.geomlinemean <- input$size.geomlinemean
     parameters_ggplot$alpha.geomlinemean <- input$alpha.geomlinemean
+    parameters_ggplot$is.mean <- input$is.mean
+    parameters_ggplot$is.sd <- input$is.sd
+    parameters_ggplot$is.perTimeonly <- input$is.perTimeonly
     
     removeModal()
   })

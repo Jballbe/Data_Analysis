@@ -375,13 +375,19 @@ perform_t_test <- function(full_dataset,myfactor,time_list){
   for(elt in time_list){
     full_dataset[,elt]=as.numeric(full_dataset[,elt])
   }
- print("elkrfgne")
- print(t_test_table)
+ 
   for(current_time in time_list){
     for (current_level in mylevels){
-      print(current_time)
-      print(current_level)
-      t_test_table[current_time,current_level]=t.test(full_dataset[which(full_dataset[,myfactor]==current_level),current_time])$p.value
+     
+      tryCatch(t_test_table[current_time,current_level] <- t.test(full_dataset[which(full_dataset[,myfactor]==current_level),current_time])$p.value,
+               error=function(e){
+                 
+                 t_test_table[current_time,current_level]=-1
+               })
+      
+      if (t_test_table[current_time,current_level]==0){
+        t_test_table[current_time,current_level] <- "X"
+      }
     }
     t_test_table[current_time,"All Categories"]=t.test(full_dataset[,current_time])$p.value
   }
