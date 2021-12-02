@@ -65,8 +65,8 @@ ui <- fluidPage(
                             tableOutput("t_test"),
                             actionButton("save_t_test_table","Save t-test table"),
                             textOutput("function_to_save_t_test_table"),
-                            tableOutput("overtime_stat_mean"),
-                            tableOutput("overtime_stat_sd")
+                            tableOutput("overtime_stat_mean"),actionButton("save_mean_overtime_table","Save Mean Table"),textOutput("dwlmean_overtime_table"),
+                            tableOutput("overtime_stat_sd"),actionButton("save_sd_overtime_table","Save SD Table"),textOutput("dwlsd_overtime_table")
                             ),
                    
                    tabPanel(title = "Single Time Point",
@@ -383,16 +383,21 @@ server <- function(session,input, output) {
     stat_dataset[,"Firing_Type"]=droplevels(stat_dataset[,"Firing_Type"])
     
     overtime_mean_table=overtime_basic_stat(stat_dataset,myfactor,my_time_list)$mean_table
-    overtime_sd_table=overtime_basic_stat(stat_dataset,myfactor,my_time_list)$sd_table
-    myenv$overtime_sd_table=overtime_sd_table
+    
+   myenv$overtime_mean_table=overtime_mean_table
     overtime_mean_table
   },rownames = TRUE,
   digits=4,align = 'c')
   
   output$overtime_stat_sd <- renderTable({
-    req(myenv$overtime_sd_table)
-    overtime_sd_table=myenv$overtime_sd_table
-    overtime_sd_table
+    threeDarray=myenv$threeDarray
+    myfactor=input$multiple_file_factor
+    my_time_list=names(myenv$file_list)
+    stat_dataset=threeDarray[,as.character(input$Variabletoshow),]
+    stat_dataset=data.frame(cbind(data.frame(myenv$factor_columns),data.frame(stat_dataset)))
+    stat_dataset[,"Firing_Type"]=droplevels(stat_dataset[,"Firing_Type"])
+    overtime_sd_table=overtime_basic_stat(stat_dataset,myfactor,my_time_list)$sd_table
+    myenv$overtime_sd_table=overtime_sd_table
   },rownames = TRUE,
   digits=4,align = 'c')
   
@@ -447,7 +452,24 @@ server <- function(session,input, output) {
                                 alpha=parameters_ggplot$alpha.geomlinemean,
                                 size=parameters_ggplot$size.geomlinemean)
       }
-  
+    
+    if (parameters_ggplot$is_overall_mean ==TRUE){
+      overall_mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=parameters_ggplot$is_overall_mean)$mean_table
+      myplot=myplot+geom_line(data = overall_mean_table,aes(x=Time,y=Mean),
+                              linetype= parameters_ggplot$line_type.mean,
+                              alpha=parameters_ggplot$alpha.geomlinemean,
+                              size=parameters_ggplot$size.geomlinemean,
+                              color="black")
+    }
+    
+    if (parameters_ggplot$is_overall_sd ==TRUE){
+      overall_sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=parameters_ggplot$is_overall_sd)$sd_table
+      myplot=myplot+geom_line(data = overall_sd_table,aes(x=Time,y=SD),
+                              linetype= parameters_ggplot$line_type.sd,
+                              alpha=parameters_ggplot$alpha.geomlinesd,
+                              size=parameters_ggplot$size.geomlinesd,
+                              color="black")
+    }
     myplot=myplot+
       labs(y=as.character(unit_dict[variable_to_analyse]),x='Time(ms)')
     if (parameters_ggplot$is.logscale==TRUE){
@@ -802,7 +824,8 @@ server <- function(session,input, output) {
     size.geomlinesd=1,
     alpha.geomlinesd=1,
     line_type.sd="solid",
-    
+    is_overall_mean=FALSE,
+    is_overall_sd=FALSE,
     is.mean=FALSE,
     size.geomlinemean=1,
     alpha.geomlinemean=1,
@@ -820,11 +843,14 @@ server <- function(session,input, output) {
       sliderInput("alpha.geompoint","Point opacity",min=0,max=1,step=0.05,value=parameters_ggplot$alpha.geompoint),
       
       checkboxInput("is.sd","Display Standard Deviation",value=parameters_ggplot$is.sd),
+      checkboxInput("is_overall_sd","Display general Standard Deviation",value=parameters_ggplot$is_overall_sd),
       selectInput("line_type.sd","Type of line for SD",choices=c("solid","twodash","longdash","dotted","dotdash","dashed"),selected=parameters_ggplot$line_type.sd),
       sliderInput("size.geomlinesd","Standard deviation line size",min=0,max=1,step=0.05,value=parameters_ggplot$size.geomlinesd),
       sliderInput("alpha.geomlinesd","Standard deviation line opacity",min=0,max=1,value=parameters_ggplot$alpha.geomlinesd,step=0.05),
       
+      
       checkboxInput("is.mean",'Display Mean',value=parameters_ggplot$is.mean),
+      checkboxInput("is_overall_mean","Display general Mean",value=parameters_ggplot$is_overall_mean),
       selectInput("line_type.mean","Type of line for mean",choices=c("solid","twodash","longdash","dotted","dotdash","dashed"),selected=parameters_ggplot$line_type.mean),
       sliderInput("size.geomlinemean","Mean line size",min=0,max=1,value=parameters_ggplot$size.geomlinemean,step=0.05),
       sliderInput("alpha.geomlinemean","Mean line opacity",min=0,max=1,value=parameters_ggplot$alpha.geomlinemean,step=0.05),
@@ -840,6 +866,8 @@ server <- function(session,input, output) {
   
   observeEvent(input$execute_update_of_ggplot_param,{
     parameters_ggplot$is.logscale <- input$is.logscale
+    parameters_ggplot$is_overall_sd <- input$is_overall_sd
+    parameters_ggplot$is_overall_mean <- input$is_overall_mean
     parameters_ggplot$size.geompoint <- input$size.geompoint
     parameters_ggplot$alpha.geompoint <- input$alpha.geompoint
     parameters_ggplot$line_type.sd <- input$line_type.sd
@@ -857,5 +885,92 @@ server <- function(session,input, output) {
   
   
   
+  save_mean_overtime_table_vals<- reactiveValues(
+    saving_path=NULL,
+    saving_name=NULL
+  )
+  observeEvent(input$save_mean_overtime_table,{
+    
+    showModal(save_mean_overtime_table())
+  })
+  observeEvent(input$execute_mean_overtime_table_saving,{
+    if (input$folder_to_save_mean_overtime_table != "" && input$file_name_mean_overtime_table != "" ){
+      
+      save_mean_overtime_table_vals$saving_path <- input$folder_to_save_mean_overtime_table
+      save_mean_overtime_table_vals$saving_name <- input$file_name_mean_overtime_table
+      removeModal()
+    }
+    else{
+      showModal(save_mean_overtime_table(failed=TRUE))
+    }
+  })
+  save_mean_overtime_table <- function(failed=FALSE){
+    modalDialog(
+      textInput("folder_to_save_mean_overtime_table","Saving folder (ending with / or \ "),
+      textInput("file_name_mean_overtime_table", label= "File name (without .csv)"),
+      
+      span('Please select a directory and file name for saving'),
+      if (failed)
+        div(tags$b("Please enter all required information")),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("execute_mean_overtime_table_saving","Save table")
+      )
+    )
+  }
+  
+  output$dwlmean_overtime_table<- renderText({
+    #Only begin when the user have entered the file name and pushed the button
+    req(save_mean_overtime_table_vals$saving_path,save_mean_overtime_table_vals$saving_name)
+    overtime_mean_table=myenv$overtime_mean_table
+    stat_name=save_mean_overtime_table_vals$saving_name
+    write.csv(overtime_mean_table,file=paste0(save_mean_overtime_table_vals$saving_path,stat_name,".csv"),row.names = TRUE,col.names = TRUE)
+    print(paste0("Overtime mean table succesfully saved"))
+  })
+  
+  
+  save_sd_overtime_table_vals<- reactiveValues(
+    saving_path=NULL,
+    saving_name=NULL
+  )
+  observeEvent(input$save_sd_overtime_table,{
+    
+    showModal(save_sd_overtime_table())
+  })
+  
+  observeEvent(input$execute_sd_overtime_table_saving,{
+    if (input$folder_to_save_sd_overtime_table != "" && input$file_name_sd_overtime_table != "" ){
+      
+      save_sd_overtime_table_vals$saving_path <- input$folder_to_save_sd_overtime_table
+      save_sd_overtime_table_vals$saving_name <- input$file_name_sd_overtime_table
+      removeModal()
+    }
+    else{
+      showModal(save_sd_overtime_table(failed=TRUE))
+    }
+  })
+  save_sd_overtime_table <- function(failed=FALSE){
+    modalDialog(
+      textInput("folder_to_save_sd_overtime_table","Saving folder (ending with / or \ "),
+      textInput("file_name_sd_overtime_table", label= "File name (without .csv)"),
+      
+      span('Please select a directory and file name for saving'),
+      if (failed)
+        div(tags$b("Please enter all required information")),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("execute_sd_overtime_table_saving","Save table")
+      )
+    )
+  }
+  
+  output$dwlsd_overtime_table<- renderText({
+    #Only begin when the user have entered the file name and pushed the button
+    req(save_sd_overtime_table_vals$saving_path,save_sd_overtime_table_vals$saving_name)
+    overtime_sd_table=myenv$overtime_sd_table
+    stat_name=save_sd_overtime_table_vals$saving_name
+    write.csv(overtime_sd_table,file=paste0(save_sd_overtime_table_vals$saving_path,stat_name,".csv"),row.names = TRUE,col.names = TRUE)
+    print(paste0("Overtime sd table succesfully saved"))
+  })
 }
 shinyApp(ui, server)
