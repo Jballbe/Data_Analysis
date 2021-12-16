@@ -53,9 +53,12 @@ ui <- fluidPage(
       ##3
       tabPanel(title = "Data Analysis",
                sidebarLayout(
-                 sidebarPanel(selectInput("multiple_file_factor","Factor of analysis",choices=""),
+                 sidebarPanel(
+                              textOutput("function_to_save"),
+                              selectInput("multiple_file_factor","Factor of analysis",choices=""),
                               selectInput("Variabletoshow","Select Variable to display",choices=""),
                               selectInput("Which_time_file","Select time to show",choices="")
+                              
                               
                  ),
                  mainPanel(tabsetPanel(
@@ -67,9 +70,9 @@ ui <- fluidPage(
                                        textOutput("t_test_name"),
                                        tableOutput("t_test"),
                                        actionButton("save_t_test_table","Save t-test table"),
-                                       textOutput("function_to_save_t_test_table"),
-                                       tableOutput("overtime_stat_mean"),actionButton("save_mean_overtime_table","Save Mean Table"),textOutput("dwlmean_overtime_table"),
-                                       tableOutput("overtime_stat_sd"),actionButton("save_sd_overtime_table","Save SD Table"),textOutput("dwlsd_overtime_table")
+                                       
+                                       tableOutput("overtime_stat_mean"),actionButton("save_mean_overtime_table","Save Mean Table"),
+                                       tableOutput("overtime_stat_sd"),actionButton("save_sd_overtime_table","Save SD Table")
                               ),
                               tabPanel(title="Time differences",
                                        plotOutput("mean_difference_over_time"),
@@ -85,18 +88,16 @@ ui <- fluidPage(
                               tabPanel(title="Stats",
                                        tableOutput("Hypothesis"),
                                        actionButton("save_hypo_table","Save Hypothesis table"),
-                                       textOutput("dwlhypo_table"),
-                                       textOutput("dwlstat_table"),
                                        tableOutput("basic_stats"),
-                                       actionButton("save_stat_table","Save stat table"),
-                                       textOutput("save_time_plot")),
+                                       actionButton("save_stat_table","Save stat table")),
                               tabPanel(title="Plots",
                                        tableOutput("countervariable"),
                                        plotOutput("plot"),
                                        plotlyOutput("plotly"),
                                        checkboxInput("points","Display points in plotly"),
-                                       actionButton("save_variable_plot","Save plot")),
-                                       textOutput("save_var_plot"),)
+                                       actionButton("save_variable_plot","Save plot"),
+                                       textOutput("save_var_plot")),
+                                       )
                                 )
                  )
                    
@@ -121,6 +122,7 @@ server <- function(session,input, output) {
   myenv$previous_value=0
   myenv$previous_value_MF=0
   myenv$previous_stat_value=0
+  myenv$is.stat.table=FALSE
 
   output$checklibraries <- renderText({
     #The following lines only execute when the files are selected
@@ -377,21 +379,146 @@ server <- function(session,input, output) {
   output$t_test_name <- renderPrint({
     print("Statistical mean difference from 0 (one-sample t-test, p.val<0.05 = significantly different; X= not enough observation to compute t-test")
   })
-  t_test_table_vals <- reactiveValues(
+  
+  observeEvent(input$save_variable_plot,{
+    
+    showModal(save_variable_plot())
+  })
+  
+  
+  variable_plot_saving_vals <- reactiveValues(
     saving_path=NULL,
     saving_name=NULL
   )
-  observeEvent(input$save_t_test_table,{
-    
-    showModal(save_t_test_table())
+  save_variable_plot <- function(failed=FALSE){
+    modalDialog(
+      textInput("folder_to_save_var_plot","Saving folder (ending with / or \ "),
+      textInput("file_name_var", label= "File name (without .pdf)"),
+      
+      span('Please select a directory and file name for saving'),
+      if (failed)
+        div(tags$b("Please enter all required information")),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("execute_variable_plot_saving","Save plot as pdf")
+      )
+    )
+  }
+  observeEvent(input$execute_variable_plot_saving,{
+    if (input$folder_to_save_var_plot != "" && input$file_name_var != "" ){
+      
+      variable_plot_saving_vals$saving_path <- input$folder_to_save_var_plot
+      variable_plot_saving_vals$saving_name <- input$file_name_var
+      removeModal()
+    }
+    else{
+      showModal(save_variable_plot(failed=TRUE))
+    }
   })
   
-  save_t_test_table <- function(failed=FALSE){
+  output$save_var_plot <- renderText({
+    req(variable_plot_saving_vals$saving_path,
+        variable_plot_saving_vals$saving_name,
+        myenv$Hypothesis_table,
+        input$multiple_file_factor,
+        myenv$current_time_dataset,
+        input$Variabletoshow
+    )
+    saving_path=variable_plot_saving_vals$saving_path
+    file_name=variable_plot_saving_vals$saving_name
+    
+    saveallfigures(Hypothesis_table = myenv$Hypothesis_table, full_dataset = myenv$current_time_dataset, saving_path=saving_path ,file_name = file_name, nbfactors = nbfactors,myfactor = input$multiple_file_factor,variable_to_save=input$Variabletoshow)
+    print(paste0(variable_plot_saving_vals$saving_name,".pdf succesfully saved!"))
+  })
+  
+  saving_vals <- reactiveValues(
+    saving_path=NULL,
+    saving_name=NULL,
+    saving_file_kind=NULL,
+    proceed=FALSE
+  )
+  observeEvent(input$save_t_test_table,{
+    myenv$table_to_save=myenv$my_t_test_table
+    myenv$table_or_plot="table"
+    showModal(save_modal())
+  })
+  observeEvent(input$save_mean_diff_plot,{
+    myenv$plot_to_save=myenv$mean_diff_plot
+    myenv$table_or_plot="plot"
+    showModal(save_modal())
+  })
+  observeEvent(input$time_plot_saving,{
+    myenv$plot_to_save=myenv$plot_MF
+    myenv$table_or_plot="plot"
+    showModal(save_modal())
+  })
+  observeEvent(input$execute_saving,{
+    if (input$folder_to_save != "" && input$file_name_save != ""){
+      saving_vals$saving_path <- input$folder_to_save
+      saving_vals$saving_name <- input$file_name_save
+      saving_vals$saving_file_kind <- input$Kind_of_file
+      saving_vals$proceed = TRUE
+      removeModal()
+    }
+    else{
+      showModal(save_modal(failed = TRUE))
+    }
+  })
+  observeEvent(input$save_stat_table,{
+    myenv$is.stat.table=TRUE
+    myenv$table_or_plot="table"
+    showModal(save_modal())
+  })
+  observeEvent(input$save_hypo_table,{
+    myenv$table_to_save=myenv$Hypothesis_table
+    myenv$table_or_plot="table"
+    showModal(save_modal())
+  })
+  observeEvent(input$save_mean_overtime_table,{
+    myenv$table_to_save=myenv$overtime_mean_table
+    myenv$table_or_plot="table"
+    showModal(save_modal())
+  })
+  observeEvent(input$save_sd_overtime_table,{
+    myenv$table_to_save=myenv$overtime_sd_table
+    showModal(save_modal())
+  })
+  
+  output$function_to_save <- renderText({
+    if (saving_vals$proceed==TRUE){
+    req(saving_vals$saving_path,saving_vals$saving_name)
+    if(myenv$table_or_plot=="table"){
+      if (myenv$is.stat.table==TRUE){
+        write.csv(myenv$mean_table,file=paste0(saving_vals$saving_path,saving_vals$saving_name,"_mean.csv"),row.names = TRUE,col.names = TRUE)
+        write.csv(myenv$sd_table,file=paste0(saving_vals$saving_path,saving_vals$saving_name,"_sd.csv"),row.names = TRUE,col.names = TRUE)
+        print(paste0("Stats tables successfully saved!"))
+        myenv$is.stat.table=FALSE
+      }
+      else{
+      write.csv(myenv$table_to_save,file=paste0(saving_vals$saving_path,saving_vals$saving_name,".csv"),row.names = TRUE,col.names = TRUE)
+      print(paste0(saving_vals$saving_name,".csv"," successfully saved!"))
+      }
+      saving_vals$proceed=FALSE
+      myenv$table_to_save=NULL
+      
+    }
+    
+    if(myenv$table_or_plot=="plot"){
+      
+      ggsave(filename = paste0(saving_vals$saving_name,".pdf"),plot=myenv$plot_to_save,path=saving_vals$saving_path,device = cairo_pdf,width=200,height = 100,units="mm")
+      print(paste0(saving_vals$saving_name,".pdf ","succesfully saved!"))
+      saving_vals$proceed=FALSE
+      myenv$plot_to_save=NULL
+    }
+    
+    }
+  })
+  save_modal <- function(failed=FALSE){
     modalDialog(
       
-      textInput("folder_to_save_t_test_table","Saving folder (ending with / or \ "),
+      textInput("folder_to_save",label="Saving folder (ending with / or \ "),
       
-      textInput("file_name_t_test_table", label= "File name (without .csv or .pdf)"),
+      textInput("file_name_save", label= "File name (without .csv or .pdf)"),
       
       span('Please select a directory,',' and file name for saving','Plot are save as .pdf, and tabke as .csv'),
       if (failed)
@@ -402,40 +529,12 @@ server <- function(session,input, output) {
       )
     )
   }
-  save_mean_diff_plot_modal <- function(failed=FALSE){
-    modalDialog(
-      textInput("folder_to_save_mean_diff_plot","Saving folder (ending with / or \ "),
-      
-      textInput("file_name_mean_diff_plot", label= "File name (without .pdf)"),
-      
-      span('Please select a directory,',' and file name for saving'),
-      if (failed)
-        div(tags$b("Please enter all required information")),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("execute_mean_diff_plot_saving","Save plot as pdf"),
-      )
-    )
-  }
+
   
-  observeEvent(input$save_mean_diff_plot,{
-    showModal(save_mean_diff_plot_modal())
-  })
-  mean_diff_plot_vals <- reactiveValues(
-    saving_path=NULL,
-    saving_name=NULL
-  )
-  observeEvent(input$execute_mean_diff_plot_saving,{
-    if (input$folder_to_save_mean_diff_plot != "" && input$file_name_mean_diff_plot != ""){
-      mean_diff_plot_vals$saving_path <- input$folder_to_save_mean_diff_plot
-      mean_diff_plot_vals$saving_name <- input$file_name_mean_diff_plot
-      
-      removeModal()
-    }
-    else{
-      showModal(save_mean_diff_plot_modal(failed = TRUE))
-    }
-  })
+  
+  
+  
+  
   output$mean_difference_over_time <- renderPlot({
     threeDarray=myenv$threeDarray
     myfactor=input$multiple_file_factor
@@ -510,36 +609,7 @@ server <- function(session,input, output) {
     bxp
     
   })
-  output$function_to_save_mean_diff_plot <- renderText({
-    req(mean_diff_plot_vals$saving_path,mean_diff_plot_vals$saving_name)
-    my_plot=myenv$mean_diff_plot
-    ggsave(filename = paste0(mean_diff_plot_vals$saving_name,".pdf"),plot=my_plot,path=mean_diff_plot_vals$saving_path,device = cairo_pdf,width=200,height = 100,units="mm")
-    print(paste0(mean_diff_plot_vals$saving_name,".pdf ","succesfully saved!"))
-    
-  })
-  
-  
-  
-  output$function_to_save_t_test_table <- renderText({
-    req(t_test_table_vals$saving_path,t_test_table_vals$saving_name)
-    my_t_test_table=myenv$my_t_test_table
-    write.csv(my_t_test_table,file=paste0(t_test_table_vals$saving_path,t_test_table_vals$saving_name,".csv"),row.names = TRUE)
-    print(paste0(t_test_table_vals$saving_name,".csv"," successfully saved!"))
-  })
-  observeEvent(input$execute_t_test_table_saving,{
-    
-    if (input$folder_to_save_t_test_table != "" && input$file_name_t_test_table != "" ){
-      
-      t_test_table_vals$saving_path <- input$folder_to_save_t_test_table
-      t_test_table_vals$saving_name <- input$file_name_t_test_table
-      
-      removeModal()
-      
-    }
-    else{
-      showModal(save_t_test_table(failed=TRUE))
-    }
-  })
+
   output$t_test <- renderTable({
     threeDarray=myenv$threeDarray
     myfactor=input$multiple_file_factor
@@ -661,57 +731,6 @@ server <- function(session,input, output) {
     myplot
   })
   
-  
-  time_plot_saving_vals <- reactiveValues(
-    saving_path=NULL,
-    saving_name=NULL
-  )
-  save_time_plot <- function(failed=FALSE){
-    modalDialog(
-      
-      textInput("folder_to_save_time_plot","Saving folder (ending with / or \ "),
-      
-      textInput("file_name_time_plot", label= "File name (without .pdf)"),
-      
-      span('Please select a directory,',' and file name for saving'),
-      if (failed)
-        div(tags$b("Please enter all required information")),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("execute_time_plot_saving","Save plot as pdf"),
-      )
-    )
-  }
-  
-  
-  observeEvent(input$time_plot_saving,{
-    
-    showModal(save_time_plot())
-  })
-  observeEvent(input$execute_time_plot_saving,{
-    
-    if (input$folder_to_save_time_plot != "" && input$file_name_time_plot != "" ){
-      
-      time_plot_saving_vals$saving_path <- input$folder_to_save_time_plot
-      time_plot_saving_vals$saving_name <- input$file_name_time_plot
-      
-      removeModal()
-      
-    }
-    else{
-      showModal(save_time_plot(failed=TRUE))
-    }
-  })
-  
-  output$save_time_plot <- renderText({
-    
-    req(time_plot_saving_vals$saving_path,time_plot_saving_vals$saving_name)
-    
-    ggsave(filename = paste0(time_plot_saving_vals$saving_name,".pdf"),plot=myenv$plot_MF,path=time_plot_saving_vals$saving_path,device = cairo_pdf,width=200,height = 100,units="mm")
-    
-    print(paste0(time_plot_saving_vals$saving_name,".pdf ","succesfully saved!"))
-  })
-  
   output$Hypothesis <- renderTable( {
     #only begin when the full data table is created
     #req(input$myfactor,myenv$full_dataset,input$nbfactors)
@@ -722,7 +741,7 @@ server <- function(session,input, output) {
     current_time_dataset=file_list[[input$Which_time_file]]
     myenv$current_time_dataset=current_time_dataset
     #Perform the test to know which parametric test has to be performed for each variable
-    View(current_time_dataset)
+    
     Hypothesis_table=parametric_test(current_time_dataset,nbfactors,myfactor)
     myenv$Hypothesis_table=Hypothesis_table
     
@@ -761,7 +780,7 @@ server <- function(session,input, output) {
     req(input$multiple_file_factor,input$nbfactors,input$Variabletoshow)
     file_list=myenv$file_list
     current_time_dataset=file_list[[input$Which_time_file]]
-    View(current_time_dataset)
+    
     variable_table=count_samples(current_time_dataset,nbfactor=input$nbfactors,myfactor=input$multiple_file_factor,nbvariable = myenv$nbvariable)[input$Variabletoshow]
     
     data.frame(variable_table)
@@ -841,160 +860,7 @@ server <- function(session,input, output) {
     #Display an interactive plot
     variable_plotly
   })
-  
-  observeEvent(input$save_variable_plot,{
-    
-    showModal(save_variable_plot())
-  })
-  
-  
-  variable_plot_saving_vals <- reactiveValues(
-    saving_path=NULL,
-    saving_name=NULL
-  )
-  save_variable_plot <- function(failed=FALSE){
-    modalDialog(
-      textInput("folder_to_save_var_plot","Saving folder (ending with / or \ "),
-      textInput("file_name_var", label= "File name (without .pdf)"),
-      
-      span('Please select a directory and file name for saving'),
-      if (failed)
-        div(tags$b("Please enter all required information")),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("execute_variable_plot_saving","Save plot as pdf")
-      )
-    )
-  }
-  observeEvent(input$execute_variable_plot_saving,{
-    if (input$folder_to_save_var_plot != "" && input$file_name_var != "" ){
-      
-      variable_plot_saving_vals$saving_path <- input$folder_to_save_var_plot
-      variable_plot_saving_vals$saving_name <- input$file_name_var
-      removeModal()
-    }
-    else{
-      showModal(save_variable_plot(failed=TRUE))
-    }
-  })
-  
-  output$save_var_plot <- renderText({
-    req(variable_plot_saving_vals$saving_path,
-        variable_plot_saving_vals$saving_name,
-        myenv$Hypothesis_table,
-        input$multiple_file_factor,
-        myenv$current_time_dataset,
-        input$Variabletoshow
-    )
-    saving_path=variable_plot_saving_vals$saving_path
-    file_name=variable_plot_saving_vals$saving_name
-    
-    saveallfigures(Hypothesis_table = myenv$Hypothesis_table, full_dataset = myenv$current_time_dataset, saving_path=saving_path ,file_name = file_name, nbfactors = nbfactors,myfactor = input$multiple_file_factor,variable_to_save=input$Variabletoshow)
-    print(paste0(variable_plot_saving_vals$saving_name,".pdf succesfully saved!"))
-  })
- 
-  
-  
-  observeEvent(input$save_stat_table,{
-    
-    showModal(save_stat_table())
-  })
-  
-  stat_table_saving_vals <- reactiveValues(
-    saving_path=NULL,
-    saving_name=NULL
-  )
-  save_stat_table <- function(failed=FALSE){
-    modalDialog(
-      textInput("folder_to_save_stat_table","Saving folder (ending with / or \ "),
-      textInput("file_name_stat_table", label= "File name (without _mean/_sd.csv)"),
-      
-      span('Please select a directory and file name for saving'),
-      if (failed)
-        div(tags$b("Please enter all required information")),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("execute_stat_table_saving","Save table")
-      )
-    )
-  }
-  observeEvent(input$execute_stat_table_saving,{
-    if (input$folder_to_save_stat_table != "" && input$file_name_stat_table != "" ){
-      
-      stat_table_saving_vals$saving_path <- input$folder_to_save_stat_table
-      stat_table_saving_vals$saving_name <- input$file_name_stat_table
-      removeModal()
-    }
-    else{
-      showModal(save_stat_table(failed=TRUE))
-    }
-  })
-  
-  output$dwlstat_table<- renderText({
-    #Only begin when the user have entered the file name and pushed the button
-    req(stat_table_saving_vals$saving_path,stat_table_saving_vals$saving_name)
-    
-    stat_name=stat_table_saving_vals$saving_name
-    
-    
-    mean_table=myenv$mean_table
-    sd_table=myenv$sd_table
-    
-    
-    
-      write.csv(mean_table,file=paste0(stat_table_saving_vals$saving_path,stat_name,"_mean.csv"),row.names = TRUE)
-      write.csv(sd_table,file=paste0(stat_table_saving_vals$saving_path,stat_name,"_sd.csv"),row.names = TRUE)
-      print(paste0("Stats tables succesfully saved"))
-  })
-  
-  
-  
-  observeEvent(input$save_hypo_table,{
-    
-    showModal(save_hypo_table())
-  })
-  hypo_table_saving_vals <- reactiveValues(
-    saving_path=NULL,
-    saving_name=NULL
-  )
-  save_hypo_table <- function(failed=FALSE){
-    modalDialog(
-      textInput("folder_to_save_hypo_table","Saving folder (ending with / or \ "),
-      textInput("file_name_hypo_table", label= "File name (without .csv)"),
-      
-      span('Please select a directory and file name for saving'),
-      if (failed)
-        div(tags$b("Please enter all required information")),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("execute_hypo_table_saving","Save table")
-      )
-    )
-  }
-  observeEvent(input$execute_hypo_table_saving,{
-    if (input$folder_to_save_hypo_table != "" && input$file_name_hypo_table != "" ){
-      
-      hypo_table_saving_vals$saving_path <- input$folder_to_save_hypo_table
-      hypo_table_saving_vals$saving_name <- input$file_name_hypo_table
-      removeModal()
-    }
-    else{
-      showModal(save_hypo_table(failed=TRUE))
-    }
-  })
-  
-  output$dwlhypo_table<- renderText({
-    #Only begin when the user have entered the file name and pushed the button
-    req(hypo_table_saving_vals$saving_path,hypo_table_saving_vals$saving_name)
-    
-    hypo_name=hypo_table_saving_vals$saving_name
-    
-    Hypothesis_table=myenv$Hypothesis_table
-    
-    write.csv(Hypothesis_table,file=paste0(hypo_table_saving_vals$saving_path,hypo_name,".csv"),row.names = TRUE)
-   
-    print(paste0("Hypothesis tables succesfully saved"))
-  })
+
   
   
   parameters_ggplot <- reactiveValues(
@@ -1066,93 +932,6 @@ server <- function(session,input, output) {
   })
   
   
-  
-  save_mean_overtime_table_vals<- reactiveValues(
-    saving_path=NULL,
-    saving_name=NULL
-  )
-  observeEvent(input$save_mean_overtime_table,{
-    
-    showModal(save_mean_overtime_table())
-  })
-  observeEvent(input$execute_mean_overtime_table_saving,{
-    if (input$folder_to_save_mean_overtime_table != "" && input$file_name_mean_overtime_table != "" ){
-      
-      save_mean_overtime_table_vals$saving_path <- input$folder_to_save_mean_overtime_table
-      save_mean_overtime_table_vals$saving_name <- input$file_name_mean_overtime_table
-      removeModal()
-    }
-    else{
-      showModal(save_mean_overtime_table(failed=TRUE))
-    }
-  })
-  save_mean_overtime_table <- function(failed=FALSE){
-    modalDialog(
-      textInput("folder_to_save_mean_overtime_table","Saving folder (ending with / or \ "),
-      textInput("file_name_mean_overtime_table", label= "File name (without .csv)"),
-      
-      span('Please select a directory and file name for saving'),
-      if (failed)
-        div(tags$b("Please enter all required information")),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("execute_mean_overtime_table_saving","Save table")
-      )
-    )
-  }
-  
-  output$dwlmean_overtime_table<- renderText({
-    #Only begin when the user have entered the file name and pushed the button
-    req(save_mean_overtime_table_vals$saving_path,save_mean_overtime_table_vals$saving_name)
-    overtime_mean_table=myenv$overtime_mean_table
-    stat_name=save_mean_overtime_table_vals$saving_name
-    write.csv(overtime_mean_table,file=paste0(save_mean_overtime_table_vals$saving_path,stat_name,".csv"),row.names = TRUE,col.names = TRUE)
-    print(paste0("Overtime mean table succesfully saved"))
-  })
-  
-  
-  save_sd_overtime_table_vals<- reactiveValues(
-    saving_path=NULL,
-    saving_name=NULL
-  )
-  observeEvent(input$save_sd_overtime_table,{
-    
-    showModal(save_sd_overtime_table())
-  })
-  
-  observeEvent(input$execute_sd_overtime_table_saving,{
-    if (input$folder_to_save_sd_overtime_table != "" && input$file_name_sd_overtime_table != "" ){
-      
-      save_sd_overtime_table_vals$saving_path <- input$folder_to_save_sd_overtime_table
-      save_sd_overtime_table_vals$saving_name <- input$file_name_sd_overtime_table
-      removeModal()
-    }
-    else{
-      showModal(save_sd_overtime_table(failed=TRUE))
-    }
-  })
-  save_sd_overtime_table <- function(failed=FALSE){
-    modalDialog(
-      textInput("folder_to_save_sd_overtime_table","Saving folder (ending with / or \ "),
-      textInput("file_name_sd_overtime_table", label= "File name (without .csv)"),
-      
-      span('Please select a directory and file name for saving'),
-      if (failed)
-        div(tags$b("Please enter all required information")),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("execute_sd_overtime_table_saving","Save table")
-      )
-    )
-  }
-  
-  output$dwlsd_overtime_table<- renderText({
-    #Only begin when the user have entered the file name and pushed the button
-    req(save_sd_overtime_table_vals$saving_path,save_sd_overtime_table_vals$saving_name)
-    overtime_sd_table=myenv$overtime_sd_table
-    stat_name=save_sd_overtime_table_vals$saving_name
-    write.csv(overtime_sd_table,file=paste0(save_sd_overtime_table_vals$saving_path,stat_name,".csv"),row.names = TRUE,col.names = TRUE)
-    print(paste0("Overtime sd table succesfully saved"))
-  })
+
 }
 shinyApp(ui, server)
