@@ -1,5 +1,5 @@
 library(shiny)
-required_packages=c("Cairo","plyr","stringr","abind","dplyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
+required_packages=c("Cairo","Skillings.Mack","plyr","stringr","abind","dplyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves','shinyWidgets')
 install.packages(setdiff(required_packages,rownames(installed.packages())))
 print ("All required packages installed")
 for (package_name in required_packages){
@@ -16,13 +16,14 @@ ui <- fluidPage(
     tabPanel("Files",
       sidebarLayout(
        sidebarPanel(
+        checkboxInput("usual_files","Automatic file upload"),
         fileInput("Source_functions","Choose the source function file"),
         fileInput("Pop_class_file","Choose Population Class file"),
         
         numericInput("nbfactors","How many possible factors are they?",2),
         
        
-                        
+         
          checkboxInput("isfive",'5ms'),
          checkboxInput("isten",'10ms'),
          checkboxInput("istwentyfive",'25ms'),
@@ -59,14 +60,24 @@ ui <- fluidPage(
                  ),
                  mainPanel(tabsetPanel(
                    tabPanel(title = "Over Time",
-                            plotlyOutput("time_evol"),
-                            actionButton("update_parameters","Modify plot parameters"),actionButton("time_plot_saving","Save plot"),
-                            textOutput("t_test_name"),
-                            tableOutput("t_test"),
-                            actionButton("save_t_test_table","Save t-test table"),
-                            textOutput("function_to_save_t_test_table"),
-                            tableOutput("overtime_stat_mean"),actionButton("save_mean_overtime_table","Save Mean Table"),textOutput("dwlmean_overtime_table"),
-                            tableOutput("overtime_stat_sd"),actionButton("save_sd_overtime_table","Save SD Table"),textOutput("dwlsd_overtime_table")
+                            tabsetPanel(
+                              tabPanel(title="General stats",
+                                       plotlyOutput("time_evol"),
+                                       actionButton("update_parameters","Modify plot parameters"),actionButton("time_plot_saving","Save plot"),
+                                       textOutput("t_test_name"),
+                                       tableOutput("t_test"),
+                                       actionButton("save_t_test_table","Save t-test table"),
+                                       textOutput("function_to_save_t_test_table"),
+                                       tableOutput("overtime_stat_mean"),actionButton("save_mean_overtime_table","Save Mean Table"),textOutput("dwlmean_overtime_table"),
+                                       tableOutput("overtime_stat_sd"),actionButton("save_sd_overtime_table","Save SD Table"),textOutput("dwlsd_overtime_table")
+                              ),
+                              tabPanel(title="Time differences",
+                                       plotOutput("mean_difference_over_time"),
+                                       actionButton("save_mean_diff_plot","Save plot"),
+                                       textOutput("function_to_save_mean_diff_plot"))
+                            )
+                            
+                            
                             ),
                    
                    tabPanel(title = "Single Time Point",
@@ -127,6 +138,57 @@ server <- function(session,input, output) {
   
   output$multiplefiles <- renderText({
     req(input$proceed_to_multiple_analysis)
+    if (input$usual_files == TRUE){
+      #select all files directly
+      populationclass=read.csv("/Users/julienballbe/Documents/Script/Data_Files/Population_Classes.csv",header=T)
+      source(file = "/Users/julienballbe/My_Work/Data_Analysis/Source_functions.R")
+      FR_5ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_5ms.csv",header=T)
+      FR_5ms=create_fulldataset(FR_5ms,nbfactors=2,population_class = populationclass)$full_dataset
+      
+      
+      FR_10ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_10ms.csv",header=T)
+      FR_10ms=create_fulldataset(FR_10ms,nbfactors=2,population_class = populationclass)$full_dataset
+      
+      
+      FR_25ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_25ms.csv",header=T)
+      FR_25ms=create_fulldataset(FR_25ms,nbfactors=2,population_class = populationclass)$full_dataset
+      
+      FR_50ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_50ms.csv",header=T)
+      FR_50ms=create_fulldataset(FR_50ms,nbfactors=2,population_class = populationclass)$full_dataset
+      
+      
+      FR_100ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_100ms.csv",header=T)
+      FR_100ms=create_fulldataset(FR_100ms,nbfactors=2,population_class = populationclass)$full_dataset
+      
+      
+      FR_250ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_250ms.csv",header=T)
+      FR_250ms=create_fulldataset(FR_250ms,nbfactors=2,population_class = populationclass)$full_dataset
+      
+      
+      FR_500ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_500ms.csv",header=T)
+      results_from_createfulldataset=create_fulldataset(FR_500ms,nbfactors=2,population_class = populationclass)
+      
+      FR_500ms=create_fulldataset(FR_500ms,nbfactors=2,population_class = populationclass)$full_dataset
+    
+      factor_list=results_from_createfulldataset$factor_list
+      variable_list=results_from_createfulldataset$variable_list
+      file_list=list("FR_5ms"=FR_5ms,
+                     "FR_10ms"=FR_10ms,
+                     "FR_25ms"=FR_25ms,
+                     "FR_50ms"=FR_50ms,
+                     "FR_100ms"=FR_100ms,
+                     "FR_250ms"=FR_250ms,
+                     "FR_500ms"=FR_500ms)
+      time_list=c("5ms","10ms","25ms","50ms","100ms","250ms","500ms")
+      Species_MF=results_from_createfulldataset$Species
+      FT_MF=results_from_createfulldataset$Firing_Type
+      unit_dict=results_from_createfulldataset$unit_dict
+      myenv$nbvariable=length(variable_list)
+    }
+    if (input$usual_files == FALSE){
+      
+    
+    
     source(file=input$Source_functions$datapath)
     time_list=c()
     population_class=read.csv(file=input$Pop_class_file$datapath,header=T)
@@ -287,6 +349,8 @@ server <- function(session,input, output) {
       file_list=append(file_list,current_list)
     }
     
+    }
+    
     threeDarray=abind(file_list,along=3)
     factor_columns=data.frame(cbind(data.frame(Species_MF),data.frame(FT_MF)))
     colnames(factor_columns)=c("Species","Firing_Type")
@@ -327,17 +391,133 @@ server <- function(session,input, output) {
       
       textInput("folder_to_save_t_test_table","Saving folder (ending with / or \ "),
       
-      textInput("file_name_t_test_table", label= "File name (without .csv)"),
+      textInput("file_name_t_test_table", label= "File name (without .csv or .pdf)"),
+      
+      span('Please select a directory,',' and file name for saving','Plot are save as .pdf, and tabke as .csv'),
+      if (failed)
+        div(tags$b("Please enter all required information")),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("execute_saving","Save file"),
+      )
+    )
+  }
+  save_mean_diff_plot_modal <- function(failed=FALSE){
+    modalDialog(
+      textInput("folder_to_save_mean_diff_plot","Saving folder (ending with / or \ "),
+      
+      textInput("file_name_mean_diff_plot", label= "File name (without .pdf)"),
       
       span('Please select a directory,',' and file name for saving'),
       if (failed)
         div(tags$b("Please enter all required information")),
       footer = tagList(
         modalButton("Cancel"),
-        actionButton("execute_t_test_table_saving","Save table as csv"),
+        actionButton("execute_mean_diff_plot_saving","Save plot as pdf"),
       )
     )
   }
+  
+  observeEvent(input$save_mean_diff_plot,{
+    showModal(save_mean_diff_plot_modal())
+  })
+  mean_diff_plot_vals <- reactiveValues(
+    saving_path=NULL,
+    saving_name=NULL
+  )
+  observeEvent(input$execute_mean_diff_plot_saving,{
+    if (input$folder_to_save_mean_diff_plot != "" && input$file_name_mean_diff_plot != ""){
+      mean_diff_plot_vals$saving_path <- input$folder_to_save_mean_diff_plot
+      mean_diff_plot_vals$saving_name <- input$file_name_mean_diff_plot
+      
+      removeModal()
+    }
+    else{
+      showModal(save_mean_diff_plot_modal(failed = TRUE))
+    }
+  })
+  output$mean_difference_over_time <- renderPlot({
+    threeDarray=myenv$threeDarray
+    myfactor=input$multiple_file_factor
+    unit_dict=myenv$unit_dict
+    
+    my_time_list=names(myenv$file_list)
+    current_data=threeDarray[,as.character(input$Variabletoshow),]
+    current_data=data.frame(current_data)
+    for (elt in seq(ncol(current_data))){
+      current_data[,elt]=as.numeric(current_data[,elt])
+    }
+    id=c(seq(nrow(current_data)))
+    id=data.frame(id)
+    colnames(id)="id"
+    current_data=data.frame(cbind(data.frame(id),data.frame(current_data)))
+    
+    my_current_data <- current_data %>%
+      gather(key="Time",value=Variable,FR_5ms,FR_10ms,FR_25ms,FR_50ms,FR_100ms,FR_250ms,FR_500ms)%>%
+      convert_as_factor(id)
+    
+    my_current_data$Time <- factor(my_current_data$Time,levels=c("FR_5ms","FR_10ms","FR_25ms","FR_50ms","FR_100ms","FR_250ms","FR_500ms"))
+    my_current_data[,"Variable"]=as.numeric(my_current_data[,"Variable"])
+    outlier=my_current_data %>% 
+      group_by(Time) %>%
+      identify_outliers(Variable)
+    
+    extreme_outlier=outlier[which(outlier[,"is.extreme"]==TRUE),"Variable"]
+    for (elt in seq(nrow(my_current_data))){
+      if (my_current_data[elt,"Variable"] %in% extreme_outlier$Variable){
+        my_current_data[elt,"Variable"] = NA
+      }
+    }
+    
+    is_normally_distributed=my_current_data %>%
+      group_by(Time) %>%
+      shapiro_test(Variable)
+   
+    my_current_data %>%
+      group_by(Time)
+    for (elt in nrow(is_normally_distributed)){
+      if (is_normally_distributed[elt,"p"] < 0.05){
+        all.normal=FALSE
+      }
+      else{
+        all.normal=TRUE
+      }
+        
+    }
+    bxp=ggboxplot(my_current_data,x='Time', y="Variable",add='jitter',size=0.3)
+    
+    if (all.normal == TRUE){
+      my.res = anova_test(data=my_current_data,dv="Variable",wid=id,within=Time)
+      pwc=pairwise_t_test(my_current_data, formula = Variable ~ Time,p.adjust.method = "bonferroni")
+    }
+    
+    if (all.normal ==FALSE){
+      
+      pwc=wilcox_test(data=my_current_data, formula=Variable ~ Time, paired = TRUE, p.adjust.method = "bonferroni")
+    }
+    
+   
+    
+    pwc=add_xy_position(pwc,x="Time")
+    
+    bxp=bxp + 
+      stat_pvalue_manual(pwc,hide.ns = TRUE,step.increase = 0.06) +
+      labs(
+           caption = get_pwc_label(pwc),
+           y=as.character(unit_dict[input$Variabletoshow]),x='Time(ms)')
+    
+    myenv$mean_diff_plot=bxp
+    bxp
+    
+  })
+  output$function_to_save_mean_diff_plot <- renderText({
+    req(mean_diff_plot_vals$saving_path,mean_diff_plot_vals$saving_name)
+    my_plot=myenv$mean_diff_plot
+    ggsave(filename = paste0(mean_diff_plot_vals$saving_name,".pdf"),plot=my_plot,path=mean_diff_plot_vals$saving_path,device = cairo_pdf,width=200,height = 100,units="mm")
+    print(paste0(mean_diff_plot_vals$saving_name,".pdf ","succesfully saved!"))
+    
+  })
+  
   
   
   output$function_to_save_t_test_table <- renderText({
@@ -542,6 +722,7 @@ server <- function(session,input, output) {
     current_time_dataset=file_list[[input$Which_time_file]]
     myenv$current_time_dataset=current_time_dataset
     #Perform the test to know which parametric test has to be performed for each variable
+    View(current_time_dataset)
     Hypothesis_table=parametric_test(current_time_dataset,nbfactors,myfactor)
     myenv$Hypothesis_table=Hypothesis_table
     
@@ -580,12 +761,13 @@ server <- function(session,input, output) {
     req(input$multiple_file_factor,input$nbfactors,input$Variabletoshow)
     file_list=myenv$file_list
     current_time_dataset=file_list[[input$Which_time_file]]
+    View(current_time_dataset)
     variable_table=count_samples(current_time_dataset,nbfactor=input$nbfactors,myfactor=input$multiple_file_factor,nbvariable = myenv$nbvariable)[input$Variabletoshow]
     
     data.frame(variable_table)
   },rownames=TRUE)
   
-  output$plot <- renderPlot({
+  output$plot <- renderPlot({ 
     #Only begin when the parametric tests have been performed, or when the factor of analysis is changed
     req(input$multiple_file_factor,input$Which_time_file,input$nbfactors,myenv$Hypothesis_table)
     myfactor=input$multiple_file_factor
@@ -608,7 +790,7 @@ server <- function(session,input, output) {
     else{
       variable_test=anova_test(current_time_dataset,formula = formula)
     }
-    
+                
     #If the test result is significant, perform a pair-wise comparison to know which means are different and create a plot
     if (variable_test$p<0.05){
       current_dunn_test=dunn_test(current_time_dataset,formula=formula,p.adjust.method = "bonferroni")

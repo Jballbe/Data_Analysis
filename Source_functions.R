@@ -413,7 +413,7 @@ overtime_basic_stat <- function(dataset,myfactor,time_list){
   
   for(current_time in time_list){
     for (current_level in mylevels){
-      print(mean(dataset[which(dataset[,myfactor]==current_level),current_time]))
+     
       mean_table[current_time,current_level] <- mean(dataset[which(dataset[,myfactor]==current_level),current_time],na.rm=TRUE)
       sd_table[current_time,current_level] <- sd(dataset[which(dataset[,myfactor]==current_level),current_time],na.rm=TRUE)
     }
