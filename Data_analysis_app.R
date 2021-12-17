@@ -435,8 +435,26 @@ server <- function(session,input, output) {
     saving_path=NULL,
     saving_name=NULL,
     saving_file_kind=NULL,
+    saving_y_max=NULL,
+    saving_y_min=NULL,
+    is.custom_y_range=FALSE,
     proceed=FALSE
   )
+  observeEvent(input$execute_saving,{
+    if (input$folder_to_save != "" && input$file_name_save != ""){
+      saving_vals$saving_path <- input$folder_to_save
+      saving_vals$saving_name <- input$file_name_save
+      saving_vals$saving_file_kind <- input$Kind_of_file
+      saving_vals$is.custom_y_range <- input$is.custom_y_range
+      saving_vals$saving_y_max <- input$saving_y_max
+      saving_vals$saving_y_min <- input$saving_y_min
+      saving_vals$proceed = TRUE
+      removeModal()
+    }
+    else{
+      showModal(save_modal(failed = TRUE))
+    }
+  })
   observeEvent(input$save_t_test_table,{
     myenv$table_to_save=myenv$my_t_test_table
     myenv$table_or_plot="table"
@@ -452,18 +470,7 @@ server <- function(session,input, output) {
     myenv$table_or_plot="plot"
     showModal(save_modal())
   })
-  observeEvent(input$execute_saving,{
-    if (input$folder_to_save != "" && input$file_name_save != ""){
-      saving_vals$saving_path <- input$folder_to_save
-      saving_vals$saving_name <- input$file_name_save
-      saving_vals$saving_file_kind <- input$Kind_of_file
-      saving_vals$proceed = TRUE
-      removeModal()
-    }
-    else{
-      showModal(save_modal(failed = TRUE))
-    }
-  })
+
   observeEvent(input$save_stat_table,{
     myenv$is.stat.table=TRUE
     myenv$table_or_plot="table"
@@ -504,8 +511,9 @@ server <- function(session,input, output) {
     }
     
     if(myenv$table_or_plot=="plot"){
-      
-      ggsave(filename = paste0(saving_vals$saving_name,".pdf"),plot=myenv$plot_to_save,path=saving_vals$saving_path,device = cairo_pdf,width=200,height = 100,units="mm")
+      plot_to_save=myenv$plot_to_save
+      plot_to_save=plot_to_save+ylim(saving_vals$saving_y_min,saving_vals$saving_y_max)
+      ggsave(filename = paste0(saving_vals$saving_name,".pdf"),plot=plot_to_save,path=saving_vals$saving_path,device = cairo_pdf,width=200,height = 100,units="mm")
       print(paste0(saving_vals$saving_name,".pdf ","succesfully saved!"))
       saving_vals$proceed=FALSE
       myenv$plot_to_save=NULL
@@ -520,6 +528,11 @@ server <- function(session,input, output) {
       
       textInput("file_name_save", label= "File name (without .csv or .pdf)"),
       
+      span('In case of plot saving'),
+      checkboxInput("is.custom_y_range","Do you want custom y range?"),
+      
+      numericInput("saving_y_max","Select maximum y axis value",1),
+      numericInput("saving_y_min","Select minimum y axis value",0),
       span('Please select a directory,',' and file name for saving','Plot are save as .pdf, and tabke as .csv'),
       if (failed)
         div(tags$b("Please enter all required information")),
@@ -720,6 +733,10 @@ server <- function(session,input, output) {
                               size=parameters_ggplot$size.geomlinesd,
                               color="black")
     }
+    if (parameters_ggplot$is.smooth==TRUE){
+      myplot=myplot+geom_smooth(method='loess',size=0.4,level=parameters_ggplot$smooth.interval)
+      
+    }
     myplot=myplot+
       labs(y=as.character(unit_dict[variable_to_analyse]),x='Time(ms)')
     if (parameters_ggplot$is.logscale==TRUE){
@@ -865,6 +882,7 @@ server <- function(session,input, output) {
   
   parameters_ggplot <- reactiveValues(
     is.logscale=FALSE,
+    smooth.interval=0.95,
     alpha.geompoint=0.3,
     size.geompoint=1,
     is.perTimeonly=FALSE,
@@ -877,6 +895,7 @@ server <- function(session,input, output) {
     is.mean=FALSE,
     size.geomlinemean=1,
     alpha.geomlinemean=1,
+    is.smooth=FALSE,
     line_type.mean="dashed"
   )
   
@@ -887,6 +906,8 @@ server <- function(session,input, output) {
     modalDialog(
       checkboxInput("is.logscale","Display x axis in log scale",value = parameters_ggplot$is.logscale),
       checkboxInput('is.perTimeonly',"Group only per time",value=parameters_ggplot$is.perTimeonly),
+      checkboxInput("is.smooth","Display confidence bnads",value=parameters_ggplot$is.smooth),
+      sliderInput("smooth.interval","Confidence interval", min=0,max=1,value=parameters_ggplot$smooth.interval,step=0.01),
       sliderInput("size.geompoint","Point size",min=0,max=1,value=parameters_ggplot$size.geompoint,step=0.05),
       sliderInput("alpha.geompoint","Point opacity",min=0,max=1,step=0.05,value=parameters_ggplot$alpha.geompoint),
       
@@ -914,6 +935,8 @@ server <- function(session,input, output) {
   
   observeEvent(input$execute_update_of_ggplot_param,{
     parameters_ggplot$is.logscale <- input$is.logscale
+    parameters_ggplot$is.smooth <- input$is.smooth
+    parameters_ggplot$smooth.interval <- input$smooth.interval
     parameters_ggplot$is_overall_sd <- input$is_overall_sd
     parameters_ggplot$is_overall_mean <- input$is_overall_mean
     parameters_ggplot$size.geompoint <- input$size.geompoint
