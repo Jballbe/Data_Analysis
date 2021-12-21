@@ -57,8 +57,17 @@ ui <- fluidPage(
                               textOutput("function_to_save"),
                               selectInput("multiple_file_factor","Factor of analysis",choices=""),
                               selectInput("Variabletoshow","Select Variable to display",choices=""),
-                              selectInput("Which_time_file","Select time to show",choices="")
+                              selectInput("Which_time_file","Select time to show",choices=""),
                               
+                                               
+                                              numericInput('which.degree','degree of the polynomial to fit',value=1,step=1),
+                                               checkboxInput("is.lm","Linear regression"),
+                                              
+                                               checkboxInput('is.loess','Locally weighted regression'),
+                                               
+                                               checkboxInput('is.confidencebands',"Show confidence bands"),
+                                               
+                                    
                               
                  ),
                  mainPanel(tabsetPanel(
@@ -733,9 +742,34 @@ server <- function(session,input, output) {
                               size=parameters_ggplot$size.geomlinesd,
                               color="black")
     }
-    if (parameters_ggplot$is.smooth==TRUE){
-      myplot=myplot+geom_smooth(method='loess',size=0.4,level=parameters_ggplot$smooth.interval)
+    if (parameters_ggplot$is_smooth==TRUE){
+      if(parameters_ggplot$is.perTimeonly ==TRUE){
+       
+        if(input$is.lm==TRUE){
+         
+          myplot=myplot+ geom_smooth(method = "lm", formula = y ~ poly(x,input$which.degree), size = 0.4, se =input$is.confidencebands,level=parameters_ggplot$smooth.interval , aes(color = "Linear Model ^2") )
+            #:stat_regline_equation(label.y = 1000,label.x = 100,formula = y ~ poly(x,input$which.degree),output.type = "latex")+
+          
+        }
+        if(input$is.loess==TRUE){
+          myplot=myplot+ geom_smooth(method = "loess", formula = y ~ x, size = 0.4, se = input$is.confidencebands,level=parameters_ggplot$smooth.interval, aes(color = "LOESS"))
+        }
+      }
       
+    if (parameters_ggplot$is.perTimeonly==FALSE){
+      
+      if(input$is.lm==TRUE){
+        #To facet by group
+        myplot=myplot+ geom_smooth(method = "lm", formula = y ~ poly(x,input$which.degree), size = 0.4, se =input$is.confidencebands,level=parameters_ggplot$smooth.interval , aes(group=.data[[input$multiple_file_factor]],color = .data[[input$multiple_file_factor]]))
+       
+        
+          #stat_cor(formula = y ~ poly(x,input$which.degree),output.type = "latex")
+      }
+      if(input$is.loess==TRUE){
+        myplot=myplot+ geom_smooth(method = "loess", formula = y ~ x, size = 0.4, se = input$is.confidencebands,level=parameters_ggplot$smooth.interval, aes(group=.data[[input$multiple_file_factor]],color = .data[[input$multiple_file_factor]]))
+      }
+    }
+     
     }
     myplot=myplot+
       labs(y=as.character(unit_dict[variable_to_analyse]),x='Time(ms)')
@@ -883,6 +917,7 @@ server <- function(session,input, output) {
   parameters_ggplot <- reactiveValues(
     is.logscale=FALSE,
     smooth.interval=0.95,
+    
     alpha.geompoint=0.3,
     size.geompoint=1,
     is.perTimeonly=FALSE,
@@ -895,7 +930,7 @@ server <- function(session,input, output) {
     is.mean=FALSE,
     size.geomlinemean=1,
     alpha.geomlinemean=1,
-    is.smooth=FALSE,
+    is_smooth=FALSE,
     line_type.mean="dashed"
   )
   
@@ -906,8 +941,9 @@ server <- function(session,input, output) {
     modalDialog(
       checkboxInput("is.logscale","Display x axis in log scale",value = parameters_ggplot$is.logscale),
       checkboxInput('is.perTimeonly',"Group only per time",value=parameters_ggplot$is.perTimeonly),
-      checkboxInput("is.smooth","Display confidence bnads",value=parameters_ggplot$is.smooth),
-      sliderInput("smooth.interval","Confidence interval", min=0,max=1,value=parameters_ggplot$smooth.interval,step=0.01),
+      checkboxInput("is_smooth","Display estimated trend",value=parameters_ggplot$is_smooth),
+      
+      sliderInput("smooth.interval","Confidence interval (0 to 1)", min=0,max=1,value=parameters_ggplot$smooth.interval,step=0.01),
       sliderInput("size.geompoint","Point size",min=0,max=1,value=parameters_ggplot$size.geompoint,step=0.05),
       sliderInput("alpha.geompoint","Point opacity",min=0,max=1,step=0.05,value=parameters_ggplot$alpha.geompoint),
       
@@ -935,7 +971,7 @@ server <- function(session,input, output) {
   
   observeEvent(input$execute_update_of_ggplot_param,{
     parameters_ggplot$is.logscale <- input$is.logscale
-    parameters_ggplot$is.smooth <- input$is.smooth
+    parameters_ggplot$is_smooth <- input$is_smooth
     parameters_ggplot$smooth.interval <- input$smooth.interval
     parameters_ggplot$is_overall_sd <- input$is_overall_sd
     parameters_ggplot$is_overall_mean <- input$is_overall_mean
