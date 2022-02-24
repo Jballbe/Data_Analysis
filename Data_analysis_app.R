@@ -213,6 +213,7 @@ server <- function(session,input, output) {
     if (input$isfive == TRUE){
       nb_of_files=nb_of_files+1
       FR_5ms=read.csv(file = input$fivems$datapath,header=T)
+      
       results_from_createfulldataset=create_fulldataset(data_file=FR_5ms,nbfactors=nbfactors,population_class = population_class)
       FR_5ms=results_from_createfulldataset$full_dataset
       factor_list=results_from_createfulldataset$factor_list
@@ -877,6 +878,7 @@ server <- function(session,input, output) {
       variable_plot=ggboxplot(current_time_dataset,x=myfactor,y=colnames(current_time_dataset[variable]))+
         labs(subtitle=get_test_label(variable_test,detailed =TRUE))
     }
+    variable_plot=variable_plot+theme(axis.text.x = element_text(angle = 90))
     myenv$current_plot=variable_plot
     #Display the plot
     variable_plot

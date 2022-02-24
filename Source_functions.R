@@ -27,16 +27,17 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
   full_dataset=data.frame(merge(population_class,data_file,all=T))
   new_row_names=c(full_dataset[,1])
   full_dataset=full_dataset[,2:(ncol(full_dataset))]
+  
   rownames(full_dataset)=new_row_names
   for (elt in seq((nbfactors+1),ncol(full_dataset))){
     full_dataset[,elt]=as.numeric(full_dataset[,elt])
   }
   #Remove unwanted data
-  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Neuron"),]
-  
-  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Glia"),]
-  
-  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Unspecified"),]
+  # full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Neuron"),]
+  # 
+  # full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Glia"),]
+  # 
+  # full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Unspecified"),]
   
   factor_list=colnames(full_dataset[,1:nbfactors])
   variable_list=colnames(full_dataset[(nbfactors+1):ncol(full_dataset)])
@@ -259,8 +260,9 @@ get_basic_stat <- function(full_dataset, nbfactors, myfactor){
   rownames(sd_stat_table)=c(levels_list)
   for (variable in variable_list){
     
-    current_data=full_dataset[-which(full_dataset[,variable]=="NaN"),]
-    
+    #current_data=full_dataset[-which(full_dataset[,variable]=="NaN"),]
+    current_data=full_dataset
+    print(variable)
     for (level in levels_list){
       
       
