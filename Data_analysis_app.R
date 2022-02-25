@@ -22,15 +22,17 @@ ui <- fluidPage(
         
         numericInput("nbfactors","How many possible factors are they?",2),
         
-       
+        checkboxInput("pertime","Analysis per time"),
+        checkboxInput("perspike","Analysis per spike"),
          
-         checkboxInput("isfive",'5ms'),
-         checkboxInput("isten",'10ms'),
-         checkboxInput("istwentyfive",'25ms'),
-         checkboxInput("isfifty",'50ms'),
-         checkboxInput("ishundred",'100ms'),
-         checkboxInput("istwohundredfifty",'250ms'),
-         checkboxInput("isfivehundred",'500ms'),
+         conditionalPanel("input.pertime==true",checkboxInput("isfive",'5ms')),
+         conditionalPanel("input.pertime==true",checkboxInput("isten",'10ms')),
+         conditionalPanel("input.pertime==true",checkboxInput("istwentyfive",'25ms')),
+         conditionalPanel("input.pertime==true",checkboxInput("isfifty",'50ms')),
+         conditionalPanel("input.pertime==true",checkboxInput("ishundred",'100ms')),
+         conditionalPanel("input.pertime==true",checkboxInput("istwohundredfifty",'250ms')),
+         conditionalPanel("input.pertime==true",checkboxInput("isfivehundred",'500ms')),
+         conditionalPanel("input.pertime==true",checkboxInput("isthousand","1000ms")),
          
          conditionalPanel("input.isfive == true",fileInput("fivems","5ms data file (csv)")),
          conditionalPanel("input.isten == true",fileInput("tenms","10ms data file (csv)")),
@@ -39,8 +41,23 @@ ui <- fluidPage(
          conditionalPanel("input.ishundred == true",fileInput("hundredms","100ms data file (csv)")),
          conditionalPanel("input.istwohundredfifty == true",fileInput("twohundredfiftyms","250ms data file (csv)")),
          conditionalPanel("input.isfivehundred == true",fileInput("fivehundredms","500ms data file (csv)")),
+         conditionalPanel("input.isthousand ==true",fileInput('thousandms','1000ms data file (csv)')),
          
-         
+         conditionalPanel("input.perspike==true",checkboxInput("isfourspikes",'4 spikes')),
+         conditionalPanel("input.perspike==true",checkboxInput("isfivespikes",'5 spikes')),
+         conditionalPanel("input.perspike==true",checkboxInput("issixspikes",'6 spikes')),
+         conditionalPanel("input.perspike==true",checkboxInput("issevenspikes",'7 spikes')),
+         conditionalPanel("input.perspike==true",checkboxInput("iseightspikes",'8 spikes')),
+         conditionalPanel("input.perspike==true",checkboxInput("isninespikes",'9 spikes')),
+         conditionalPanel("input.perspike==true",checkboxInput("istenspikes",'10 spikes')),
+        
+         conditionalPanel("input.isfourspikes == true",fileInput("fourspikes","4 spikes data file (csv)")),
+         conditionalPanel("input.isfivespikes == true",fileInput("fivespikes","5 spikes data file (csv)")),
+         conditionalPanel("input.issixspikes == true",fileInput("sixspikes","6 spikes data file (csv)")),
+         conditionalPanel("input.issevenspikes == true",fileInput("sevenspikes","7 spikes data file (csv)")),
+         conditionalPanel("input.iseightspikes == true",fileInput("eightspikes","8 spikes data file (csv)")),
+         conditionalPanel("input.isninespikes == true",fileInput("ninespikes","9 spikes data file (csv)")),
+         conditionalPanel("input.istenspikes == true",fileInput("tenspikes","10 spikes data file (csv)")),
          actionButton("proceed_to_multiple_analysis","Proceed")
         
         ),
@@ -56,7 +73,7 @@ ui <- fluidPage(
                  sidebarPanel(
                               textOutput("function_to_save"),
                               selectInput("multiple_file_factor","Factor of analysis",choices=""),
-                              selectInput("Variabletoshow","Select Variable to display",choices=""),
+                              selectInput("Variabletoshow","Variable to show",choices=""),
                               selectInput("Which_time_file","Select time to show",choices=""),
                               
                                                
@@ -71,7 +88,7 @@ ui <- fluidPage(
                               
                  ),
                  mainPanel(tabsetPanel(
-                   tabPanel(title = "Over Time",
+                   tabPanel(title = "Over Time/Over Spikes",
                             tabsetPanel(
                               tabPanel(title="General stats",
                                        plotlyOutput("time_evol"),
@@ -92,7 +109,7 @@ ui <- fluidPage(
                             
                             ),
                    
-                   tabPanel(title = "Single Time Point",
+                   tabPanel(title = "Single Time Point/Spike",
                             tabsetPanel(
                               tabPanel(title="Stats",
                                        tableOutput("Hypothesis"),
@@ -180,7 +197,8 @@ server <- function(session,input, output) {
       results_from_createfulldataset=create_fulldataset(FR_500ms,nbfactors=2,population_class = populationclass)
       
       FR_500ms=create_fulldataset(FR_500ms,nbfactors=2,population_class = populationclass)$full_dataset
-    
+      
+     
       factor_list=results_from_createfulldataset$factor_list
       variable_list=results_from_createfulldataset$variable_list
       file_list=list("FR_5ms"=FR_5ms,
@@ -210,6 +228,7 @@ server <- function(session,input, output) {
     nbfactors=input$nbfactors
     isfactor_variable_ok=0
     
+    if (input$pertime ==TRUE){
     if (input$isfive == TRUE){
       nb_of_files=nb_of_files+1
       FR_5ms=read.csv(file = input$fivems$datapath,header=T)
@@ -360,6 +379,178 @@ server <- function(session,input, output) {
       current_list=list("FR_500ms"=FR_500ms)
       file_list=append(file_list,current_list)
     }
+    
+    if (input$isthousand == TRUE){
+      nb_of_files=nb_of_files+1
+      FR_1000ms=read.csv(file = input$thousandms$datapath,header=T)
+      results_from_createfulldataset=create_fulldataset(data_file=FR_1000ms,nbfactors=nbfactors,population_class = population_class)
+      FR_1000ms=results_from_createfulldataset$full_dataset
+      if (isfactor_variable_ok == 0){
+        factor_list=results_from_createfulldataset$factor_list
+        variable_list=results_from_createfulldataset$variable_list
+        myenv$nbvariable=length(variable_list)
+        isfactor_variable_ok=1
+        Species_MF=results_from_createfulldataset$Species
+        FT_MF=results_from_createfulldataset$Firing_Type
+        unit_dict=results_from_createfulldataset$unit_dict
+      }
+      
+      time_list=c(time_list,"1000ms")
+      
+      current_list=list("FR_1000ms"=FR_1000ms)
+      file_list=append(file_list,current_list)
+    }
+    }
+    
+    if (input$perspike==TRUE){
+      
+      
+      if (input$isfourspikes==TRUE){
+        nb_of_files=nb_of_files+1
+        FR_4spikes=read.csv(file = input$fourspikes$datapath,header=T)
+        
+        results_from_createfulldataset=create_fulldataset(data_file=FR_4spikes,nbfactors=nbfactors,population_class = population_class)
+        FR_4spikes=results_from_createfulldataset$full_dataset
+        factor_list=results_from_createfulldataset$factor_list
+        variable_list=results_from_createfulldataset$variable_list
+        myenv$nbvariable=length(variable_list)
+        isfactor_variable_ok=1
+        
+        
+        time_list=c(time_list,"4_spikes")
+        current_list=list("FR_4spikes"=FR_4spikes)
+        file_list=append(file_list,current_list)
+        
+        Species_MF=results_from_createfulldataset$Species
+        FT_MF=results_from_createfulldataset$Firing_Type
+        unit_dict=results_from_createfulldataset$unit_dict
+        
+      }
+      
+      if (input$isfivespikes==TRUE){
+        nb_of_files=nb_of_files+1
+        FR_5spikes=read.csv(file = input$fivespikes$datapath,header=T)
+        results_from_createfulldataset=create_fulldataset(data_file=FR_5spikes,nbfactors=nbfactors,population_class = population_class)
+        FR_5spikes=results_from_createfulldataset$full_dataset
+        if (isfactor_variable_ok == 0){
+          factor_list=results_from_createfulldataset$factor_list
+          variable_list=results_from_createfulldataset$variable_list
+          myenv$nbvariable=length(variable_list)
+          isfactor_variable_ok=1
+          Species_MF=results_from_createfulldataset$Species
+          FT_MF=results_from_createfulldataset$Firing_Type
+          unit_dict=results_from_createfulldataset$unit_dict
+        }
+        
+        time_list=c(time_list,"5_spikes")
+        current_list=list("FR_5spikes"=FR_5spikes)
+        file_list=append(file_list,current_list)
+      }
+      
+      if (input$issixspikes==TRUE){
+        nb_of_files=nb_of_files+1
+        FR_6spikes=read.csv(file = input$sixspikes$datapath,header=T)
+        results_from_createfulldataset=create_fulldataset(data_file=FR_6spikes,nbfactors=nbfactors,population_class = population_class)
+        FR_6spikes=results_from_createfulldataset$full_dataset
+        if (isfactor_variable_ok == 0){
+          factor_list=results_from_createfulldataset$factor_list
+          variable_list=results_from_createfulldataset$variable_list
+          myenv$nbvariable=length(variable_list)
+          isfactor_variable_ok=1
+          Species_MF=results_from_createfulldataset$Species
+          FT_MF=results_from_createfulldataset$Firing_Type
+          unit_dict=results_from_createfulldataset$unit_dict
+        }
+        
+        time_list=c(time_list,"6_spikes")
+        current_list=list("FR_6spikes"=FR_6spikes)
+        file_list=append(file_list,current_list)
+      }
+      
+      if (input$issevenspikes==TRUE){
+        nb_of_files=nb_of_files+1
+        FR_7spikes=read.csv(file = input$sevenspikes$datapath,header=T)
+        results_from_createfulldataset=create_fulldataset(data_file=FR_7spikes,nbfactors=nbfactors,population_class = population_class)
+        FR_7spikes=results_from_createfulldataset$full_dataset
+        if (isfactor_variable_ok == 0){
+          factor_list=results_from_createfulldataset$factor_list
+          variable_list=results_from_createfulldataset$variable_list
+          myenv$nbvariable=length(variable_list)
+          isfactor_variable_ok=1
+          Species_MF=results_from_createfulldataset$Species
+          FT_MF=results_from_createfulldataset$Firing_Type
+          unit_dict=results_from_createfulldataset$unit_dict
+        }
+        
+        time_list=c(time_list,"7_spikes")
+        current_list=list("FR_7spikes"=FR_7spikes)
+        file_list=append(file_list,current_list)
+      }
+      
+      if (input$iseightspikes==TRUE){
+        nb_of_files=nb_of_files+1
+        FR_8spikes=read.csv(file = input$eightspikes$datapath,header=T)
+        results_from_createfulldataset=create_fulldataset(data_file=FR_8spikes,nbfactors=nbfactors,population_class = population_class)
+        FR_8spikes=results_from_createfulldataset$full_dataset
+        if (isfactor_variable_ok == 0){
+          factor_list=results_from_createfulldataset$factor_list
+          variable_list=results_from_createfulldataset$variable_list
+          myenv$nbvariable=length(variable_list)
+          isfactor_variable_ok=1
+          Species_MF=results_from_createfulldataset$Species
+          FT_MF=results_from_createfulldataset$Firing_Type
+          unit_dict=results_from_createfulldataset$unit_dict
+        }
+        
+        time_list=c(time_list,"8_spikes")
+        current_list=list("FR_8spikes"=FR_8spikes)
+        file_list=append(file_list,current_list)
+      }
+      
+      if (input$isninespikes==TRUE){
+        nb_of_files=nb_of_files+1
+        FR_9spikes=read.csv(file = input$ninespikes$datapath,header=T)
+        results_from_createfulldataset=create_fulldataset(data_file=FR_9spikes,nbfactors=nbfactors,population_class = population_class)
+        FR_9spikes=results_from_createfulldataset$full_dataset
+        if (isfactor_variable_ok == 0){
+          factor_list=results_from_createfulldataset$factor_list
+          variable_list=results_from_createfulldataset$variable_list
+          myenv$nbvariable=length(variable_list)
+          isfactor_variable_ok=1
+          Species_MF=results_from_createfulldataset$Species
+          FT_MF=results_from_createfulldataset$Firing_Type
+          unit_dict=results_from_createfulldataset$unit_dict
+        }
+        
+        time_list=c(time_list,"9_spikes")
+        current_list=list("FR_9spikes"=FR_9spikes)
+        file_list=append(file_list,current_list)
+      }
+      
+      if (input$istenspikes==TRUE){
+        nb_of_files=nb_of_files+1
+        FR_10spikes=read.csv(file = input$tenspikes$datapath,header=T)
+        results_from_createfulldataset=create_fulldataset(data_file=FR_10spikes,nbfactors=nbfactors,population_class = population_class)
+        FR_10spikes=results_from_createfulldataset$full_dataset
+        if (isfactor_variable_ok == 0){
+          factor_list=results_from_createfulldataset$factor_list
+          variable_list=results_from_createfulldataset$variable_list
+          myenv$nbvariable=length(variable_list)
+          isfactor_variable_ok=1
+          Species_MF=results_from_createfulldataset$Species
+          FT_MF=results_from_createfulldataset$Firing_Type
+          unit_dict=results_from_createfulldataset$unit_dict
+        }
+        
+        time_list=c(time_list,"10_spikes")
+        current_list=list("FR_10spikes"=FR_10spikes)
+        file_list=append(file_list,current_list)
+      }
+    }
+    
+    
+    
+    
     
     }
     
@@ -564,6 +755,7 @@ server <- function(session,input, output) {
     unit_dict=myenv$unit_dict
     
     my_time_list=names(myenv$file_list)
+    
     current_data=threeDarray[,as.character(input$Variabletoshow),]
     current_data=data.frame(current_data)
     for (elt in seq(ncol(current_data))){
@@ -572,18 +764,20 @@ server <- function(session,input, output) {
     id=c(seq(nrow(current_data)))
     id=data.frame(id)
     colnames(id)="id"
+    
     current_data=data.frame(cbind(data.frame(id),data.frame(current_data)))
+   
     
-    my_current_data <- current_data %>%
-      gather(key="Time",value=Variable,FR_5ms,FR_10ms,FR_25ms,FR_50ms,FR_100ms,FR_250ms,FR_500ms)%>%
-      convert_as_factor(id)
-    
-    my_current_data$Time <- factor(my_current_data$Time,levels=c("FR_5ms","FR_10ms","FR_25ms","FR_50ms","FR_100ms","FR_250ms","FR_500ms"))
+   
+    my_current_data =gather(current_data,key="Time",value="Variable",2:(length(my_time_list)+1))
+    my_current_data$id=as.factor(my_current_data$id)
+    my_current_data$Time <- factor(my_current_data$Time,levels=c(my_time_list))
+   
     my_current_data[,"Variable"]=as.numeric(my_current_data[,"Variable"])
     outlier=my_current_data %>% 
       group_by(Time) %>%
       identify_outliers(Variable)
-    
+   
     extreme_outlier=outlier[which(outlier[,"is.extreme"]==TRUE),"Variable"]
     for (elt in seq(nrow(my_current_data))){
       if (my_current_data[elt,"Variable"] %in% extreme_outlier$Variable){
@@ -678,14 +872,17 @@ server <- function(session,input, output) {
     req(input$proceed_to_multiple_analysis)
     variable_list=myenv$variable_list
     factor_list=myenv$factor_list
+    
     time_list_MF=myenv$time_list_MF
     threeDarray=myenv$threeDarray
     variable=dimnames(threeDarray)[[2]]
     dimnames(threeDarray)[[3]]=time_list_MF
+    
     updateSliderTextInput(session,"whichtime","whichtime",choices=time_list_MF)
     current_data=threeDarray[,as.character(input$Variabletoshow),]
     factor_columns=myenv$factor_columns
     current_data=cbind(factor_columns,current_data)
+    print("lolo")
     if (input$multiple_file_factor == "Species"){
       factor_col=myenv$Species
     }
@@ -696,6 +893,7 @@ server <- function(session,input, output) {
     variable_to_analyse=input$Variabletoshow
    
     nbfactors=input$nbfactors
+    
     ggdatatable=prepare_for_ggplot(current_data,time_list_MF,variable_to_analyse,nbfactors)$ggdatatable
     unit_dict=myenv$unit_dict
     
@@ -705,10 +903,12 @@ server <- function(session,input, output) {
                         size=parameters_ggplot$size.geompoint)
     }
     else{
+      
       myplot=ggplot(data=ggdatatable,aes(x=Time,y=.data[[input$Variabletoshow]],color=.data[[input$multiple_file_factor]]))+
         geom_point(alpha=parameters_ggplot$alpha.geompoint,
                    size=parameters_ggplot$size.geompoint)
-        
+      
+      
     }
     if (parameters_ggplot$is.sd == TRUE){
         sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=parameters_ggplot$is.perTimeonly)$sd_table
@@ -716,6 +916,7 @@ server <- function(session,input, output) {
                                    linetype= parameters_ggplot$line_type.sd,
                                    alpha=parameters_ggplot$alpha.geomlinesd,
                                    size=parameters_ggplot$size.geomlinesd)
+        
       }
       
     if (parameters_ggplot$is.mean == TRUE){
@@ -724,6 +925,7 @@ server <- function(session,input, output) {
                                 linetype= parameters_ggplot$line_type.mean,
                                 alpha=parameters_ggplot$alpha.geomlinemean,
                                 size=parameters_ggplot$size.geomlinemean)
+        
       }
     
     if (parameters_ggplot$is_overall_mean ==TRUE){
@@ -733,6 +935,7 @@ server <- function(session,input, output) {
                               alpha=parameters_ggplot$alpha.geomlinemean,
                               size=parameters_ggplot$size.geomlinemean,
                               color="black")
+      
     }
     
     if (parameters_ggplot$is_overall_sd ==TRUE){
@@ -742,6 +945,7 @@ server <- function(session,input, output) {
                               alpha=parameters_ggplot$alpha.geomlinesd,
                               size=parameters_ggplot$size.geomlinesd,
                               color="black")
+      
     }
     if (parameters_ggplot$is_smooth==TRUE){
       if(parameters_ggplot$is.perTimeonly ==TRUE){
@@ -772,13 +976,20 @@ server <- function(session,input, output) {
     }
      
     }
-    myplot=myplot+
-      labs(y=as.character(unit_dict[variable_to_analyse]),x='Time(ms)')
+    if (input$pertime==TRUE){
+      myplot=myplot+
+        labs(y=as.character(unit_dict[variable_to_analyse]),x='Time(ms)')
+    }
+    if (input$perspike==TRUE){
+      myplot=myplot+
+        labs(y=as.character(unit_dict[variable_to_analyse]),x='Spike number')
+    }
+    
     if (parameters_ggplot$is.logscale==TRUE){
       myplot=myplot+scale_x_continuous(trans="log10")
     }
       
-    
+   
     myenv$plot_MF=myplot
     myplot
   })
@@ -881,6 +1092,7 @@ server <- function(session,input, output) {
     variable_plot=variable_plot+theme(axis.text.x = element_text(angle = 90))
     myenv$current_plot=variable_plot
     #Display the plot
+    
     variable_plot
     
   })

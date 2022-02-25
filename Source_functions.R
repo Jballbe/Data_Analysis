@@ -306,7 +306,10 @@ prepare_for_ggplot <- function(datatable,time_list,variable_to_analyse,nbfactors
   }
   
   for (elt in seq((nbfactors+1),ncol(datatable))){
-  time_point=as.numeric(str_remove(colnames(datatable)[elt],"ms"))
+  time_point=str_remove(colnames(datatable)[elt],"ms")
+  time_point=str_remove(time_point,"_spikes")
+  time_point=as.numeric(time_point)
+ 
   current_time_col=rep(time_point,nrow(datatable))
   time_col=c(time_col,current_time_col)
   current_data_col=as.numeric(datatable[,elt])
