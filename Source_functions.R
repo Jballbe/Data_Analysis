@@ -32,24 +32,26 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
   for (elt in seq((nbfactors+1),ncol(full_dataset))){
     full_dataset[,elt]=as.numeric(full_dataset[,elt])
   }
-  #Remove unwanted data
-  # full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Neuron"),]
-  # 
-  # full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Glia"),]
-  # 
-  # full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Unspecified"),]
-  
   factor_list=colnames(full_dataset[,1:nbfactors])
+  #Remove unwanted data
+  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Neuron"),]
+
+  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Glia"),]
+
+  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Unspecified"),]
+
+  
   variable_list=colnames(full_dataset[(nbfactors+1):ncol(full_dataset)])
   Firing_Type=full_dataset[,2]
-  
+  factor_columns=full_dataset[,1:nbfactors]
   Species=full_dataset[,1]
   return (list("full_dataset"=full_dataset,
                "factor_list"=factor_list,
                "Firing_Type"=Firing_Type,
                "Species"=Species,
                "variable_list"=variable_list,
-               "unit_dict"=unit_dict))
+               "unit_dict"=unit_dict,
+               "factor_columns"=factor_columns))
 }
 
 #Perform tests (data normality and variance homogeneity) to know which test is to be performed
@@ -260,9 +262,9 @@ get_basic_stat <- function(full_dataset, nbfactors, myfactor){
   rownames(sd_stat_table)=c(levels_list)
   for (variable in variable_list){
     
-    #current_data=full_dataset[-which(full_dataset[,variable]=="NaN"),]
+   
     current_data=full_dataset
-    print(variable)
+    
     for (level in levels_list){
       
       

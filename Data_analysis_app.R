@@ -103,7 +103,10 @@ ui <- fluidPage(
                               tabPanel(title="Time differences",
                                        plotOutput("mean_difference_over_time"),
                                        actionButton("save_mean_diff_plot","Save plot"),
-                                       textOutput("function_to_save_mean_diff_plot"))
+                                       textOutput("function_to_save_mean_diff_plot")
+                                       ),
+                              tabPanel(title="Data repartition",
+                                       plotlyOutput("plotly_data_evolution"))
                             )
                             
                             
@@ -117,7 +120,7 @@ ui <- fluidPage(
                                        tableOutput("basic_stats"),
                                        actionButton("save_stat_table","Save stat table")),
                               tabPanel(title="Plots",
-                                       tableOutput("countervariable"),
+                                       plotlyOutput("countervariable"),
                                        plotOutput("plot"),
                                        plotlyOutput("plotly"),
                                        checkboxInput("points","Display points in plotly"),
@@ -209,8 +212,8 @@ server <- function(session,input, output) {
                      "FR_250ms"=FR_250ms,
                      "FR_500ms"=FR_500ms)
       time_list=c("5ms","10ms","25ms","50ms","100ms","250ms","500ms")
-      Species_MF=results_from_createfulldataset$Species
-      FT_MF=results_from_createfulldataset$Firing_Type
+      factor_columns=results_from_createfulldataset$factor_columns
+      myenv$factor_columns=factor_columns
       unit_dict=results_from_createfulldataset$unit_dict
       myenv$nbvariable=length(variable_list)
     }
@@ -245,8 +248,9 @@ server <- function(session,input, output) {
       current_list=list("FR_5ms"=FR_5ms)
       file_list=append(file_list,current_list)
       
-      Species_MF=results_from_createfulldataset$Species
-      FT_MF=results_from_createfulldataset$Firing_Type
+      factor_columns=results_from_createfulldataset$factor_columns
+      myenv$factor_columns=factor_columns
+      
       unit_dict=results_from_createfulldataset$unit_dict
       
     }
@@ -261,8 +265,9 @@ server <- function(session,input, output) {
         variable_list=results_from_createfulldataset$variable_list
         myenv$nbvariable=length(variable_list)
         isfactor_variable_ok=1
-        Species_MF=results_from_createfulldataset$Species
-        FT_MF=results_from_createfulldataset$Firing_Type
+        factor_columns=results_from_createfulldataset$factor_columns
+        myenv$factor_columns=factor_columns
+        
         unit_dict=results_from_createfulldataset$unit_dict
       }
      
@@ -284,8 +289,9 @@ server <- function(session,input, output) {
         variable_list=results_from_createfulldataset$variable_list
         myenv$nbvariable=length(variable_list)
         isfactor_variable_ok=1
-        Species_MF=results_from_createfulldataset$Species
-        FT_MF=results_from_createfulldataset$Firing_Type
+        
+        factor_columns=results_from_createfulldataset$factor_columns
+        myenv$factor_columns=factor_columns
         unit_dict=results_from_createfulldataset$unit_dict
       }
      
@@ -305,8 +311,9 @@ server <- function(session,input, output) {
         variable_list=results_from_createfulldataset$variable_list
         myenv$nbvariable=length(variable_list)
         isfactor_variable_ok=1
-        Species_MF=results_from_createfulldataset$Species
-        FT_MF=results_from_createfulldataset$Firing_Type
+        factor_columns=results_from_createfulldataset$factor_columns
+        myenv$factor_columns=factor_columns
+        
         unit_dict=results_from_createfulldataset$unit_dict
       }
      
@@ -326,8 +333,9 @@ server <- function(session,input, output) {
         variable_list=results_from_createfulldataset$variable_list
         myenv$nbvariable=length(variable_list)
         isfactor_variable_ok=1
-        Species_MF=results_from_createfulldataset$Species
-        FT_MF=results_from_createfulldataset$Firing_Type
+        factor_columns=results_from_createfulldataset$factor_columns
+        myenv$factor_columns=factor_columns
+        
         unit_dict=results_from_createfulldataset$unit_dict
       }
     
@@ -347,8 +355,9 @@ server <- function(session,input, output) {
         variable_list=results_from_createfulldataset$variable_list
         myenv$nbvariable=length(variable_list)
         isfactor_variable_ok=1
-        Species_MF=results_from_createfulldataset$Species
-        FT_MF=results_from_createfulldataset$Firing_Type
+        factor_columns=results_from_createfulldataset$factor_columns
+        myenv$factor_columns=factor_columns
+        
         unit_dict=results_from_createfulldataset$unit_dict
       }
     
@@ -369,8 +378,9 @@ server <- function(session,input, output) {
         variable_list=results_from_createfulldataset$variable_list
         myenv$nbvariable=length(variable_list)
         isfactor_variable_ok=1
-        Species_MF=results_from_createfulldataset$Species
-        FT_MF=results_from_createfulldataset$Firing_Type
+        factor_columns=results_from_createfulldataset$factor_columns
+        myenv$factor_columns=factor_columns
+        
         unit_dict=results_from_createfulldataset$unit_dict
       }
     
@@ -390,8 +400,9 @@ server <- function(session,input, output) {
         variable_list=results_from_createfulldataset$variable_list
         myenv$nbvariable=length(variable_list)
         isfactor_variable_ok=1
-        Species_MF=results_from_createfulldataset$Species
-        FT_MF=results_from_createfulldataset$Firing_Type
+        factor_columns=results_from_createfulldataset$factor_columns
+        myenv$factor_columns=factor_columns
+        
         unit_dict=results_from_createfulldataset$unit_dict
       }
       
@@ -421,8 +432,8 @@ server <- function(session,input, output) {
         current_list=list("FR_4spikes"=FR_4spikes)
         file_list=append(file_list,current_list)
         
-        Species_MF=results_from_createfulldataset$Species
-        FT_MF=results_from_createfulldataset$Firing_Type
+        
+        
         unit_dict=results_from_createfulldataset$unit_dict
         
       }
@@ -437,8 +448,9 @@ server <- function(session,input, output) {
           variable_list=results_from_createfulldataset$variable_list
           myenv$nbvariable=length(variable_list)
           isfactor_variable_ok=1
-          Species_MF=results_from_createfulldataset$Species
-          FT_MF=results_from_createfulldataset$Firing_Type
+          factor_columns=results_from_createfulldataset$factor_columns
+          myenv$factor_columns=factor_columns
+          
           unit_dict=results_from_createfulldataset$unit_dict
         }
         
@@ -457,8 +469,9 @@ server <- function(session,input, output) {
           variable_list=results_from_createfulldataset$variable_list
           myenv$nbvariable=length(variable_list)
           isfactor_variable_ok=1
-          Species_MF=results_from_createfulldataset$Species
-          FT_MF=results_from_createfulldataset$Firing_Type
+          factor_columns=results_from_createfulldataset$factor_columns
+          myenv$factor_columns=factor_columns
+          
           unit_dict=results_from_createfulldataset$unit_dict
         }
         
@@ -477,8 +490,9 @@ server <- function(session,input, output) {
           variable_list=results_from_createfulldataset$variable_list
           myenv$nbvariable=length(variable_list)
           isfactor_variable_ok=1
-          Species_MF=results_from_createfulldataset$Species
-          FT_MF=results_from_createfulldataset$Firing_Type
+          factor_columns=results_from_createfulldataset$factor_columns
+          myenv$factor_columns=factor_columns
+          
           unit_dict=results_from_createfulldataset$unit_dict
         }
         
@@ -497,8 +511,9 @@ server <- function(session,input, output) {
           variable_list=results_from_createfulldataset$variable_list
           myenv$nbvariable=length(variable_list)
           isfactor_variable_ok=1
-          Species_MF=results_from_createfulldataset$Species
-          FT_MF=results_from_createfulldataset$Firing_Type
+          factor_columns=results_from_createfulldataset$factor_columns
+          myenv$factor_columns=factor_columns
+          
           unit_dict=results_from_createfulldataset$unit_dict
         }
         
@@ -517,8 +532,9 @@ server <- function(session,input, output) {
           variable_list=results_from_createfulldataset$variable_list
           myenv$nbvariable=length(variable_list)
           isfactor_variable_ok=1
-          Species_MF=results_from_createfulldataset$Species
-          FT_MF=results_from_createfulldataset$Firing_Type
+          factor_columns=results_from_createfulldataset$factor_columns
+          myenv$factor_columns=factor_columns
+          
           unit_dict=results_from_createfulldataset$unit_dict
         }
         
@@ -537,8 +553,9 @@ server <- function(session,input, output) {
           variable_list=results_from_createfulldataset$variable_list
           myenv$nbvariable=length(variable_list)
           isfactor_variable_ok=1
-          Species_MF=results_from_createfulldataset$Species
-          FT_MF=results_from_createfulldataset$Firing_Type
+          factor_columns=results_from_createfulldataset$factor_columns
+          myenv$factor_columns=factor_columns
+          
           unit_dict=results_from_createfulldataset$unit_dict
         }
         
@@ -555,13 +572,13 @@ server <- function(session,input, output) {
     }
     
     threeDarray=abind(file_list,along=3)
-    factor_columns=data.frame(cbind(data.frame(Species_MF),data.frame(FT_MF)))
-    colnames(factor_columns)=c("Species","Firing_Type")
+   
+   
     
     updateSelectInput(session,"Variabletoshow","Variable to show",choices=variable_list,selected = variable_list[1])
     updateSelectInput(session,"multiple_file_factor","Factor of analysis",choices=factor_list,selected=factor_list[1])
     
-    myenv$factor_columns=factor_columns
+    
     myenv$unit_dict=unit_dict
     myenv$threeDarray=threeDarray
     myenv$time_list_MF=time_list
@@ -671,6 +688,7 @@ server <- function(session,input, output) {
     myenv$table_or_plot="plot"
     showModal(save_modal())
   })
+  
 
   observeEvent(input$save_stat_table,{
     myenv$is.stat.table=TRUE
@@ -758,6 +776,7 @@ server <- function(session,input, output) {
     
     current_data=threeDarray[,as.character(input$Variabletoshow),]
     current_data=data.frame(current_data)
+    
     for (elt in seq(ncol(current_data))){
       current_data[,elt]=as.numeric(current_data[,elt])
     }
@@ -768,22 +787,25 @@ server <- function(session,input, output) {
     current_data=data.frame(cbind(data.frame(id),data.frame(current_data)))
    
     
-   
+    
     my_current_data =gather(current_data,key="Time",value="Variable",2:(length(my_time_list)+1))
+   
     my_current_data$id=as.factor(my_current_data$id)
     my_current_data$Time <- factor(my_current_data$Time,levels=c(my_time_list))
-   
+    
     my_current_data[,"Variable"]=as.numeric(my_current_data[,"Variable"])
     outlier=my_current_data %>% 
       group_by(Time) %>%
       identify_outliers(Variable)
-   
+    
     extreme_outlier=outlier[which(outlier[,"is.extreme"]==TRUE),"Variable"]
+    extreme_outlier=as.data.frame(extreme_outlier)
     for (elt in seq(nrow(my_current_data))){
       if (my_current_data[elt,"Variable"] %in% extreme_outlier$Variable){
         my_current_data[elt,"Variable"] = NA
       }
     }
+    
     
     is_normally_distributed=my_current_data %>%
       group_by(Time) %>%
@@ -882,14 +904,8 @@ server <- function(session,input, output) {
     current_data=threeDarray[,as.character(input$Variabletoshow),]
     factor_columns=myenv$factor_columns
     current_data=cbind(factor_columns,current_data)
-    print("lolo")
-    if (input$multiple_file_factor == "Species"){
-      factor_col=myenv$Species
-    }
-    if (input$multiple_file_factor == "Firing_Type"){
-      factor_col=myenv$FT
-    }
     
+ 
     variable_to_analyse=input$Variabletoshow
    
     nbfactors=input$nbfactors
@@ -1039,15 +1055,30 @@ server <- function(session,input, output) {
     data.frame(table_count)
   },rownames=TRUE)
   
-  output$countervariable <- renderTable({
-    req(input$multiple_file_factor,input$nbfactors,input$Variabletoshow)
-    file_list=myenv$file_list
-    current_time_dataset=file_list[[input$Which_time_file]]
+  output$countervariable <- renderPlotly({
+    req(input$multiple_file_factor)
+    threeDarray=myenv$threeDarray
+    myfactor=input$multiple_file_factor
+    unit_dict=myenv$unit_dict
     
-    variable_table=count_samples(current_time_dataset,nbfactor=input$nbfactors,myfactor=input$multiple_file_factor,nbvariable = myenv$nbvariable)[input$Variabletoshow]
+    my_time_list=names(myenv$file_list)
+    factor_columns=data.frame(myenv$factor_columns)
     
-    data.frame(variable_table)
-  },rownames=TRUE)
+    factor_columns=factor_columns[myfactor]
+    
+    current_data=threeDarray[,as.character(input$Variabletoshow),]
+    current_data=cbind(data.frame(factor_columns),data.frame(current_data))
+    
+    positions=levels(factor_columns)
+    my_current_data =gather(current_data,key="Time",value="Variable",2:(length(my_time_list)+1))
+    my_current_data =my_current_data[my_current_data$Time==input$Which_time_file,]
+   
+    my_current_data=na.omit(my_current_data)
+    colnames(my_current_data)=c(myfactor,"Time","Variable")
+    my_plot=ggplot(data=my_current_data,aes_string(myfactor))+geom_bar(alpha=0.7)+scale_x_discrete(limits=positions)
+    myenv$plot_data_evol=my_plot
+    my_plot
+  })
   
   output$plot <- renderPlot({ 
     #Only begin when the parametric tests have been performed, or when the factor of analysis is changed
@@ -1126,7 +1157,29 @@ server <- function(session,input, output) {
     variable_plotly
   })
 
-  
+  output$plotly_data_evolution <- renderPlotly({ 
+    req(input$multiple_file_factor)
+    threeDarray=myenv$threeDarray
+    myfactor=input$multiple_file_factor
+    unit_dict=myenv$unit_dict
+    
+    my_time_list=names(myenv$file_list)
+    factor_columns=data.frame(myenv$factor_columns)
+    
+    factor_columns=factor_columns[myfactor]
+    
+    current_data=threeDarray[,as.character(input$Variabletoshow),]
+    current_data=cbind(data.frame(factor_columns),data.frame(current_data))
+    
+    positions=my_time_list
+    my_current_data =gather(current_data,key="Time",value="Variable",2:(length(my_time_list)+1))
+    
+    my_current_data=na.omit(my_current_data)
+    colnames(my_current_data)=c(myfactor,"Time","Variable")
+    my_plot=ggplot(data=my_current_data,aes(Time))+geom_bar(aes_string(fill=myfactor),alpha=0.7)+scale_x_discrete(limits=positions)
+    myenv$plot_data_evol=my_plot
+    my_plot
+    })
   
   parameters_ggplot <- reactiveValues(
     is.logscale=FALSE,
@@ -1203,6 +1256,7 @@ server <- function(session,input, output) {
     
     removeModal()
   })
+  
   
   
 
