@@ -23,9 +23,12 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
   
   data_file=data_file[2:nrow(data_file),]
   
+  data_file[,1]=population_class[,1]
+  
   #create full dataset
   full_dataset=data.frame(merge(population_class,data_file,all=T))
   new_row_names=c(full_dataset[,1])
+  
   full_dataset=full_dataset[,2:(ncol(full_dataset))]
   
   rownames(full_dataset)=new_row_names
@@ -34,11 +37,11 @@ create_fulldataset <- function(population_class, data_file, nbfactors){
   }
   factor_list=colnames(full_dataset[,1:nbfactors])
   #Remove unwanted data
-  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Neuron"),]
-
-  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Glia"),]
-
-  full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Unspecified"),]
+  # full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Neuron"),]
+  # 
+  # full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Glia"),]
+  # 
+  # full_dataset=full_dataset[-which(full_dataset[,nbfactors]=="Unspecified"),]
 
   
   variable_list=colnames(full_dataset[(nbfactors+1):ncol(full_dataset)])
@@ -92,6 +95,7 @@ parametric_test <- function(full_dataset, nbfactors, myfactor){
   for (current_variable in variable_list){
     current_data=full_dataset
     #test normality of the data
+    View(shapiro_test(data=current_data[,current_variable]))
     current_shapiro_test=shapiro_test(data=current_data[,current_variable])$p.value
     Hypothesis_table["Normality p_value",current_variable]=formatC(current_shapiro_test,digits=3,format='e')
 
@@ -301,6 +305,8 @@ prepare_for_ggplot <- function(datatable,time_list,variable_to_analyse,nbfactors
   colname=c()
   time_col=c()
   data_col=c()
+  
+  
   for (elt in seq(nbfactors)){
     ggdatatable[,elt]=data.frame(rep(datatable[,elt]),
                                  length(time_list))
@@ -393,13 +399,14 @@ perform_t_test <- function(full_dataset,myfactor,time_list){
                })
       
       if (t_test_table[current_time,current_level]==0){
-        t_test_table[current_time,current_level] <- "X"
+        t_test_table[current_time,current_level] <- NA
+        
       }
     }
     t_test_table[current_time,"All Categories"]=t.test(full_dataset[,current_time])$p.value
   }
 
-  print(t_test_table)
+  return(t_test_table)
 }
 
 overtime_basic_stat <- function(dataset,myfactor,time_list){
