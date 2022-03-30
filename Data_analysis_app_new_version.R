@@ -16,13 +16,10 @@ ui <- fluidPage(
     tabPanel("Files",
       sidebarLayout(
        sidebarPanel(
-         fileInput("Source_functions","Choose the source function file"),
-         fileInput("factors_input","Select test file from which read factors"),
-         fileInput("features_input","Select test file from which read features"),
-        checkboxInput("usual_files","Automatic file upload"),
-        
+         checkboxInput("usual_files","Automatic file upload"),
+        fileInput("Source_functions","Choose the source function file"),
         fileInput("Pop_class_file","Choose Population Class file"),
-        actionButton("import_files","Import_files"),
+        
         selectInput("factor_of_analysis","Factor of analysis",choices=""),
         selectInput("Feature_to_study","Feature to study",choices=""),
         #numericInput("nbfactors","How many possible factors are they?",2),
@@ -63,6 +60,7 @@ ui <- fluidPage(
          conditionalPanel("input.iseightspikes == true",fileInput("eightspikes","8 spikes data file (csv)")),
          conditionalPanel("input.isninespikes == true",fileInput("ninespikes","9 spikes data file (csv)")),
          conditionalPanel("input.istenspikes == true",fileInput("tenspikes","10 spikes data file (csv)")),
+         actionButton("import_files","Import_files"),
          actionButton("proceed_to_multiple_analysis","Proceed")
         
         ),
@@ -153,62 +151,74 @@ ui <- fluidPage(
 server <- function(session,input, output) {
   #Create a local environment (myenv) to pass variable across different functions
   myenv=new.env()
+  myenv$features_names_download=0
+  myenv$factor_list_download=0
   myenv$previous_value=0
   myenv$previous_value_MF=0
   myenv$previous_stat_value=0
   myenv$is.stat.table=FALSE
 
-  output$checklibraries <- renderText({
-    #The following lines only execute when the files are selected
-    req(input$Source_functions$datapath,input$factors_input$datapath,input$features_input$datapath)
+  
+  
+  output$multiplefiles <- renderText({
+    req(input$import_files)
     options(digits=2)
     source(file=input$Source_functions$datapath)
     required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
     #Check if the user have all required libraries and if not, install them
     have_library(required_packages = required_packages)
-    features_list=c(colnames(read.csv(input$features_input$datapath,header=T)[1,]))
-    features_list=features_list[2:length(features_list)]
-    
-    factor_list=c(colnames(read.csv(input$factors_input$datapath,header=T)[1,]))
-    factor_list=factor_list[2:length(factor_list)]
-    
-    updateSelectInput(session,"factor_of_analysis","Factor of analysis",choices=factor_list,selected = factor_list[1])
-    updateSelectInput(session,"Feature_to_study","Feature to study",choices=features_list,selected = features_list[1])
-    print("Please select a factor and a variable to analyze")
+    if (myenv$factor_list_download==0){
+      factor_list=c(colnames(read.csv(input$Pop_class_file$datapath,header=T)[1,]))
+      factor_list=factor_list[2:length(factor_list)]
+      updateSelectInput(session,"factor_of_analysis","Factor of analysis",choices=factor_list,selected = factor_list[1])
+      myenv$factor_list_download==1
+      print("Please select a factor and a variable to analyze")
+    }
     
     
-    print('Libraries and files successfully loaded')
     
-  })
-  
-  output$multiplefiles <- renderText({
-    req(input$proceed_to_multiple_analysis)
-    print("coucou")
-    factor_table=data.frame(read.csv(file=input$Pop_class_file$datapath,header=T)[,c("Cell",as.character(input$factor_of_analysis))])
+    factor_table=data.frame(read.csv(file=input$Pop_class_file$datapath,header=T)[,c("Cell_id",as.character(input$factor_of_analysis))])
     full_table=factor_table
+    full_table[,1]=as.character(full_table[,1])
+    full_table[,2]=as.factor(full_table[,2])
+    
     time_list=c()
 
     if (input$pertime ==TRUE){
       if (input$isfive == TRUE){
-       
-        FR_5ms_file=data.frame(read.csv(file = input$fivems$datapath,header=T)[,c("Cell",as.character(input$Feature_to_study))])
+        if (myenv$features_names_download==0){
+          features_list=c(colnames(read.csv(input$fivems$datapath,header=T)[1,]))
+          features_list=features_list[2:length(features_list)]
+          updateSelectInput(session,"Feature_to_study","Feature to study",choices=features_list,selected = features_list[1])
+          myenv$features_names_download=1
+        }
+        
+        FR_5ms_file=data.frame(read.csv(file = input$fivems$datapath,header=T)[,c("Cell_id",as.character(input$Feature_to_study))])
         current_unit=FR_5ms_file[1,2]
         FR_5ms_file=FR_5ms_file[2:nrow(FR_5ms_file),]
-        colnames(FR_5ms_file)=c("Cell","5ms")
-        full_table=merge(full_table,FR_5ms_file,by=c('Cell'))
+        colnames(FR_5ms_file)=c("Cell_id","5ms")
+        full_table=merge(full_table,FR_5ms_file,by=c("Cell_id"))
         time_list=c(time_list,"5ms")
+        
       
         
       }
       
       if (input$isten == TRUE){
-       
-        FR_10ms_file=data.frame(read.csv(file = input$tenms$datapath,header=T)[,c("Cell",as.character(input$Feature_to_study))])
+        if (myenv$features_names_download==0){
+          features_list=c(colnames(read.csv(input$tenms$datapath,header=T)[1,]))
+          features_list=features_list[2:length(features_list)]
+          updateSelectInput(session,"Feature_to_study","Feature to study",choices=features_list,selected = features_list[1])
+          myenv$features_names_download=1
+        }
+        
+        FR_10ms_file=data.frame(read.csv(file = input$tenms$datapath,header=T)[,c("Cell_id",as.character(input$Feature_to_study))])
         current_unit=FR_10ms_file[1,2]
         FR_10ms_file=FR_10ms_file[2:nrow(FR_10ms_file),]
-        colnames(FR_10ms_file)=c("Cell","10ms")
-        full_table=merge(full_table,FR_10ms_file,by=c('Cell'))
+        colnames(FR_10ms_file)=c("Cell_id","10ms")
+        full_table=merge(full_table,FR_10ms_file,by=c("Cell_id"))
         time_list=c(time_list,"10ms")
+        
         
         
         
@@ -216,36 +226,54 @@ server <- function(session,input, output) {
       }
       
       if (input$istwentyfive == TRUE){
-       
-        FR_25ms_file=data.frame(read.csv(file = input$twentyfivems$datapath,header=T)[,c("Cell",as.character(input$Feature_to_study))])
+        if (myenv$features_names_download==0){
+          features_list=c(colnames(read.csv(input$twentyfivems$datapath,header=T)[1,]))
+          features_list=features_list[2:length(features_list)]
+          updateSelectInput(session,"Feature_to_study","Feature to study",choices=features_list,selected = features_list[1])
+          myenv$features_names_download=1
+        }
+        
+        FR_25ms_file=data.frame(read.csv(file = input$twentyfivems$datapath,header=T)[,c("Cell_id",as.character(input$Feature_to_study))])
         current_unit=FR_25ms_file[1,2]
-        FR_5ms_file=FR_25ms_file[2:nrow(FR_25ms_file),]
-        colnames(FR_25ms_file)=c("Cell","25ms")
-        full_table=merge(full_table,FR_25ms_file,by=c('Cell'))
+        FR_25ms_file=FR_25ms_file[2:nrow(FR_25ms_file),]
+        colnames(FR_25ms_file)=c("Cell_id","25ms")
+        full_table=merge(full_table,FR_25ms_file,by=c("Cell_id"))
         
         time_list=c(time_list,"25ms")
-       
+        
       }
       
       if (input$isfifty == TRUE){
-       
-        FR_50ms_file=data.frame(read.csv(file = input$fiftyms$datapath,header=T)[,c("Cell",as.character(input$Feature_to_study))])
+        if (myenv$features_names_download==0){
+          features_list=c(colnames(read.csv(input$fiftyms$datapath,header=T)[1,]))
+          features_list=features_list[2:length(features_list)]
+          updateSelectInput(session,"Feature_to_study","Feature to study",choices=features_list,selected = features_list[1])
+          myenv$features_names_download=1
+        }
+        
+        FR_50ms_file=data.frame(read.csv(file = input$fiftyms$datapath,header=T)[,c("Cell_id",as.character(input$Feature_to_study))])
         current_unit=FR_50ms_file[1,2]
         FR_50ms_file=FR_50ms_file[2:nrow(FR_50ms_file),]
-        colnames(FR_50ms_file)=c("Cell","50ms")
-        full_table=merge(full_table,FR_50ms_file,by=c('Cell'))
+        colnames(FR_50ms_file)=c("Cell_id","50ms")
+        full_table=merge(full_table,FR_50ms_file,by=c("Cell_id"))
         
         time_list=c(time_list,"50ms")
         
       }
       
       if (input$ishundred == TRUE){
-       
-        FR_100ms_file=data.frame(read.csv(file = input$hundredms$datapath,header=T)[,c("Cell",as.character(input$Feature_to_study))])
+        if (myenv$features_names_download==0){
+          features_list=c(colnames(read.csv(input$hundredms$datapath,header=T)[1,]))
+          features_list=features_list[2:length(features_list)]
+          updateSelectInput(session,"Feature_to_study","Feature to study",choices=features_list,selected = features_list[1])
+          myenv$features_names_download=1
+        }
+        
+        FR_100ms_file=data.frame(read.csv(file = input$hundredms$datapath,header=T)[,c("Cell_id",as.character(input$Feature_to_study))])
         current_unit=FR_100ms_file[1,2]
         FR_100ms_file=FR_100ms_file[2:nrow(FR_100ms_file),]
-        colnames(FR_100ms_file)=c("Cell","100ms")
-        full_table=merge(full_table,FR_100ms_file,by=c('Cell'))
+        colnames(FR_100ms_file)=c("Cell_id","100ms")
+        full_table=merge(full_table,FR_100ms_file,by=c("Cell_id"))
         
         time_list=c(time_list,"100ms")
         
@@ -254,26 +282,37 @@ server <- function(session,input, output) {
       
       if (input$istwohundredfifty == TRUE){
        
+        if (myenv$features_names_download==0){
+          features_list=c(colnames(read.csv(input$twohundredfiftyms$datapath,header=T)[1,]))
+          features_list=features_list[2:length(features_list)]
+          updateSelectInput(session,"Feature_to_study","Feature to study",choices=features_list,selected = features_list[1])
+          myenv$features_names_download=1
+        }
         
-        FR_250ms_file=data.frame(read.csv(file = input$twohundredfiftyms$datapath,header=T)[,c("Cell",as.character(input$Feature_to_study))])
+        FR_250ms_file=data.frame(read.csv(file = input$twohundredfiftyms$datapath,header=T)[,c("Cell_id",as.character(input$Feature_to_study))])
         current_unit=FR_250ms_file[1,2]
-        FR_250ms_file=FR_5ms_file[2:nrow(FR_250ms_file),]
-        colnames(FR_250ms_file)=c("Cell","250ms")
-        full_table=merge(full_table,FR_250ms_file,by=c('Cell'))
+        FR_250ms_file=FR_250ms_file[2:nrow(FR_250ms_file),]
+        colnames(FR_250ms_file)=c("Cell_id","250ms")
+        full_table=merge(full_table,FR_250ms_file,by=c("Cell_id"))
         
         time_list=c(time_list,"250ms")
-        
         
         
       }
       
       if (input$isfivehundred == TRUE){
-       
-        FR_500ms_file=data.frame(read.csv(file = input$fivehundredfiftyms$datapath,header=T)[,c("Cell",as.character(input$Feature_to_study))])
+        if (myenv$features_names_download==0){
+          features_list=c(colnames(read.csv(input$fivehundredms$datapath,header=T)[1,]))
+          features_list=features_list[2:length(features_list)]
+          updateSelectInput(session,"Feature_to_study","Feature to study",choices=features_list,selected = features_list[1])
+          myenv$features_names_download=1
+        }
+        
+        FR_500ms_file=data.frame(read.csv(file = input$fivehundredms$datapath,header=T)[,c("Cell_id",as.character(input$Feature_to_study))])
         current_unit=FR_500ms_file[1,2]
-        FR_500ms_file=FR_5ms_file[2:nrow(FR_500ms_file),]
-        colnames(FR_500ms_file)=c("Cell","500ms")
-        full_table=merge(full_table,FR_500ms_file,by=c('Cell'))
+        FR_500ms_file=FR_500ms_file[2:nrow(FR_500ms_file),]
+        colnames(FR_500ms_file)=c("Cell_id","500ms")
+        full_table=merge(full_table,FR_500ms_file,by=c("Cell_id"))
         
         time_list=c(time_list,"500ms")
         
@@ -281,452 +320,36 @@ server <- function(session,input, output) {
       }
       
       if (input$isthousand == TRUE){
-       
-        FR_1000ms_file=data.frame(read.csv(file = input$thousandms$datapath,header=T)[,c("Cell",as.character(input$Feature_to_study))])
+        if (myenv$features_names_download==0){
+          features_list=c(colnames(read.csv(input$thousandms$datapath,header=T)[1,]))
+          features_list=features_list[2:length(features_list)]
+          updateSelectInput(session,"Feature_to_study","Feature to study",choices=features_list,selected = features_list[1])
+          myenv$features_names_download=1
+        }
+        
+        FR_1000ms_file=data.frame(read.csv(file = input$thousandms$datapath,header=T)[,c("Cell_id",as.character(input$Feature_to_study))])
         current_unit=FR_1000ms_file[1,2]
         FR_1000ms_file=FR_1000ms_file[2:nrow(FR_1000ms_file),]
-        colnames(FR_1000ms_file)=c("Cell","1000ms")
-        full_table=merge(full_table,FR_1000ms_file,by=c('Cell'))
+        colnames(FR_1000ms_file)=c("Cell_id","1000ms")
+        full_table=merge(full_table,FR_1000ms_file,by=c("Cell_id"))
         
         time_list=c(time_list,"1000ms")
         
         
       }
     }
-    View(data.frame(full_table))
-    print("okokok")
+    colnames(full_table)=c("Cell_id",as.character(input$factor_of_analysis),time_list)
+    for (elt in seq(3,ncol(full_table))){
+      
+      full_table[,elt]=as.numeric(full_table[,elt])}
+    myenv$full_table=full_table
     
+    myenv$current_unit=current_unit
+    print('Libraries and files successfully loaded')
   })
   
   
-  # output$multiplefiles <- renderText({
-  #   req(input$proceed_to_multiple_analysis)
-  #   if (input$usual_files == TRUE){
-  #     #select all files directly
-  #     populationclass=read.csv("/Users/julienballbe/Documents/Script/Data_Files/Population_Classes.csv",header=T)
-  #     source(file = "/Users/julienballbe/My_Work/Data_Analysis/Source_functions.R")
-  #     FR_5ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_5ms.csv",header=T)
-  #     FR_5ms=create_fulldataset(FR_5ms,nbfactors=2,population_class = populationclass)$full_dataset
-  #     
-  #     
-  #     FR_10ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_10ms.csv",header=T)
-  #     FR_10ms=create_fulldataset(FR_10ms,nbfactors=2,population_class = populationclass)$full_dataset
-  #     
-  #     
-  #     FR_25ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_25ms.csv",header=T)
-  #     FR_25ms=create_fulldataset(FR_25ms,nbfactors=2,population_class = populationclass)$full_dataset
-  #     
-  #     FR_50ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_50ms.csv",header=T)
-  #     FR_50ms=create_fulldataset(FR_50ms,nbfactors=2,population_class = populationclass)$full_dataset
-  #     
-  #     
-  #     FR_100ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_100ms.csv",header=T)
-  #     FR_100ms=create_fulldataset(FR_100ms,nbfactors=2,population_class = populationclass)$full_dataset
-  #     
-  #     
-  #     FR_250ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_250ms.csv",header=T)
-  #     FR_250ms=create_fulldataset(FR_250ms,nbfactors=2,population_class = populationclass)$full_dataset
-  #     
-  #     
-  #     FR_500ms=read.csv("/Users/julienballbe/Documents/Script/Data_Files/FR_Hz_500ms.csv",header=T)
-  #     results_from_createfulldataset=create_fulldataset(FR_500ms,nbfactors=2,population_class = populationclass)
-  #     
-  #     FR_500ms=create_fulldataset(FR_500ms,nbfactors=2,population_class = populationclass)$full_dataset
-  #     
-  #    
-  #     factor_list=results_from_createfulldataset$factor_list
-  #     variable_list=results_from_createfulldataset$variable_list
-  #     file_list=list("FR_5ms"=FR_5ms,
-  #                    "FR_10ms"=FR_10ms,
-  #                    "FR_25ms"=FR_25ms,
-  #                    "FR_50ms"=FR_50ms,
-  #                    "FR_100ms"=FR_100ms,
-  #                    "FR_250ms"=FR_250ms,
-  #                    "FR_500ms"=FR_500ms)
-  #     time_list=c("5ms","10ms","25ms","50ms","100ms","250ms","500ms")
-  #     factor_columns=results_from_createfulldataset$factor_columns
-  #     myenv$factor_columns=factor_columns
-  #     unit_dict=results_from_createfulldataset$unit_dict
-  #     myenv$nbvariable=length(variable_list)
-  #   }
-  #   if (input$usual_files == FALSE){
-  #     
-  #   
-  #   
-  #   source(file=input$Source_functions$datapath)
-  #   time_list=c()
-  #   population_class=read.csv(file=input$Pop_class_file$datapath,header=T)
-  #   nb_of_files=0
-  #   file_list=list()
-  #   Species_MF=population_class[,2]
-  #   FT_MF=population_class[,3]
-  #   nbfactors=input$nbfactors
-  #   isfactor_variable_ok=0
-  #   
-  #   if (input$pertime ==TRUE){
-  #   if (input$isfive == TRUE){
-  #    
-  #     FR_5ms=read.csv(file = input$fivems$datapath,header=T)
-  #     
-  #     results_from_createfulldataset=create_fulldataset(data_file=FR_5ms,nbfactors=nbfactors,population_class = population_class)
-  #     FR_5ms=results_from_createfulldataset$full_dataset
-  #     factor_list=results_from_createfulldataset$factor_list
-  #     variable_list=results_from_createfulldataset$variable_list
-  #     myenv$nbvariable=length(variable_list)
-  #     isfactor_variable_ok=1
-  #    
-  #     
-  #     time_list=c(time_list,"5ms")
-  #     current_list=list("FR_5ms"=FR_5ms)
-  #     file_list=append(file_list,current_list)
-  #     
-  #     factor_columns=results_from_createfulldataset$factor_columns
-  #     myenv$factor_columns=factor_columns
-  #     
-  #     unit_dict=results_from_createfulldataset$unit_dict
-  #     
-  #   }
-  #   
-  #   if (input$isten == TRUE){
-  #    
-  #     FR_10ms=read.csv(file = input$tenms$datapath,header=T)
-  #     results_from_createfulldataset=create_fulldataset(data_file=FR_10ms,nbfactors=nbfactors,population_class = population_class)
-  #     FR_10ms=results_from_createfulldataset$full_dataset
-  #     if (isfactor_variable_ok == 0){
-  #       factor_list=results_from_createfulldataset$factor_list
-  #       variable_list=results_from_createfulldataset$variable_list
-  #       myenv$nbvariable=length(variable_list)
-  #       isfactor_variable_ok=1
-  #       factor_columns=results_from_createfulldataset$factor_columns
-  #       myenv$factor_columns=factor_columns
-  #       
-  #       unit_dict=results_from_createfulldataset$unit_dict
-  #     }
-  #    
-  #     time_list=c(time_list,"10ms")
-  #     current_list=list("FR_10ms"=FR_10ms)
-  #     file_list=append(file_list,current_list)
-  #    
-  #     
-  #     
-  #   }
-  #   
-  #   if (input$istwentyfive == TRUE){
-  #    
-  #     FR_25ms=read.csv(file = input$twentyfivems$datapath,header=T)
-  #     results_from_createfulldataset=create_fulldataset(data_file=FR_25ms,nbfactors=nbfactors,population_class = population_class)
-  #     FR_25ms=results_from_createfulldataset$full_dataset
-  #     if (isfactor_variable_ok == 0){
-  #       factor_list=results_from_createfulldataset$factor_list
-  #       variable_list=results_from_createfulldataset$variable_list
-  #       myenv$nbvariable=length(variable_list)
-  #       isfactor_variable_ok=1
-  #       
-  #       factor_columns=results_from_createfulldataset$factor_columns
-  #       myenv$factor_columns=factor_columns
-  #       unit_dict=results_from_createfulldataset$unit_dict
-  #     }
-  #    
-  #     time_list=c(time_list,"25ms")
-  #     
-  #     current_list=list("FR_25ms"=FR_25ms)
-  #     file_list=append(file_list,current_list)
-  #   }
-  #   
-  #   if (input$isfifty == TRUE){
-  #    
-  #     FR_50ms=read.csv(file = input$fiftyms$datapath,header=T)
-  #     results_from_createfulldataset=create_fulldataset(data_file=FR_50ms,nbfactors=nbfactors,population_class = population_class)
-  #     FR_50ms=results_from_createfulldataset$full_dataset
-  #     if (isfactor_variable_ok == 0){
-  #       factor_list=results_from_createfulldataset$factor_list
-  #       variable_list=results_from_createfulldataset$variable_list
-  #       myenv$nbvariable=length(variable_list)
-  #       isfactor_variable_ok=1
-  #       factor_columns=results_from_createfulldataset$factor_columns
-  #       myenv$factor_columns=factor_columns
-  #       
-  #       unit_dict=results_from_createfulldataset$unit_dict
-  #     }
-  #    
-  #     time_list=c(time_list,"50ms")
-  #     
-  #     current_list=list("FR_50ms"=FR_50ms)
-  #     file_list=append(file_list,current_list)
-  #   }
-  #   
-  #   if (input$ishundred == TRUE){
-  #    
-  #     FR_100ms=read.csv(file = input$hundredms$datapath,header=T)
-  #     results_from_createfulldataset=create_fulldataset(data_file=FR_100ms,nbfactors=nbfactors,population_class = population_class)
-  #     FR_100ms=results_from_createfulldataset$full_dataset
-  #     if (isfactor_variable_ok == 0){
-  #       factor_list=results_from_createfulldataset$factor_list
-  #       variable_list=results_from_createfulldataset$variable_list
-  #       myenv$nbvariable=length(variable_list)
-  #       isfactor_variable_ok=1
-  #       factor_columns=results_from_createfulldataset$factor_columns
-  #       myenv$factor_columns=factor_columns
-  #       
-  #       unit_dict=results_from_createfulldataset$unit_dict
-  #     }
-  #   
-  #     time_list=c(time_list,"100ms")
-  #     
-  #     current_list=list("FR_100ms"=FR_100ms)
-  #     file_list=append(file_list,current_list)
-  #   }
-  #   
-  #   if (input$istwohundredfifty == TRUE){
-  #    
-  #     FR_250ms=read.csv(file = input$twohundredfiftyms$datapath,header=T)
-  #     results_from_createfulldataset=create_fulldataset(data_file=FR_250ms,nbfactors=nbfactors,population_class = population_class)
-  #     FR_250ms=results_from_createfulldataset$full_dataset
-  #     if (isfactor_variable_ok == 0){
-  #       factor_list=results_from_createfulldataset$factor_list
-  #       variable_list=results_from_createfulldataset$variable_list
-  #       myenv$nbvariable=length(variable_list)
-  #       isfactor_variable_ok=1
-  #       factor_columns=results_from_createfulldataset$factor_columns
-  #       myenv$factor_columns=factor_columns
-  #       
-  #       unit_dict=results_from_createfulldataset$unit_dict
-  #     }
-  #   
-  #     time_list=c(time_list,"250ms")
-  #     
-  #     current_list=list("FR_250ms"=FR_250ms)
-  #     file_list=append(file_list,current_list)
-  #     
-  #   }
-  #   
-  #   if (input$isfivehundred == TRUE){
-  #    
-  #     FR_500ms=read.csv(file = input$fivehundredms$datapath,header=T)
-  #     results_from_createfulldataset=create_fulldataset(data_file=FR_500ms,nbfactors=nbfactors,population_class = population_class)
-  #     FR_500ms=results_from_createfulldataset$full_dataset
-  #     if (isfactor_variable_ok == 0){
-  #       factor_list=results_from_createfulldataset$factor_list
-  #       variable_list=results_from_createfulldataset$variable_list
-  #       myenv$nbvariable=length(variable_list)
-  #       isfactor_variable_ok=1
-  #       factor_columns=results_from_createfulldataset$factor_columns
-  #       myenv$factor_columns=factor_columns
-  #       
-  #       unit_dict=results_from_createfulldataset$unit_dict
-  #     }
-  #   
-  #     time_list=c(time_list,"500ms")
-  #     
-  #     current_list=list("FR_500ms"=FR_500ms)
-  #     file_list=append(file_list,current_list)
-  #   }
-  #   
-  #   if (input$isthousand == TRUE){
-  #    
-  #     FR_1000ms=read.csv(file = input$thousandms$datapath,header=T)
-  #     results_from_createfulldataset=create_fulldataset(data_file=FR_1000ms,nbfactors=nbfactors,population_class = population_class)
-  #     FR_1000ms=results_from_createfulldataset$full_dataset
-  #     if (isfactor_variable_ok == 0){
-  #       factor_list=results_from_createfulldataset$factor_list
-  #       variable_list=results_from_createfulldataset$variable_list
-  #       myenv$nbvariable=length(variable_list)
-  #       isfactor_variable_ok=1
-  #       factor_columns=results_from_createfulldataset$factor_columns
-  #       myenv$factor_columns=factor_columns
-  #       
-  #       unit_dict=results_from_createfulldataset$unit_dict
-  #     }
-  #     
-  #     time_list=c(time_list,"1000ms")
-  #     
-  #     current_list=list("FR_1000ms"=FR_1000ms)
-  #     file_list=append(file_list,current_list)
-  #   }
-  #   }
-  #   
-  #   if (input$perspike==TRUE){
-  #     
-  #     
-  #     if (input$isfourspikes==TRUE){
-  #      
-  #       FR_4spikes=read.csv(file = input$fourspikes$datapath,header=T)
-  #       
-  #       results_from_createfulldataset=create_fulldataset(data_file=FR_4spikes,nbfactors=nbfactors,population_class = population_class)
-  #       FR_4spikes=results_from_createfulldataset$full_dataset
-  #       factor_list=results_from_createfulldataset$factor_list
-  #       variable_list=results_from_createfulldataset$variable_list
-  #       myenv$nbvariable=length(variable_list)
-  #       isfactor_variable_ok=1
-  #       factor_columns=results_from_createfulldataset$factor_columns
-  #       myenv$factor_columns=factor_columns
-  #       
-  #       time_list=c(time_list,"4_spikes")
-  #       current_list=list("FR_4spikes"=FR_4spikes)
-  #       file_list=append(file_list,current_list)
-  #       
-  #       
-  #       
-  #       unit_dict=results_from_createfulldataset$unit_dict
-  #       
-  #     }
-  #     
-  #     if (input$isfivespikes==TRUE){
-  #      
-  #       FR_5spikes=read.csv(file = input$fivespikes$datapath,header=T)
-  #       results_from_createfulldataset=create_fulldataset(data_file=FR_5spikes,nbfactors=nbfactors,population_class = population_class)
-  #       FR_5spikes=results_from_createfulldataset$full_dataset
-  #       if (isfactor_variable_ok == 0){
-  #         factor_list=results_from_createfulldataset$factor_list
-  #         variable_list=results_from_createfulldataset$variable_list
-  #         myenv$nbvariable=length(variable_list)
-  #         isfactor_variable_ok=1
-  #         factor_columns=results_from_createfulldataset$factor_columns
-  #         myenv$factor_columns=factor_columns
-  #         
-  #         unit_dict=results_from_createfulldataset$unit_dict
-  #       }
-  #       
-  #       time_list=c(time_list,"5_spikes")
-  #       current_list=list("FR_5spikes"=FR_5spikes)
-  #       file_list=append(file_list,current_list)
-  #     }
-  #     
-  #     if (input$issixspikes==TRUE){
-  #      
-  #       FR_6spikes=read.csv(file = input$sixspikes$datapath,header=T)
-  #       results_from_createfulldataset=create_fulldataset(data_file=FR_6spikes,nbfactors=nbfactors,population_class = population_class)
-  #       FR_6spikes=results_from_createfulldataset$full_dataset
-  #       if (isfactor_variable_ok == 0){
-  #         factor_list=results_from_createfulldataset$factor_list
-  #         variable_list=results_from_createfulldataset$variable_list
-  #         myenv$nbvariable=length(variable_list)
-  #         isfactor_variable_ok=1
-  #         factor_columns=results_from_createfulldataset$factor_columns
-  #         myenv$factor_columns=factor_columns
-  #         
-  #         unit_dict=results_from_createfulldataset$unit_dict
-  #       }
-  #       
-  #       time_list=c(time_list,"6_spikes")
-  #       current_list=list("FR_6spikes"=FR_6spikes)
-  #       file_list=append(file_list,current_list)
-  #     }
-  #     
-  #     if (input$issevenspikes==TRUE){
-  #      
-  #       FR_7spikes=read.csv(file = input$sevenspikes$datapath,header=T)
-  #       results_from_createfulldataset=create_fulldataset(data_file=FR_7spikes,nbfactors=nbfactors,population_class = population_class)
-  #       FR_7spikes=results_from_createfulldataset$full_dataset
-  #       if (isfactor_variable_ok == 0){
-  #         factor_list=results_from_createfulldataset$factor_list
-  #         variable_list=results_from_createfulldataset$variable_list
-  #         myenv$nbvariable=length(variable_list)
-  #         isfactor_variable_ok=1
-  #         factor_columns=results_from_createfulldataset$factor_columns
-  #         myenv$factor_columns=factor_columns
-  #         
-  #         unit_dict=results_from_createfulldataset$unit_dict
-  #       }
-  #       
-  #       time_list=c(time_list,"7_spikes")
-  #       current_list=list("FR_7spikes"=FR_7spikes)
-  #       file_list=append(file_list,current_list)
-  #     }
-  #     
-  #     if (input$iseightspikes==TRUE){
-  #      
-  #       FR_8spikes=read.csv(file = input$eightspikes$datapath,header=T)
-  #       results_from_createfulldataset=create_fulldataset(data_file=FR_8spikes,nbfactors=nbfactors,population_class = population_class)
-  #       FR_8spikes=results_from_createfulldataset$full_dataset
-  #       if (isfactor_variable_ok == 0){
-  #         factor_list=results_from_createfulldataset$factor_list
-  #         variable_list=results_from_createfulldataset$variable_list
-  #         myenv$nbvariable=length(variable_list)
-  #         isfactor_variable_ok=1
-  #         factor_columns=results_from_createfulldataset$factor_columns
-  #         myenv$factor_columns=factor_columns
-  #         
-  #         unit_dict=results_from_createfulldataset$unit_dict
-  #       }
-  #       
-  #       time_list=c(time_list,"8_spikes")
-  #       current_list=list("FR_8spikes"=FR_8spikes)
-  #       file_list=append(file_list,current_list)
-  #     }
-  #     
-  #     if (input$isninespikes==TRUE){
-  #      
-  #       FR_9spikes=read.csv(file = input$ninespikes$datapath,header=T)
-  #       results_from_createfulldataset=create_fulldataset(data_file=FR_9spikes,nbfactors=nbfactors,population_class = population_class)
-  #       FR_9spikes=results_from_createfulldataset$full_dataset
-  #       if (isfactor_variable_ok == 0){
-  #         factor_list=results_from_createfulldataset$factor_list
-  #         variable_list=results_from_createfulldataset$variable_list
-  #         myenv$nbvariable=length(variable_list)
-  #         isfactor_variable_ok=1
-  #         factor_columns=results_from_createfulldataset$factor_columns
-  #         myenv$factor_columns=factor_columns
-  #         
-  #         unit_dict=results_from_createfulldataset$unit_dict
-  #       }
-  #       
-  #       time_list=c(time_list,"9_spikes")
-  #       current_list=list("FR_9spikes"=FR_9spikes)
-  #       file_list=append(file_list,current_list)
-  #     }
-  #     
-  #     if (input$istenspikes==TRUE){
-  #      
-  #       FR_10spikes=read.csv(file = input$tenspikes$datapath,header=T)
-  #       results_from_createfulldataset=create_fulldataset(data_file=FR_10spikes,nbfactors=nbfactors,population_class = population_class)
-  #       FR_10spikes=results_from_createfulldataset$full_dataset
-  #       if (isfactor_variable_ok == 0){
-  #         factor_list=results_from_createfulldataset$factor_list
-  #         variable_list=results_from_createfulldataset$variable_list
-  #         myenv$nbvariable=length(variable_list)
-  #         isfactor_variable_ok=1
-  #         factor_columns=results_from_createfulldataset$factor_columns
-  #         myenv$factor_columns=factor_columns
-  #         
-  #         unit_dict=results_from_createfulldataset$unit_dict
-  #       }
-  #       
-  #       time_list=c(time_list,"10_spikes")
-  #       current_list=list("FR_10spikes"=FR_10spikes)
-  #       file_list=append(file_list,current_list)
-  #     }
-  #   }
-  #   
-  #   
-  #   
-  #   
-  #   
-  #   }
-  #   
-  #   threeDarray=abind(file_list,along=3)
-  #   
-  #  
-  #   
-  #   updateSelectInput(session,"Variabletoshow","Variable to show",choices=variable_list,selected = variable_list[1])
-  #   updateSelectInput(session,"multiple_file_factor","Factor of analysis",choices=factor_list,selected=factor_list[1])
-  #   
-  #   
-  #   myenv$unit_dict=unit_dict
-  #   myenv$threeDarray=threeDarray
-  #   myenv$time_list_MF=time_list
-  #   myenv$factor_list=factor_list
-  #   myenv$variable_list=variable_list
-  #   myenv$file_list=file_list
-  #   file_list_name=list()
-  #   for (elt in seq((length(file_list)))){
-  #     file_list_name=append(file_list_name,names(file_list)[elt])
-  #   }
-  #   updateSelectInput(session,"Which_time_file","Select time to show",choices=file_list_name,selected=file_list_name[1])
-  #   
-  #   print("Multiple file analysis ready")
-  # })
-  # 
+  
   output$t_test_name <- renderPrint({
     print("Statistical mean difference from 0 (one-sample t-test, p.val<0.05 = significantly different; X= not enough observation to compute t-test")
   })
@@ -901,70 +524,49 @@ server <- function(session,input, output) {
   
   
   output$mean_difference_over_time <- renderPlot({
-    threeDarray=myenv$threeDarray
-    myfactor=input$multiple_file_factor
-    unit_dict=myenv$unit_dict
+    #perform multiple measure anova to compare mean evolution along time
+    req(input$proceed_to_multiple_analysis)
+    full_table=myenv$full_table
     
-    my_time_list=names(myenv$file_list)
-    
-    current_data=threeDarray[,as.character(input$Variabletoshow),]
-    current_data=data.frame(current_data)
-    
-    for (elt in seq(ncol(current_data))){
-      current_data[,elt]=as.numeric(current_data[,elt])
+    for (time in seq(3,ncol(full_table))){
+      print("oko")
+      print(colnames(full_table)[time])
+      current_outlier=full_table %>% identify_outliers(colnames(full_table)[time])
+      print("pkpo")
+      extreme_outlier_id=current_outlier[which(current_outlier[,"is.extreme"]==TRUE),"Cell_id"]
+      print('kzkz')
+      full_table[which(full_table[,"Cell_id"] %in% extreme_outlier_id),as.character(colnames(full_table)[time])]=NA
     }
-    id=c(seq(nrow(current_data)))
-    id=data.frame(id)
-    colnames(id)="id"
     
-    current_data=data.frame(cbind(data.frame(id),data.frame(current_data)))
-   
+    symbol_val=sym(input$Feature_to_study)
+    
+    RMA_full_table=gather(full_table,key="Time",value=symbol_val,3:ncol(full_table))
     
     
-    my_current_data =gather(current_data,key="Time",value="Variable",2:(length(my_time_list)+1))
-   
-    my_current_data$id=as.factor(my_current_data$id)
-    my_current_data$Time <- factor(my_current_data$Time,levels=c(my_time_list))
-    
-    my_current_data[,"Variable"]=as.numeric(my_current_data[,"Variable"])
-    outlier=my_current_data %>% 
+    RMA_full_table$Time <- factor(RMA_full_table$Time,levels=colnames(full_table[3:ncol(full_table)]))
+  
+    print("kjnkjn")
+    View(RMA_full_table)
+    is_normally_distributed=RMA_full_table %>%
       group_by(Time) %>%
-      identify_outliers(Variable)
-    
-    extreme_outlier=outlier[which(outlier[,"is.extreme"]==TRUE),"Variable"]
-    extreme_outlier=as.data.frame(extreme_outlier)
-    for (elt in seq(nrow(my_current_data))){
-      if (my_current_data[elt,"Variable"] %in% extreme_outlier$Variable){
-        my_current_data[elt,"Variable"] = NA
-      }
-    }
-    
-    
-    is_normally_distributed=my_current_data %>%
-      group_by(Time) %>%
-      shapiro_test(Variable)
-    
-    my_current_data %>%
-      group_by(Time)
-    for (elt in nrow(is_normally_distributed)){
-      if (is_normally_distributed[elt,"p"] < 0.05){
-        all.normal=FALSE
-      }
-      else{
-        all.normal=TRUE
-      }
-        
-    }
-    bxp=ggboxplot(my_current_data,x='Time', y="Variable",add='jitter',size=0.3)
-    
+      shapiro_test(symbol_val)
+    View(is_normally_distributed)
+    p_val_shapiro=is_normally_distributed$p>0.05
+    if (FALSE %in% p_val_shapiro){all.normal=FALSE}
+    else{all.normal=TRUE}
+    print("jiij")
+    colnames(RMA_full_table)[ncol(RMA_full_table)]="my_current_variable"
+    View(RMA_full_table)
+    bxp=ggboxplot(RMA_full_table,x='Time', y='my_current_variable',size=0.3)+geom_jitter(alpha=0.1)
+    print(bxp)
     if (all.normal == TRUE){
-      my.res = anova_test(data=my_current_data,dv="Variable",wid=id,within=Time)
-      pwc=pairwise_t_test(my_current_data, formula = Variable ~ Time,p.adjust.method = "bonferroni")
+      my.res = anova_test(data=RMA_full_table,dv='my_current_variable',wid=id,within=Time)
+      pwc=pairwise_t_test(RMA_full_table, formula = as.formula(my_current_variable ~ Time),p.adjust.method = "bonferroni")
     }
     
     if (all.normal ==FALSE){
       
-      pwc=wilcox_test(data=my_current_data, formula=Variable ~ Time, paired = TRUE, p.adjust.method = "bonferroni")
+      pwc=wilcox_test(data=RMA_full_table, formula=as.formula(my_current_variable ~ Time), paired = TRUE, p.adjust.method = "bonferroni")
     }
     
     
@@ -975,9 +577,11 @@ server <- function(session,input, output) {
       stat_pvalue_manual(pwc,hide.ns = TRUE,step.increase = 0.06) +
       labs(
            caption = get_pwc_label(pwc),
-           y=as.character(unit_dict[input$Variabletoshow]),x='Time(ms)')
+           y=as.character(myenv$current_unit),x='Time(ms)')
     
     myenv$mean_diff_plot=bxp
+    print('jijij')
+    
     bxp
     
   })
