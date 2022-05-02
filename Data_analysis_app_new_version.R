@@ -24,6 +24,7 @@ ui <- fluidPage(
         selectInput("Feature_to_study","Feature to study",choices=""),
         #numericInput("nbfactors","How many possible factors are they?",2),
         
+        
         checkboxInput("pertime","Analysis per time"),
         checkboxInput("perspike","Analysis per spike"),
          
@@ -75,8 +76,9 @@ ui <- fluidPage(
                sidebarLayout(
                  sidebarPanel(
                               textOutput("function_to_save"),
-                              selectInput("multiple_file_factor","Factor of analysis",choices=""),
-                              selectInput("Variabletoshow","Variable to show",choices=""),
+                              selectInput("Feature_to_study","Feature to study",choices=""),
+                              selectInput("factor_of_analysis","Factor of analysis",choices=""),
+                              selectInput("current_factor_level","Category of analysis",choices=""),
                               selectInput("Which_time_file","Select time to show",choices=""),
                               
                                                
@@ -94,19 +96,22 @@ ui <- fluidPage(
                    tabPanel(title = "Over Time/Over Spikes",
                             tabsetPanel(
                               tabPanel(title="General stats",
-                                       plotlyOutput("time_evol"),
+                                       plotOutput("time_evol"),
                                        actionButton("update_parameters","Modify plot parameters"),actionButton("time_plot_saving","Save plot"),
                                        textOutput("t_test_name"),
                                        tableOutput("t_test"),
                                        actionButton("save_t_test_table","Save t-test table"),
                                        
-                                       tableOutput("overtime_stat_mean"),actionButton("save_mean_overtime_table","Save Mean Table"),
-                                       tableOutput("overtime_stat_sd"),actionButton("save_sd_overtime_table","Save SD Table")
+                                       tableOutput("overtime_stat"),actionButton("save_overtime_stat_table","Save Mean Table")
+                                       
                               ),
                               tabPanel(title="Time differences",
                                        plotOutput("mean_difference_over_time"),
+                                       checkboxInput("over_time_per_factor","Perform analysis per factor"),
                                        actionButton("save_mean_diff_plot","Save plot"),
-                                       textOutput("function_to_save_mean_diff_plot")
+                                       textOutput("function_to_save_mean_diff_plot"),
+                                       tableOutput("mean_diff_table"),
+                                       actionButton("save_mean_diff_table","Save table")
                                        ),
                               tabPanel(title="Data repartition",
                                        plotlyOutput("plotly_data_evolution"))
@@ -167,17 +172,26 @@ server <- function(session,input, output) {
     required_packages=c("plyr","shiny","ggplot2","GGally","plotly","tidyverse","pracma","gghighlight","rstatix","ggpubr","shinyFiles",'gghalves')
     #Check if the user have all required libraries and if not, install them
     have_library(required_packages = required_packages)
+    
     if (myenv$factor_list_download==0){
       factor_list=c(colnames(read.csv(input$Pop_class_file$datapath,header=T)[1,]))
       factor_list=factor_list[2:length(factor_list)]
-      updateSelectInput(session,"factor_of_analysis","Factor of analysis",choices=factor_list,selected = factor_list[1])
-      myenv$factor_list_download==1
+      View(factor_list)
+      
+      updateSelectInput(session,"factor_of_analysis","Factor of analysis",choices=factor_list)
+      myenv$factor_list_download=1
       print("Please select a factor and a variable to analyze")
     }
     
     
     
     factor_table=data.frame(read.csv(file=input$Pop_class_file$datapath,header=T)[,c("Cell_id",as.character(input$factor_of_analysis))])
+    leveled_factor_table=factor_table
+    leveled_factor_table[,2]=as.factor(leveled_factor_table[,2])
+    
+    levels_list=c(levels(leveled_factor_table[,2]))
+    updateSelectInput(session,"current_factor_level","Category of analysis",choices=levels_list)
+    
     full_table=factor_table
     full_table[,1]=as.character(full_table[,1])
     full_table[,2]=as.factor(full_table[,2])
@@ -185,6 +199,7 @@ server <- function(session,input, output) {
     time_list=c()
 
     if (input$pertime ==TRUE){
+      
       if (input$isfive == TRUE){
         if (myenv$features_names_download==0){
           features_list=c(colnames(read.csv(input$fivems$datapath,header=T)[1,]))
@@ -338,12 +353,13 @@ server <- function(session,input, output) {
         
       }
     }
-    colnames(full_table)=c("Cell_id",as.character(input$factor_of_analysis),time_list)
+    colnames(full_table)=c("Cell_id","Factor_of_analysis",time_list)
     for (elt in seq(3,ncol(full_table))){
       
       full_table[,elt]=as.numeric(full_table[,elt])}
-    myenv$full_table=full_table
     
+    myenv$full_table=full_table
+    myenv$factor_order=time_list
     myenv$current_unit=current_unit
     print('Libraries and files successfully loaded')
   })
@@ -351,7 +367,7 @@ server <- function(session,input, output) {
   
   
   output$t_test_name <- renderPrint({
-    print("Statistical mean difference from 0 (one-sample t-test, p.val<0.05 = significantly different; X= not enough observation to compute t-test")
+    print("Statistical mean difference from 0 (one-sample t-test, p.val<0.05 = significantly different; -1 = not enough observation to compute t-test")
   })
   
   observeEvent(input$save_variable_plot,{
@@ -456,13 +472,16 @@ server <- function(session,input, output) {
     myenv$table_or_plot="table"
     showModal(save_modal())
   })
-  observeEvent(input$save_mean_overtime_table,{
-    myenv$table_to_save=myenv$overtime_mean_table
+  observeEvent(input$save_overtime_stat_table,{
+    myenv$table_to_save=myenv$overtime_stat_table
     myenv$table_or_plot="table"
     showModal(save_modal())
   })
-  observeEvent(input$save_sd_overtime_table,{
-    myenv$table_to_save=myenv$overtime_sd_table
+
+  
+  observeEvent(input$save_mean_diff_table,{
+    myenv$table_to_save=myenv$pwc
+    myenv$table_or_plot="table"
     showModal(save_modal())
   })
   
@@ -487,7 +506,8 @@ server <- function(session,input, output) {
     
     if(myenv$table_or_plot=="plot"){
       plot_to_save=myenv$plot_to_save
-      plot_to_save=plot_to_save+ylim(saving_vals$saving_y_min,saving_vals$saving_y_max)
+      if (saving_vals$is.custom_y_range ==TRUE){
+      plot_to_save=plot_to_save+ylim(saving_vals$saving_y_min,saving_vals$saving_y_max)}
       ggsave(filename = paste0(saving_vals$saving_name,".pdf"),plot=plot_to_save,path=saving_vals$saving_path,device = cairo_pdf,width=200,height = 100,units="mm")
       print(paste0(saving_vals$saving_name,".pdf ","succesfully saved!"))
       saving_vals$proceed=FALSE
@@ -524,153 +544,361 @@ server <- function(session,input, output) {
   
   
   output$mean_difference_over_time <- renderPlot({
-    #perform multiple measure anova to compare mean evolution along time
-    req(input$proceed_to_multiple_analysis)
+  
     full_table=myenv$full_table
+    View(full_table)
     
-    for (time in seq(3,ncol(full_table))){
-      print("oko")
+    for (time in seq(3,ncol(full_table))){ #remove outliers for each time
+      
       print(colnames(full_table)[time])
       current_outlier=full_table %>% identify_outliers(colnames(full_table)[time])
-      print("pkpo")
+      
       extreme_outlier_id=current_outlier[which(current_outlier[,"is.extreme"]==TRUE),"Cell_id"]
-      print('kzkz')
+      
       full_table[which(full_table[,"Cell_id"] %in% extreme_outlier_id),as.character(colnames(full_table)[time])]=NA
+    }
+    
+    my_full_table=full_table
+    
+    if (input$over_time_per_factor == TRUE){
+      full_table=full_table[which(full_table[,"Factor_of_analysis"]==as.character(input$current_factor_level)),]
     }
     
     symbol_val=sym(input$Feature_to_study)
     
-    RMA_full_table=gather(full_table,key="Time",value=symbol_val,3:ncol(full_table))
+    RMA_full_table=gather(full_table,key="Ind_var",value=symbol_val,3:ncol(full_table))%>%convert_as_factor(Cell_id,Ind_var)
     
     
-    RMA_full_table$Time <- factor(RMA_full_table$Time,levels=colnames(full_table[3:ncol(full_table)]))
+    RMA_full_table$Ind_var <- factor(RMA_full_table$Ind_var,levels=colnames(full_table[3:ncol(full_table)]))
   
-    print("kjnkjn")
-    View(RMA_full_table)
+    
     is_normally_distributed=RMA_full_table %>%
-      group_by(Time) %>%
-      shapiro_test(symbol_val)
-    View(is_normally_distributed)
+    group_by(Ind_var) %>%
+    shapiro_test(symbol_val)
+    
     p_val_shapiro=is_normally_distributed$p>0.05
     if (FALSE %in% p_val_shapiro){all.normal=FALSE}
     else{all.normal=TRUE}
-    print("jiij")
+    
     colnames(RMA_full_table)[ncol(RMA_full_table)]="my_current_variable"
-    View(RMA_full_table)
-    bxp=ggboxplot(RMA_full_table,x='Time', y='my_current_variable',size=0.3)+geom_jitter(alpha=0.1)
-    print(bxp)
+    
+    if (input$over_time_per_factor == TRUE){
+      my_RMA_full_table=gather(my_full_table,key="Ind_var",value=symbol_val,3:ncol(my_full_table))%>%convert_as_factor(Cell_id,Ind_var)
+      #my_RMA_full_table[which(my_RMA_full_table[,as.character(input$factor_of_analysis)]!=as.character(input$current_factor_level)),as.character(input$factor_of_analysis)]=as.character("Other")
+      
+      my_RMA_full_table$Ind_var <- factor(my_RMA_full_table$Ind_var)
+      old_RMA_table=my_RMA_full_table
+      my_RMA_full_table[,"Factor_of_analysis"]<- as.character(my_RMA_full_table[,"Factor_of_analysis"])
+      my_RMA_full_table[which(my_RMA_full_table[,"Factor_of_analysis"]!=as.character(input$current_factor_level)),"Factor_of_analysis"]=as.character("Other")
+      my_RMA_full_table[,"Factor_of_analysis"]<- as.factor(my_RMA_full_table[,"Factor_of_analysis"])
+      
+      level_table=my_RMA_full_table[which(my_RMA_full_table[,"Factor_of_analysis"]==as.character(input$current_factor_level)),]
+      other_level=my_RMA_full_table[which(my_RMA_full_table[,"Factor_of_analysis"]!=as.character(input$current_factor_level)),]
+      
+      old_RMA_table[,"Factor_of_analysis"]<- as.character(old_RMA_table[,"Factor_of_analysis"])
+      old_RMA_table[,"Factor_of_analysis"]=as.character("All")
+      old_RMA_table[,"Factor_of_analysis"]<- as.factor(old_RMA_table[,"Factor_of_analysis"])
+      
+      mytable=rbind(old_RMA_table,level_table)
+      
+      colnames(my_RMA_full_table)[ncol(my_RMA_full_table)]="my_current_variable"
+      colnames(mytable)[ncol(mytable)]="my_current_variable"
+     
+      
+      
+      mytable$Ind_var=factor(mytable$Ind_var,levels=myenv$factor_order)
+      
+      
+      bxp=mytable %>%
+        drop_na()%>%
+        ggplot(aes(x=Ind_var,y=my_current_variable, color=Factor_of_analysis)) +
+        geom_boxplot(outlier.shape=NA)+
+        geom_point(aes(alpha=Factor_of_analysis),position='jitter')+scale_alpha_manual(values=c(0.15,0.6))
+      
+    }
+    else{
+      
+      bxp=RMA_full_table %>%
+        drop_na()%>%
+        ggplot(aes(x=Ind_var,y=my_current_variable)) +
+        geom_boxplot(outlier.shape=NA)+
+        geom_point(alpha=0.3,position='jitter')
+    
+    }
+    
     if (all.normal == TRUE){
-      my.res = anova_test(data=RMA_full_table,dv='my_current_variable',wid=id,within=Time)
-      pwc=pairwise_t_test(RMA_full_table, formula = as.formula(my_current_variable ~ Time),p.adjust.method = "bonferroni")
+      my.res = anova_test(data=RMA_full_table,dv='my_current_variable',wid=id,within=Ind_var)
+      pwc <- data.frame(Method=c(my.res$method),
+                        p_value=c(my.res$p.value))
+      myenv$pwc=pwc
+      if (my.res$p.value<0.05){
+        pwc=pairwise_t_test(RMA_full_table, formula = as.formula(my_current_variable ~ Ind_var),p.adjust.method = "bonferroni")
+        myenv$pwc=pwc[,2:ncol(pwc)]
+        pwc=add_xy_position(pwc,x="Ind_var")
+        if (input$over_time_per_factor == TRUE){
+          bxp=bxp + 
+            stat_pvalue_manual(pwc,hide.ns = TRUE,step.increase = 0.06,color="red")
+        }
+        else{
+          bxp=bxp + 
+            stat_pvalue_manual(pwc,hide.ns = TRUE,step.increase = 0.06)
+        }
+        
+        if (input$pertime==TRUE){
+          bxp=bxp +
+            labs(
+              caption = get_pwc_label(pwc),
+              y=as.character(myenv$current_unit),x='Time(ms)')
+        }
+        else{
+          bxp=bxp +
+            labs(
+              caption = get_pwc_label(pwc),
+              y=as.character(myenv$current_unit),x='° Spike')
+        }
+      }
+      
     }
     
     if (all.normal ==FALSE){
       
-      pwc=wilcox_test(data=RMA_full_table, formula=as.formula(my_current_variable ~ Time), paired = TRUE, p.adjust.method = "bonferroni")
+      
+      res.fried=friedman.test(y=RMA_full_table$my_current_variable,groups=RMA_full_table$Ind_var,blocks=RMA_full_table$Cell_id)
+      pwc <- data.frame(Method=c(res.fried$method),
+                        p_value=c(res.fried$p.value))
+      myenv$pwc=pwc
+      
+      if (res.fried$p.value<0.05){
+        
+        pwc=wilcox_test(data=RMA_full_table, formula=as.formula(my_current_variable ~ Ind_var), paired = TRUE, p.adjust.method = "bonferroni")
+        
+        myenv$pwc=pwc[,2:ncol(pwc)]
+        
+        pwc=add_xy_position(pwc,x="Ind_var")
+        
+        bxp=bxp + 
+          stat_pvalue_manual(pwc,hide.ns = TRUE,step.increase = 0.06)
+        bxp=bxp +
+          labs(
+            caption = get_pwc_label(pwc),
+            y=as.character(myenv$current_unit),x='Time(ms)')
+        
+        if (input$pertime==TRUE){
+          bxp=bxp +
+            labs(
+              caption = get_pwc_label(pwc),
+              y=as.character(myenv$current_unit),x='Time(ms)')
+        }
+        else{
+          bxp=bxp +
+            labs(
+              caption = get_pwc_label(pwc),
+              y=as.character(myenv$current_unit),x='° Spike')
+        }
+      }
+      
+      
     }
     
-    
-    
-    pwc=add_xy_position(pwc,x="Time")
-    
-    bxp=bxp + 
-      stat_pvalue_manual(pwc,hide.ns = TRUE,step.increase = 0.06) +
-      labs(
-           caption = get_pwc_label(pwc),
-           y=as.character(myenv$current_unit),x='Time(ms)')
-    
     myenv$mean_diff_plot=bxp
-    print('jijij')
-    
     bxp
     
   })
-
+ 
+  output$mean_diff_table <- renderTable({
+    full_table=myenv$full_table
+    over_time_per_factor=input$over_time_per_factor
+    factor_level=input$current_factor_level
+    mytest <- myenv$pwc
+    mytest
+  },digits=-2,align = 'c')
+  
+  
   output$t_test <- renderTable({
-    threeDarray=myenv$threeDarray
-    myfactor=input$multiple_file_factor
-    my_time_list=names(myenv$file_list)
-    t_test_dataset=threeDarray[,as.character(input$Variabletoshow),]
-    t_test_dataset=data.frame(cbind(data.frame(myenv$factor_columns),data.frame(t_test_dataset)))
-    
-   
-    my_t_test_table=perform_t_test(t_test_dataset,myfactor,my_time_list)
-    is.num <- sapply(my_t_test_table, is.numeric)
-    my_t_test_table[is.num] <- lapply(my_t_test_table[is.num], round, 8)
-    myenv$my_t_test_table=my_t_test_table
-    
-    my_t_test_table
-  },rownames = TRUE,
-  digits=-2,align = 'c')
-   
-  output$overtime_stat_mean <- renderTable({
-    threeDarray=myenv$threeDarray
-    myfactor=input$multiple_file_factor
-    my_time_list=names(myenv$file_list)
-    stat_dataset=threeDarray[,as.character(input$Variabletoshow),]
-    
-    stat_dataset=data.frame(cbind(data.frame(myenv$factor_columns),data.frame(stat_dataset)))
-   
-    
-    overtime_mean_table=overtime_basic_stat(stat_dataset,myfactor,my_time_list)$mean_table
-    
-   myenv$overtime_mean_table=overtime_mean_table
-    overtime_mean_table
-  },rownames = TRUE,
-  digits=-2,align = 'c')
-  
-  output$overtime_stat_sd <- renderTable({
-    threeDarray=myenv$threeDarray
-    myfactor=input$multiple_file_factor
-    my_time_list=names(myenv$file_list)
-    stat_dataset=threeDarray[,as.character(input$Variabletoshow),]
-    stat_dataset=data.frame(cbind(data.frame(myenv$factor_columns),data.frame(stat_dataset)))
-    
-    overtime_sd_table=overtime_basic_stat(stat_dataset,myfactor,my_time_list)$sd_table
-    myenv$overtime_sd_table=overtime_sd_table
-  },rownames = TRUE,
-  digits=-2,align = 'c')
-  
-  output$time_evol <- renderPlotly({
     req(input$proceed_to_multiple_analysis)
+    full_table=myenv$full_table
     variable_list=myenv$variable_list
     factor_list=myenv$factor_list
-    
-    time_list_MF=myenv$time_list_MF
-    threeDarray=myenv$threeDarray
-    variable=dimnames(threeDarray)[[2]]
-    dimnames(threeDarray)[[3]]=time_list_MF
-    
-    updateSliderTextInput(session,"whichtime","whichtime",choices=time_list_MF)
-    current_data=threeDarray[,as.character(input$Variabletoshow),]
-    
-    factor_columns=myenv$factor_columns
-    current_data=cbind(factor_columns,current_data)
+    time_list=myenv$factor_order
+    symbol_val=sym(input$Feature_to_study)
+    full_table=gather(full_table,key="Ind_var",value=symbol_val,3:ncol(full_table))%>%convert_as_factor(Cell_id)
+    full_table$Ind_var=as_factor(full_table$Ind_var)
+    full_table$Factor_of_analysis=as_factor(full_table$Factor_of_analysis)
     
     
-    variable_to_analyse=input$Variabletoshow
+    
+    t_test_table=data.frame(matrix(ncol=4,nrow=0, dimnames=list(NULL, c("Ind_var", "Factor_of_analysis", 'nb_obs',"t_test_p_val"))))
+    
+    
+    
+    
+    for (current_ind_var in levels(full_table$Ind_var)){
+      
+      for (current_factor in levels(full_table$Factor_of_analysis)){
+        
+        current_subset=full_table[which(full_table$Ind_var == current_ind_var & full_table$Factor_of_analysis ==current_factor) ,]
+        current_subset=na.omit(current_subset)
+        if (nrow(current_subset)>1){res_t_test = current_subset%>%t_test(symbol_val ~ 1,mu=0)
+        p_val=res_t_test$p
+        nb_obs=res_t_test$n}
+        else{ p_val=-1
+              nb_obs=nrow(current_subset)
+                 }
+        
+        new_line=data.frame("Ind_var"=current_ind_var,
+                            "Factor_of_analysis"=current_factor,
+                            'nb_obs'=nb_obs,
+                            "t_test_p_val"=p_val)
+        
+        
+        t_test_table=rbind(t_test_table,new_line)
+        
+        
+      }
+      
+      all_pop_current_subset=full_table[which(full_table$Ind_var == current_ind_var) ,]
+      all_pop_current_subset=na.omit(all_pop_current_subset)
+      if (nrow(all_pop_current_subset)>1){
+        new_res_t_test = all_pop_current_subset%>%t_test(symbol_val ~ 1,mu=0)
+        new_p_val=new_res_t_test$p
+        new_nb_obs=new_res_t_test$n
+      }
+      else{
+        new_p_val=-1
+        new_nb_obs=nrow(all_pop_current_subset)
+      }
+      
+      
+      all_pop_new_line=data.frame("Ind_var"=current_ind_var,
+                          "Factor_of_analysis"="All_population",
+                          'nb_obs'=new_nb_obs,
+                          "t_test_p_val"=new_p_val)
+      
+      t_test_table=rbind(t_test_table,all_pop_new_line)
+    }
+    
+    t_test_table=t(t_test_table)
+    myenv$t_test_table
+    t_test_table
+    
+  },rownames = TRUE,colnames=FALSE,
+  digits=-2,align = 'c')
    
-    nbfactors=input$nbfactors
+  output$overtime_stat <- renderTable({
+    req(input$proceed_to_multiple_analysis)
+    full_table=myenv$full_table
+    variable_list=myenv$variable_list
+    factor_list=myenv$factor_list
+    time_list=myenv$factor_order
     
-    ggdatatable=prepare_for_ggplot(current_data,time_list_MF,variable_to_analyse,nbfactors)$ggdatatable
-    unit_dict=myenv$unit_dict
+    symbol_val=sym(input$Feature_to_study)
+    overtime_stat_table=gather(full_table,key="Ind_var",value=symbol_val,3:ncol(full_table))%>%convert_as_factor(Cell_id)
+    
+    overtime_stat_table$Ind_var=str_remove(overtime_stat_table$Ind_var,"ms")
+    overtime_stat_table$Ind_var=str_remove(overtime_stat_table$Ind_var,"_spikes")
+    overtime_stat_table$Ind_var=as.numeric(overtime_stat_table$Ind_var)
+    overtime_mean_table=overtime_stat_table %>%
+      group_by(Ind_var,Factor_of_analysis) %>%
+      summarise_at(vars(symbol_val),funs(mean(.,na.rm=TRUE)))
+    overtime_mean_table_all_population=overtime_stat_table %>%
+      group_by(Ind_var) %>%
+      summarise_at(vars(symbol_val),funs(mean(.,na.rm=TRUE)))
+    overtime_mean_table_all_population['Factor_of_analysis'] <- c(rep("All_population",nrow(overtime_mean_table_all_population)))
+    
+    columns_order <- c("Ind_var","Factor_of_analysis","symbol_val")
+    overtime_mean_table <- overtime_mean_table[,columns_order]
+    overtime_mean_table_all_population <- overtime_mean_table_all_population[,columns_order]
+    new_overtime_mean_table=rbind(overtime_mean_table,overtime_mean_table_all_population)
+    myfactor_levels=append(factor_list,'All_population')
+    new_overtime_mean_table%>%
+      mutate(Factor_of_analysis=factor(Factor_of_analysis,levels=myfactor_levels))
+    new_overtime_mean_table=arrange(new_overtime_mean_table ,Ind_var,Factor_of_analysis)
+    
+    
+    
+    overtime_sd_table=overtime_stat_table %>%
+      group_by(Ind_var,Factor_of_analysis) %>%
+      summarise_at(vars(symbol_val),funs(sd(.,na.rm=TRUE)))
+    overtime_sd_table_all_population=overtime_stat_table %>%
+      group_by(Ind_var) %>%
+      summarise_at(vars(symbol_val),funs(sd(.,na.rm=TRUE)))
+    overtime_sd_table_all_population['Factor_of_analysis'] <- c(rep("All_population",nrow(overtime_sd_table_all_population)))
+    
+    
+    columns_order <- c("Ind_var","Factor_of_analysis","symbol_val")
+    overtime_sd_table <- overtime_sd_table[,columns_order]
+    overtime_sd_table_all_population <- overtime_sd_table_all_population[,columns_order]
+    new_overtime_sd_table=rbind(overtime_sd_table,overtime_sd_table_all_population)
+    myfactor_levels=append(factor_list,'All_population')
+    new_overtime_sd_table%>%
+      mutate(Factor_of_analysis=factor(Factor_of_analysis,levels=myfactor_levels))
+    new_overtime_sd_table=arrange(new_overtime_sd_table ,Ind_var,Factor_of_analysis)
+    overtime_stat_table=cbind(new_overtime_mean_table,new_overtime_sd_table[,2:3])
+    if (input$pertime==TRUE){
+      colnames(overtime_stat_table) <- c("Time(ms)",as.character(input$factor_of_analysis),'Mean',as.character(input$factor_of_analysis),'SD')
+    }
+    else{colnames(overtime_stat_table) <- c("Spike",as.character(input$factor_of_analysis),'Mean',as.character(input$factor_of_analysis),'SD')}
+    
+    
+    overtime_stat_table=t(overtime_stat_table)
+    myenv$overtime_stat_table=overtime_stat_table
+    overtime_stat_table
+  },rownames = TRUE,
+  colnames = FALSE,
+  digits=-2,align = 'c')
+  
+  
+  
+  output$time_evol <- renderPlot({
+    req(input$proceed_to_multiple_analysis)
+    full_table=myenv$full_table
+    variable_list=myenv$variable_list
+    factor_list=myenv$factor_list
+    time_list=myenv$factor_order
+    symbol_val=sym(input$Feature_to_study)
+    time_evol_table=gather(full_table,key="Ind_var",value=symbol_val,3:ncol(full_table))%>%convert_as_factor(Cell_id)
+  
+    time_evol_table$Ind_var=str_remove(time_evol_table$Ind_var,"ms")
+    time_evol_table$Ind_var=str_remove(time_evol_table$Ind_var,"_spikes")
+    time_evol_table$Ind_var=as.numeric(time_evol_table$Ind_var)
+    View(time_evol_table)
     
     if (parameters_ggplot$is.perTimeonly == TRUE){
-      myplot=ggplot(data=ggdatatable,aes(x=Time,y=.data[[input$Variabletoshow]]))+
+      myplot=ggplot(data=time_evol_table,aes(x=Ind_var,y=symbol_val))+
              geom_point(alpha=parameters_ggplot$alpha.geompoint,
                         size=parameters_ggplot$size.geompoint)
+      
+      mean_table=time_evol_table %>%
+        group_by(Ind_var) %>%
+        summarise_at(vars(symbol_val),funs(mean(.,na.rm=TRUE)))
+      mean_table$Factor_of_analysis <- c(rep('All population',nrow(mean_table)))
+      mean_table$Factor_of_analysis <- as.factor(mean_table$Factor_of_analysis)
+      mean_table_pop=mean_table
+      View(mean_table_pop)
+      sd_table=time_evol_table %>%
+        group_by(Ind_var) %>%
+        summarise_at(vars(symbol_val),funs(sd(.,na.rm=TRUE)))
+      sd_table$Factor_of_analysis <- c(rep('All population',nrow(sd_table)))
+      sd_table$Factor_of_analysis <- as.factor(sd_table$Factor_of_analysis)
+      
     }
     else{
+      mean_table=time_evol_table %>%
+        group_by(Ind_var,Factor_of_analysis) %>%
+        summarise_at(vars(symbol_val),funs(mean(.,na.rm=TRUE)))
+      View(mean_table)
+      sd_table=time_evol_table %>%
+        group_by(Ind_var,Factor_of_analysis) %>%
+        summarise_at(vars(symbol_val),funs(sd(.,na.rm=TRUE)))
       
-      myplot=ggplot(data=ggdatatable,aes(x=Time,y=.data[[input$Variabletoshow]],color=.data[[input$multiple_file_factor]]))+
+      myplot=ggplot(data=time_evol_table,aes(x=Ind_var,y=symbol_val,color=Factor_of_analysis))+
         geom_point(alpha=parameters_ggplot$alpha.geompoint,
                    size=parameters_ggplot$size.geompoint)
       
       
     }
     if (parameters_ggplot$is.sd == TRUE){
-        sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=parameters_ggplot$is.perTimeonly)$sd_table
-        myplot <- myplot+geom_line(data = sd_table,aes(x=Time,y=SD),
+        myplot <- myplot+geom_line(data = sd_table,aes(x=Ind_var,y=symbol_val,color=Factor_of_analysis),
                                    linetype= parameters_ggplot$line_type.sd,
                                    alpha=parameters_ggplot$alpha.geomlinesd,
                                    size=parameters_ggplot$size.geomlinesd)
@@ -678,33 +906,13 @@ server <- function(session,input, output) {
       }
       
     if (parameters_ggplot$is.mean == TRUE){
-        mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=parameters_ggplot$is.perTimeonly)$mean_table
-        myplot=myplot+geom_line(data = mean_table,aes(x=Time,y=Mean),
+        myplot=myplot+geom_line(data = mean_table,aes(x=Ind_var,y=symbol_val,color=Factor_of_analysis),
                                 linetype= parameters_ggplot$line_type.mean,
                                 alpha=parameters_ggplot$alpha.geomlinemean,
                                 size=parameters_ggplot$size.geomlinemean)
         
       }
-    
-    if (parameters_ggplot$is_overall_mean ==TRUE){
-      overall_mean_table=getmean(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=parameters_ggplot$is_overall_mean)$mean_table
-      myplot=myplot+geom_line(data = overall_mean_table,aes(x=Time,y=Mean),
-                              linetype= parameters_ggplot$line_type.mean,
-                              alpha=parameters_ggplot$alpha.geomlinemean,
-                              size=parameters_ggplot$size.geomlinemean,
-                              color="black")
-      
-    }
-    
-    if (parameters_ggplot$is_overall_sd ==TRUE){
-      overall_sd_table=getsd(ggdatatable,input$multiple_file_factor,variable_to_analyse,perTimeonly=parameters_ggplot$is_overall_sd)$sd_table
-      myplot=myplot+geom_line(data = overall_sd_table,aes(x=Time,y=SD),
-                              linetype= parameters_ggplot$line_type.sd,
-                              alpha=parameters_ggplot$alpha.geomlinesd,
-                              size=parameters_ggplot$size.geomlinesd,
-                              color="black")
-      
-    }
+   
     if (parameters_ggplot$is_smooth==TRUE){
       if(parameters_ggplot$is.perTimeonly ==TRUE){
        
@@ -723,31 +931,36 @@ server <- function(session,input, output) {
       
       if(input$is.lm==TRUE){
         #To facet by group
-        myplot=myplot+ geom_smooth(method = "lm", formula = y ~ poly(x,input$which.degree), size = 0.4, se =input$is.confidencebands,level=parameters_ggplot$smooth.interval , aes(group=.data[[input$multiple_file_factor]],color = .data[[input$multiple_file_factor]]))
+        myplot=myplot+ geom_smooth(method = "lm", formula = y ~ poly(x,input$which.degree), size = 0.4, se =input$is.confidencebands,level=parameters_ggplot$smooth.interval , aes(group=Factor_of_analysis,color = Factor_of_analysis))
        
         
           #stat_cor(formula = y ~ poly(x,input$which.degree),output.type = "latex")
       }
       if(input$is.loess==TRUE){
-        myplot=myplot+ geom_smooth(method = "loess", formula = y ~ x, size = 0.4, se = input$is.confidencebands,level=parameters_ggplot$smooth.interval, aes(group=.data[[input$multiple_file_factor]],color = .data[[input$multiple_file_factor]]))
+        myplot=myplot+ geom_smooth(method = "loess", formula = y ~ x, size = 0.4, se = input$is.confidencebands,level=parameters_ggplot$smooth.interval, aes(group=Factor_of_analysis,color = Factor_of_analysis))
       }
     }
      
     }
     if (input$pertime==TRUE){
       myplot=myplot+
-        labs(y=as.character(unit_dict[variable_to_analyse]),x='Time(ms)')
+        labs(y=as.character(myenv$current_unit),x='Time(ms)')
     }
     if (input$perspike==TRUE){
       myplot=myplot+
-        labs(y=as.character(unit_dict[variable_to_analyse]),x='Spike number')
+        labs(y=as.character(myenv$current_unit),x='Spike number')
     }
     
     if (parameters_ggplot$is.logscale==TRUE){
       myplot=myplot+scale_x_continuous(trans="log10")
     }
       
-   
+    if(parameters_ggplot$use_custom_y_range==TRUE){
+      myplot=myplot+ylim(parameters_ggplot$minimum_y_axis_range, parameters_ggplot$maximum_y_axis_range)
+    }
+    
+    myenv$mean_table=mean_table
+    myenv$sd_table=data.frame(sd_table)
     myenv$plot_MF=myplot
     myplot
   })
@@ -781,7 +994,7 @@ server <- function(session,input, output) {
     basic_stats=get_basic_stat(current_time_dataset, nbfactors = nbfactors, myfactor = myfactor)
     stat_table=basic_stats$stat_table
     myenv$stat_table=basic_stats$stat_table
-    myenv$mean_table=basic_stats$mean_table
+    #myenv$mean_table=basic_stats$mean_table
     myenv$sd_table=basic_stats$sd_table
     
     print(stat_table)
@@ -926,7 +1139,9 @@ server <- function(session,input, output) {
   parameters_ggplot <- reactiveValues(
     is.logscale=FALSE,
     smooth.interval=0.95,
-    
+    use_custom_y_range=FALSE,
+    maximum_y_axis_range=1,
+    minimum_y_axis_range=0,
     alpha.geompoint=0.3,
     size.geompoint=1,
     is.perTimeonly=FALSE,
@@ -951,7 +1166,9 @@ server <- function(session,input, output) {
       checkboxInput("is.logscale","Display x axis in log scale",value = parameters_ggplot$is.logscale),
       checkboxInput('is.perTimeonly',"Group only per time",value=parameters_ggplot$is.perTimeonly),
       checkboxInput("is_smooth","Display estimated trend",value=parameters_ggplot$is_smooth),
-      
+      checkboxInput("use_custom_y_range","Use custom y axis range",value=parameters_ggplot$use_custom_y_range),
+      numericInput("maximum_custom_y_range","Choose maximum Y axis value",value=parameters_ggplot$maximum_y_axis_range),
+      numericInput("minimum_custom_y_range","Choose minimum Y axis value",value=parameters_ggplot$minimum_y_axis_range),
       sliderInput("smooth.interval","Confidence interval (0 to 1)", min=0,max=1,value=parameters_ggplot$smooth.interval,step=0.01),
       sliderInput("size.geompoint","Point size",min=0,max=1,value=parameters_ggplot$size.geompoint,step=0.05),
       sliderInput("alpha.geompoint","Point opacity",min=0,max=1,step=0.05,value=parameters_ggplot$alpha.geompoint),
@@ -982,6 +1199,9 @@ server <- function(session,input, output) {
     parameters_ggplot$is.logscale <- input$is.logscale
     parameters_ggplot$is_smooth <- input$is_smooth
     parameters_ggplot$smooth.interval <- input$smooth.interval
+    parameters_ggplot$use_custom_y_range <- input$use_custom_y_range
+    parameters_ggplot$maximum_y_axis_range <- input$maximum_custom_y_range
+    parameters_ggplot$minimum_y_axis_range <- input$minimum_custom_y_range
     parameters_ggplot$is_overall_sd <- input$is_overall_sd
     parameters_ggplot$is_overall_mean <- input$is_overall_mean
     parameters_ggplot$size.geompoint <- input$size.geompoint
