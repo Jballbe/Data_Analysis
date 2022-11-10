@@ -76,6 +76,7 @@ ui <- fluidPage(
                # Show a plot of the generated distribution
                mainPanel(
                  plotlyOutput("I_O_feature_plot",height = 800),
+                 plotlyOutput("Adaptation_plot",height=800),
                  tableOutput('IO_table'),
                  tableOutput('Stim_freq_table')
                  
@@ -203,7 +204,151 @@ server <- function(session,input, output) {
       SF_plot
       
     })
-    
+    output$Adaptation_plot <- renderPlotly({
+      current_json_file=get_json_file()
+      Full_Sweep_metadata=as.data.frame(do.call("cbind",current_json_file$Spike_feature_table$`0`))
+      time_list=c(0.005,0.010,0.025,0.050,0.100,0.250,0.500)
+      
+      full_median_table=data.frame(Interval = numeric(),    # Create empty data frame
+                                   Inst_freq_WU = numeric(),
+                                   Nb_of_obs = numeric(),
+                                   Response_time_ms=character())
+      
+      full_inst_freq_table=data.frame(Stim_amp_pA=numeric(),
+                                      Interval=numeric(),
+                                      Inst_freq_WU = numeric())
+      
+        
+      
+      for(current_time in time_list){
+      maximum_nb_interval =0
+      sweep_list=(Full_Sweep_metadata[,1])
+      sweep_list <-  unlist(unname(sweep_list))
+      for (current_sweep in sweep_list){
+        current_SF_table=as.data.frame(do.call("cbind",current_json_file$Spike_feature_table$`0`$SF[[as.character(current_sweep)]]))
+        start_time=unname(unlist(Full_Sweep_metadata[as.character(current_sweep),2]))
+        current_SF_tableSpike_time=subset(current_SF_table, Feature == "Upstroke")
+        current_SF_tableSpike_time=subset(current_SF_tableSpike_time,Time_s<=(start_time+current_time))
+        
+        nb_spikes=dim(current_SF_tableSpike_time)[1]
+        
+      if (nb_spikes>maximum_nb_interval ){
+        maximum_nb_interval=nb_spikes
+      }
+        
+      }
+      
+      if (maximum_nb_interval>1){
+      new_columns=as.character(seq(1,(maximum_nb_interval-1)))
+      
+      Inst_freq_table=Full_Sweep_metadata[,c(1,4)]
+      
+      for (elt in new_columns){
+        Inst_freq_table[elt]=NaN
+      }
+      
+      for (current_sweep in sweep_list){
+        current_SF_table=as.data.frame(do.call("cbind",current_json_file$Spike_feature_table$`0`$SF[[as.character(current_sweep)]]))
+        start_time=unname(unlist(Full_Sweep_metadata[as.character(current_sweep),2]))
+        current_SF_tableSpike_time=subset(current_SF_table, Feature == "Upstroke")
+        current_SF_tableSpike_time=subset(current_SF_tableSpike_time,Time_s<=(start_time+current_time))
+        spike_times=unlist(unname(current_SF_tableSpike_time$Time_s))
+        
+        if (length(spike_times) >2){
+          
+          for (current_spike_time_index in 2:length(spike_times)){
+            current_frequency=1/(spike_times[current_spike_time_index]-spike_times[current_spike_time_index-1])
+            current_interval=current_spike_time_index-1
+            Inst_freq_table[as.character(current_sweep),as.character(current_interval)]=current_frequency
+            
+          }
+        }
+        initial_first_freq=Inst_freq_table[as.character(current_sweep),"1"]
+        for (col in new_columns){
+          
+          Inst_freq_table[as.character(current_sweep),col]=Inst_freq_table[as.character(current_sweep),col]/initial_first_freq
+        }
+      }
+      
+      Inst_freq_table=Inst_freq_table[,seq(2,dim(Inst_freq_table)[2])]
+      
+      Inst_freq_table$Stim_amp_pA <- as.numeric(Inst_freq_table$Stim_amp_pA)
+      Inst_freq_table=gather(Inst_freq_table, key="Interval", value="Inst_freq_WU", 2:dim(Inst_freq_table)[2])
+      
+      Inst_freq_table$Interval=str_remove(Inst_freq_table$Interval,'Interval_')
+      Inst_freq_table <- Inst_freq_table %>% replace(.=="NULL", NaN)
+      Inst_freq_table <- Inst_freq_table[!is.na(Inst_freq_table$Inst_freq_WU),]
+      Inst_freq_table$Inst_freq_WU <- unlist(Inst_freq_table$Inst_freq_WU)
+      Inst_freq_table$Interval=as.numeric(Inst_freq_table$Interval)
+      
+      count_df=data.frame(table(Inst_freq_table$Interval))
+      if (dim(count_df)[1]>0){
+      colnames(count_df) <- c("Interval","Nb_of_obs")
+      
+      
+      median_table=Inst_freq_table %>% group_by(Interval) %>% 
+        summarise(Inst_freq_WU=median(Inst_freq_WU))
+      median_table$Interval <- as.numeric(median_table$Interval)
+      count_df$Interval <- as.numeric(count_df$Interval)
+      median_table <- merge(median_table,count_df,by=c("Interval"))
+      median_table['Response_time_ms']=paste0(as.character(current_time*1e3),'ms')
+      
+      full_median_table=rbind(full_median_table,median_table)
+      full_inst_freq_table=rbind(full_inst_freq_table,Inst_freq_table)
+      }
+      }
+      }
+      
+      full_median_table$Response_time_ms=factor(full_median_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
+      
+      Adapt_plot=ggplot()+geom_point(full_inst_freq_table,mapping=aes(x=Interval,y=Inst_freq_WU))
+      
+      Adapt_plot=Adapt_plot+geom_point(full_median_table,mapping=aes(x=Interval,y=Inst_freq_WU,color=Response_time_ms),size=full_median_table$Nb_of_obs,shape="square")
+      fit_table=as.data.frame(do.call("cbind",current_json_file$Fit_table$`0`))
+      fit_table=subset(fit_table,Adaptation_obs =="--")
+      
+      Interval_seq=seq(1,length(seq(7,dim(Full_Sweep_metadata)[2])))
+      if (dim(fit_table)[1] != 0){
+        
+        A=unname(unlist(fit_table[1,"A"]))
+        Index_cst=unname(unlist(fit_table[1,"B"]))
+        C=unname(unlist(fit_table[1,"C"]))
+        
+        A_norm=A/(A+C)
+        C_norm=C/(A+C)
+        
+        inst_freq_array=A*exp(-Interval_seq/Index_cst)+C
+        
+        Adapt_fit_table=data.frame(cbind(Interval_seq,inst_freq_array))
+        Adapt_fit_table['Response_time_ms']=paste0(as.character(unname(unlist(fit_table[1,"Response_time_ms"]))*1e3),'ms')
+        
+        for (time in 2:dim(fit_table)[1]){
+          
+          A=unname(unlist(fit_table[time,"A"]))
+          Index_cst=unname(unlist(fit_table[time,"B"]))
+          C=unname(unlist(fit_table[time,"C"]))
+          A_norm=A/(A+C)
+          C_norm=C/(A+C)
+          
+          inst_freq_array=A_norm*exp(-Interval_seq/Index_cst)+C_norm
+          new_table=data.frame(cbind(Interval_seq,inst_freq_array))
+          new_table['Response_time_ms']=paste0(as.character(unname(unlist(fit_table[time,"Response_time_ms"]))*1e3),'ms')
+          Adapt_fit_table=rbind(Adapt_fit_table,new_table)
+          
+          
+          
+        }
+        
+        colnames(Adapt_fit_table) <- c("Interval","Inst_freq_WU",'Response_time_ms')
+        Adapt_fit_table$Response_time_ms=as.factor(Adapt_fit_table$Response_time_ms)
+        Adapt_fit_table$Response_time_ms=factor(Adapt_fit_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
+        Adapt_plot=Adapt_plot+geom_line(Adapt_fit_table,mapping=aes(x=Interval,y=Inst_freq_WU,color=Response_time_ms))
+      }
+      
+      Adapt_plot
+      
+      
+    })
     output$I_O_feature_plot <- renderPlotly({
       
       current_json_file=get_json_file()
@@ -238,6 +383,8 @@ server <- function(session,input, output) {
             
             
           }
+          
+          
         }
         
         else if (dim(current_SF_tableSpike_time)[1] == 0){
@@ -264,30 +411,34 @@ server <- function(session,input, output) {
       IO_plot=ggplot(Stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_time))+geom_point()
       
       
-      # Create sigmoid fit traces  --> fit trace
+      # Create Hill fit traces  --> fit trace
       fit_trace=as.data.frame(do.call("cbind",current_json_file$Fit_table$`0`))
-      fit_trace=subset(fit_trace,Fit =="TypeI")
+      fit_trace=subset(fit_trace,I_O_obs =="--")
       
       if (dim(fit_trace)[1] != 0){
         stim_array=seq(min(unname(unlist(Full_Sweep_metadata$Stim_amp_pA))),
                        max(unname(unlist(Full_Sweep_metadata$Stim_amp_pA))),
                        1)
-        sigmoid_amplitude=unname(unlist(fit_trace[1,"Amplitude"]))
-        sigmoid_center=unname(unlist(fit_trace[1,"Center"]))
-        sigmoid_sigma=unname(unlist(fit_trace[1,"Sigma"]))
+        Hill_amplitude=unname(unlist(fit_trace[1,"Hill_amplitude"]))
+        Hill_coef=unname(unlist(fit_trace[1,"Hill_coef"]))
+        Hill_Half_cst=unname(unlist(fit_trace[1,"Hill_Half_cst"]))
+        x_shift=abs(min(stim_array))
+        stim_array_shifted=stim_array+x_shift
+        freq_array=Hill_amplitude*((stim_array_shifted**(Hill_coef))/((Hill_Half_cst**Hill_coef)+(stim_array_shifted**(Hill_coef))))
         
-        freq_array=sigmoid_amplitude*(1-(1/(1+exp((stim_array-sigmoid_center)/sigmoid_sigma))))
         fit_table=data.frame(cbind(stim_array,freq_array))
-        fit_table['Response_time']=paste0(as.character(unname(unlist(fit_trace[1,"Response_time_ms"]))),'ms')
+        fit_table['Response_time']=paste0(as.character(unname(unlist(fit_trace[1,"Response_time_ms"]))*1e3),'ms')
         
         for (time in 2:dim(fit_trace)[1]){
-          sigmoid_amplitude=unname(unlist(fit_trace[time,"Amplitude"]))
-          sigmoid_center=unname(unlist(fit_trace[time,"Center"]))
-          sigmoid_sigma=unname(unlist(fit_trace[time,"Sigma"]))
-          freq_array=sigmoid_amplitude*(1-(1/(1+exp((stim_array-sigmoid_center)/sigmoid_sigma))))
+          
+          Hill_amplitude=unname(unlist(fit_trace[time,"Hill_amplitude"]))
+          Hill_coef=unname(unlist(fit_trace[time,"Hill_coef"]))
+          Hill_Half_cst=unname(unlist(fit_trace[time,"Hill_Half_cst"]))
+          freq_array=Hill_amplitude*((stim_array_shifted**(Hill_coef))/((Hill_Half_cst**Hill_coef)+(stim_array_shifted**(Hill_coef))))
           new_table=data.frame(cbind(stim_array,freq_array))
-          new_table['Response_time']=paste0(as.character(unname(unlist(fit_trace[time,"Response_time_ms"]))),'ms')
+          new_table['Response_time']=paste0(as.character(unname(unlist(fit_trace[time,"Response_time_ms"]))*1e3),'ms')
           fit_table=rbind(fit_table,new_table)
+          print(as.character(unname(unlist(fit_trace[time,"Response_time_ms"]))))
           
         }
         
@@ -298,7 +449,9 @@ server <- function(session,input, output) {
       }
       
       original_IO_table=as.data.frame(do.call("cbind",current_json_file$IO_table$`0`))
-      original_IO_table=subset(original_IO_table,Fit=="TypeI")
+      first_line=1
+      original_IO_table <- original_IO_table %>% replace(.=="NULL", NA)
+      original_IO_table <- original_IO_table[!is.na(original_IO_table$Gain),]
       
       if (dim(original_IO_table)[1] !=0){
         min_x=min(unname(unlist(original_IO_table$Threshold)))-10
@@ -311,7 +464,7 @@ server <- function(session,input, output) {
         IO_stim_array=seq(min_x,max_x,1)
         IO_freq_array=Gain*IO_stim_array+Intercept
         IO_table=data.frame(cbind(IO_stim_array,IO_freq_array))
-        IO_table['Response_time']=paste0(as.character(unname(unlist(original_IO_table[1,"Response_time_ms"]))),'ms')
+        IO_table['Response_time']=paste0(as.character(unname(unlist(original_IO_table[1,"Response_time_ms"]))*1e3),'ms')
         
         for (time in 2:dim(original_IO_table)[1]){
           Threshold=unname(unlist(original_IO_table[time,"Threshold"]))
@@ -319,7 +472,7 @@ server <- function(session,input, output) {
           Intercept=-Gain*Threshold
           IO_freq_array=Gain*IO_stim_array+Intercept
           current_IO_table=data.frame(cbind(IO_stim_array,IO_freq_array))
-          current_IO_table['Response_time']=paste0(as.character(unname(unlist(original_IO_table[time,"Response_time_ms"]))),'ms')
+          current_IO_table['Response_time']=paste0(as.character(unname(unlist(original_IO_table[time,"Response_time_ms"]))*1e3),'ms')
           
           IO_table=rbind(IO_table,current_IO_table)
           
@@ -339,6 +492,10 @@ server <- function(session,input, output) {
       original_IO_table=as.data.frame(do.call("cbind",current_json_file$IO_table$`0`))
       original_IO_table <- original_IO_table %>% replace(.=="NULL", NaN)
       original_IO_table=original_IO_table[,-1]
+      for (line in 1:dim(original_IO_table)[1]){
+        original_IO_table[line,1]=1e3*unname(unlist(original_IO_table[line,1]))
+      }
+      original_IO_table[,1]=as.character(original_IO_table[,1])
       original_IO_table=data.frame(original_IO_table)
       original_IO_table
     })
