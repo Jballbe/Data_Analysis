@@ -36,9 +36,7 @@ ui <- fluidPage(
         mainPanel(
          # plotlyOutput("Spike_feature_plot",height = 800)
           #plotlyOutput("traces_plot")
-          #tableOutput('Metadata'),
-          #tableOutput('IO_table')
-          #tableOutput('Stim_freq_table')
+          
           
            
            
