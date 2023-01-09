@@ -31,7 +31,7 @@ ui <- fluidPage(
               sidebarPanel(
                 shinyDirButton('folder', 'Select a folder', 'Please select a folder', FALSE),
                 selectInput("Cell_id_to_analyse","Select_cell_id",choices=""),
-            textInput("Cell_id","Enter cell id"),
+            
             actionButton("Change_cell", "Show Cell Trace")
             
         ),
@@ -39,7 +39,7 @@ ui <- fluidPage(
         
         mainPanel(
           
-          
+          dataTableOutput('cell_list_csv')
          # plotlyOutput("Spike_feature_plot",height = 800)
           #plotlyOutput("traces_plot")
           
@@ -61,7 +61,10 @@ ui <- fluidPage(
                mainPanel(
                  textOutput('file_path'),
                  tableOutput('Metadata'),
-                 tableOutput('Sweep_info')
+                 tableOutput('Sweep_info'),
+                 plotlyOutput('BE_plot'),
+                 plotlyOutput('Time_cst_plot'),
+                 plotlyOutput('Time_cst_boxplot')
                  # plotlyOutput("Spike_feature_plot",height = 800)
                  #plotlyOutput("traces_plot")
                  
@@ -105,7 +108,8 @@ ui <- fluidPage(
                # Show a plot of the generated distribution
                mainPanel(
                  plotlyOutput("I_O_feature_plot",height = 800),
-                 tableOutput('IO_table'),
+                 tableOutput('IO_table_fit'),
+                 tableOutput('IO_table_feature'),
                  plotlyOutput("Adaptation_plot",height=800),
                  tableOutput('Adapt_table'),
                  tableOutput('Stim_freq_table')
@@ -166,6 +170,12 @@ server <- function(session,input, output) {
                             full.names=FALSE)
                  updateSelectInput(session,"Cell_id_to_analyse","Select_cell_id",choices=file_list)
                })
+  
+  output$cell_list_csv <- renderDataTable({
+    cell_list_csv=read_csv('/Volumes/Work_Julien/Cell_Data_File/Cell_file_information.csv',)
+    
+    cell_list_csv
+  })
   
   get_cell_file <- eventReactive(input$Change_cell,{
     req(input$Cell_id_to_analyse)
@@ -316,6 +326,14 @@ server <- function(session,input, output) {
       
       sweep_info_table=cell_tables_list$Sweep_info_table
       Adaptation_fit_table=cell_tables_list$Adaptation_fit_table
+      cell_fit_table=cell_tables_list$Cell_fit_table
+      sub_cell_fit_table=cell_fit_table[which(cell_fit_table$Adaptation_obs == '--'),]
+      if (dim(sub_cell_fit_table)[1] == 0){
+        Adapt_plot=ggplot() + theme_void() + ggtitle('Not able to compute adaptation')
+        
+      }
+      
+      else{
       
       time_list <- unique(Adaptation_fit_table$Response_time_ms)
       
@@ -369,8 +387,10 @@ server <- function(session,input, output) {
         current_SF_tableSpike_time=current_SF_table[which(current_SF_table$Feature == 'Upstroke' & current_SF_table$Time_s <=(start_time+current_time*1e-3)),]
         spike_times=unlist(unname(current_SF_tableSpike_time$Time_s))
         max_nb_of_spike=length(spike_times)
+        
         if (max_nb_of_spike>=5){
           sub_Adaptation_table=Adaptation_fit_table[which(Adaptation_fit_table$Response_time_ms == current_time),]
+          
           Max_nb_spike=sub_Adaptation_table[which(sub_Adaptation_table$Sweep == current_sweep),'Nb_of_spikes']
           
           first_inst_freq=1/(spike_times[2]-spike_times[1])
@@ -391,7 +411,7 @@ server <- function(session,input, output) {
             
             Inst_freq_table=rbind(Inst_freq_table,new_df)
           }
-          
+         
         }
       }
       full_inst_freq_table=rbind(full_inst_freq_table,Inst_freq_table)
@@ -407,7 +427,7 @@ server <- function(session,input, output) {
       full_inst_freq_table$Nb_of_spikes=as.character(full_inst_freq_table$Nb_of_spikes)
       
       #Adapt_plot=ggplot()+geom_point(full_inst_freq_table,mapping=aes(x=Interval,y=Inst_freq_WU))
-      print(full_inst_freq_table)
+      
       Adapt_plot=ggplot()+geom_point(full_inst_freq_table,mapping=aes(x=Interval,y=Inst_freq_WU,color=Response_time_ms,alpha=Nb_of_spikes))
       
       #,color=Stim_amp_pA,alpha=Max_nb_spike
@@ -464,16 +484,19 @@ server <- function(session,input, output) {
       sweep_adapt_fit_table$Inst_freq_WU=as.numeric(sweep_adapt_fit_table$Inst_freq_WU)
       sweep_adapt_fit_table$Response_time_ms=as.factor(sweep_adapt_fit_table$Response_time_ms)
       sweep_adapt_fit_table$Response_time_ms=factor(sweep_adapt_fit_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
+      sweep_adapt_fit_table$Sweep=as.factor(sweep_adapt_fit_table$Sweep)
+      sweep_adapt_fit_table$Sweep=factor(sweep_adapt_fit_table$Sweep,levels=sweep_list)
       
       sweep_adapt_fit_table$Nb_of_spikes = as.character(sweep_adapt_fit_table$Nb_of_spikes)
       
       colnames(full_Adapt_fit_table) <- c("Interval","Inst_freq_WU",'Response_time_ms')
       full_Adapt_fit_table$Response_time_ms=as.factor(full_Adapt_fit_table$Response_time_ms)
       full_Adapt_fit_table$Response_time_ms=factor(full_Adapt_fit_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-      Adapt_plot=Adapt_plot+geom_line(sweep_adapt_fit_table,mapping=aes(x=Interval,y=Inst_freq_WU,color=Response_time_ms,alpha=Nb_of_spikes),linetype = "dashed")
+      Adapt_plot=Adapt_plot+geom_line(sweep_adapt_fit_table,mapping=aes(x=Interval,y=Inst_freq_WU,color=Response_time_ms,alpha=Nb_of_spikes,group=Sweep),linetype = "dashed")
       Adapt_plot=Adapt_plot+geom_line(full_Adapt_fit_table,mapping=aes(x=Interval,y=Inst_freq_WU,color=Response_time_ms))
+      Adapt_plot=Adapt_plot+ggtitle('Spike_frequency_adaptation')
       
-      
+      }
       Adapt_plot
       
       
@@ -537,7 +560,10 @@ server <- function(session,input, output) {
       
       
       cell_fit_table=cell_tables_list$Cell_fit_table
+      View(Cell_feature_table)
       sub_cell_fit_table=cell_fit_table[which(cell_fit_table$I_O_obs == "--"),]
+      if (dim(sub_cell_fit_table)[1]!=0){
+      
       sub_time_list=sub_cell_fit_table$Response_time_ms
       stim_array=Full_Sweep_metadata$Stim_amp_pA
       stim_array=seq(min(stim_array,na.rm = TRUE),max(stim_array,na.rm = TRUE),.1)
@@ -588,12 +614,12 @@ server <- function(session,input, output) {
       IO_table$Response_time=factor(IO_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
       IO_plot=IO_plot+geom_line(IO_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_time),linetype='dashed')
       
-     
+      }
       IO_plot
       
     })
     
-    output$IO_table <- renderTable({
+    output$IO_table_fit <- renderTable({
       cell_tables_list=get_cell_file()
       cell_fit_table=cell_tables_list$Cell_fit_table
       sub_cell_fit_table=cell_fit_table[,c("Response_time_ms", "I_O_obs", "I_O_QNRMSE",
@@ -601,6 +627,15 @@ server <- function(session,input, output) {
       
       sub_cell_fit_table
     })
+    
+    
+    output$IO_table_feature <- renderTable({
+      cell_tables_list=get_cell_file()
+      cell_feature_table=cell_tables_list$Cell_feature_table
+     
+      cell_feature_table
+    })
+    
     
     output$Adapt_table <- renderTable({
       cell_tables_list=get_cell_file()
@@ -677,9 +712,43 @@ server <- function(session,input, output) {
       Sweep_info_table
     },rownames=TRUE)
     
+    output$BE_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      cell_sweep_info_table=cell_tables_list$Sweep_info_table
+      BE_table <- cell_sweep_info_table[,c('Bridge_Error_GOhms','Bridge_Error_extrapolated','Sweep','Trace_id','Train_id')]
+      levels=unique(BE_table$Train_id)
+      BE_table$Train_id <- factor(BE_table$Train_id,levels=levels)
+      BE_plot=ggplot(BE_table,mapping=aes(x=Trace_id,y=Bridge_Error_GOhms,color=Bridge_Error_extrapolated))+geom_line(aes(group=Train_id,color=Bridge_Error_extrapolated))+geom_point()
+      BE_plot
+    }))
+    
+    
+    output$Time_cst_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      cell_sweep_info_table=cell_tables_list$Sweep_info_table
+      TC_table <- cell_sweep_info_table[,c('Time_constant_ms','Sweep','Trace_id','Train_id')]
+      levels=unique(TC_table$Train_id)
+      TC_table$Train_id <- factor(TC_table$Train_id,levels=levels)
+      TC_plot=ggplot(TC_table,mapping=aes(x=Trace_id,y=Time_constant_ms,color=Train_id))+geom_line(aes(group=Train_id))+geom_point()
+      TC_plot
+    }))
+    
+    
+    output$Time_cst_boxplot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      cell_sweep_info_table=cell_tables_list$Sweep_info_table
+      TC_table <- cell_sweep_info_table[,c('Time_constant_ms','Sweep','Trace_id','Train_id')]
+      levels=unique(TC_table$Train_id)
+      TC_table$Train_id <- factor(TC_table$Train_id,levels=levels)
+      TC_boxplot=ggplot(TC_table,mapping=aes(x=factor(0),y=Time_constant_ms))+geom_boxplot()+geom_jitter(color="black", size=0.9, alpha=0.9)
+      TC_boxplot=TC_plot+theme(axis.title.x=element_blank(),
+            axis.text.x=element_blank(),
+            axis.ticks.x=element_blank())
+      TC_boxplot
+    }))
+    
    
-    
-    
+
 }
 
 # Run the application 
