@@ -851,7 +851,7 @@ server <- function(session,input, output) {
     # }
     
     my_full_table=full_table
-    
+    View(my_full_table)
     if (input$over_time_per_factor == TRUE){
       full_table=full_table[which(full_table[,"Factor_of_analysis"]==as.character(input$current_factor_level)),]
     }
@@ -866,13 +866,18 @@ server <- function(session,input, output) {
     
     
     for (elt in levels(RMA_full_table[,"Ind_var"])){
+      
       current_table=RMA_full_table[which(RMA_full_table[,"Ind_var"]==as.character(elt)),]
-      current_table=current_table[-which(is.nan(current_table[,"symbol_val"])==TRUE),]
+
+      current_table=current_table[-which(is.na(current_table[,"symbol_val"])==TRUE),]
+
       if (nrow(current_table)<3){
+        
         RMA_full_table=RMA_full_table[-which(RMA_full_table[,"Ind_var"]==as.character(elt)),]
         
       }
     }
+    
     RMA_full_table$Ind_var=droplevels(RMA_full_table$Ind_var)
     
     
@@ -931,6 +936,18 @@ server <- function(session,input, output) {
       
     }
     
+    if (input$custom_y_range_anova_plot==TRUE){
+      bxp=bxp+ylim(input$minimum_y_anova,input$maximum_y_anova)
+      #min_pwc=min(pwc[,'y.position'])
+    }
+    
+    bxp=bxp+
+      labs(y=as.character(myenv$current_unit),x='Time(ms)')
+    bxp=bxp+ theme(text = element_text(size = 15,face='bold'))+theme(axis.title = element_text(face="bold"))
+    
+    
+    return (bxp)
+    
     if (all.normal == TRUE){
       my.res = anova_test(data=RMA_full_table,dv='my_current_variable',wid=id,within=Ind_var)
       pwc <- data.frame(Method=c(my.res$method),
@@ -982,6 +999,14 @@ server <- function(session,input, output) {
         
         pwc=add_xy_position(pwc,x="Ind_var",scales='free')
        
+        if (input$custom_y_range_anova_plot==TRUE){
+          bxp=bxp+ylim(input$minimum_y_anova,input$maximum_y_anova)
+          min_pwc=min(pwc[,'y.position'])
+          max_pwc=max(pwc[,'y.position'])
+          for (current_pwc in seq(nrow(pwc))){
+            pwc[current_pwc,'y.position']=pwc[current_pwc,'y.position']*((input$maximum_y_anova)/max_pwc)
+          }
+        }
         bxp=bxp + 
           stat_pvalue_manual(pwc,hide.ns = TRUE,step.increase = 0.06)
         
@@ -1006,6 +1031,16 @@ server <- function(session,input, output) {
       
       
     }
+    
+    if (input$custom_y_range_anova_plot==TRUE){
+      bxp=bxp+ylim(input$minimum_y_anova,input$maximum_y_anova)
+      #min_pwc=min(pwc[,'y.position'])
+    }
+    
+    bxp=bxp+
+      labs(y=as.character(myenv$current_unit))
+    bxp=bxp+ theme(text = element_text(size = 15,face='bold'))+theme(axis.title = element_text(face="bold"))
+    
     
     myenv$mean_diff_plot=bxp
     bxp
@@ -1272,7 +1307,11 @@ server <- function(session,input, output) {
       myplot=myplot+scale_x_continuous(trans="log10")
     }
     
+    
+    
     myenv$toplolty=myplot
+    
+    
     if(parameters_ggplot$use_custom_y_range==TRUE){
       myplot=myplot+ylim(parameters_ggplot$minimum_y_axis_range, parameters_ggplot$maximum_y_axis_range)
     }
@@ -1650,6 +1689,7 @@ server <- function(session,input, output) {
     
     anova_plot=anova_plot+
       labs(y=as.character(myenv$current_unit))
+    anova_plot=anova_plot+ theme(text = element_text(size = 15,face='bold'))+theme(axis.title = element_text(face="bold"))
     
     
     myenv$anova_plot=anova_plot
@@ -1680,6 +1720,7 @@ server <- function(session,input, output) {
     model=myenv$model
     current_ind_var=input$Which_time_file
     anova_plot=ggboxplot(full_table,x="Factor_of_analysis" ,y="symbol_val")
+    
     
     
     

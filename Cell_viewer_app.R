@@ -7,7 +7,7 @@
 #    http://shiny.rstudio.com/
 #
 
-required_packages=c("rhdf5","plyr","dplyr","shiny","ggplot2","GGally","plotly","tidyverse","gghighlight","ggpubr","shinyFiles",'gghalves','shinyWidgets','seewave',"gsignal")
+required_packages=c("rhdf5","plyr","dplyr","shiny","ggplot2","GGally","plotly","tidyverse","gghighlight","ggpubr","shinyFiles",'gghalves','shinyWidgets','orca',"gsignal","RColorBrewer","processx",'ggh4x')
 install.packages(setdiff(required_packages,rownames(installed.packages())))
 source(file="/Users/julienballbe/My_Work/Data_Analysis/Import_h5_file.R")
 #source_python("/Users/julienballbe/My_Work/My_Librairies/read_pickle.py")
@@ -94,7 +94,8 @@ ui <- fluidPage(
                
                # Show a plot of the generated distribution
                mainPanel(
-                 plotlyOutput("Spike_feature_plot",height = 800)
+                 plotlyOutput("Spike_feature_plot",height = 800),
+                 actionButton('Save_spike_feature_plot',"Save plot")
                  
                  
                )
@@ -131,6 +132,7 @@ ui <- fluidPage(
                  tableOutput('IO_table_fit'),
                  tableOutput('IO_table_feature'),
                  plotlyOutput("Adaptation_plot",height=800),
+                 checkboxInput("Normalize_adapt_params","Normalize Adaptation Parameters"),
                  tableOutput('Adapt_table'),
                  tableOutput('Stim_freq_table')
                  
@@ -141,14 +143,14 @@ ui <- fluidPage(
 
              # Sidebar with a slider input for number of bins
              sidebarLayout(
-               sidebarPanel(
+               sidebarPanel(width=1,
                  checkboxInput("Apply_BE_correction","Apply Bridge Error Correction")
 
                ),
 
 
-               mainPanel(
-                 plotlyOutput("traces_plot"),
+               mainPanel(width = 11,
+                 plotlyOutput("traces_plot",height = 800),
 
                )
              )
@@ -225,15 +227,22 @@ server <- function(session,input, output) {
       
       sweep_info_table=cell_tables_list$Sweep_info_table
       sweep_list=sweep_info_table$Sweep
-      sampling_freq=mean(sweep_info_table$Sampling_frequency_Hz)
+      View(sweep_info_table)
+      sampling_freq=mean(sweep_info_table$Sampling_Rate_Hz)
       
       full_trace_df=data.frame(cell_tables_list$Full_TPC[as.character(sweep_list[1])])
+      print(sweep_list)
       
-      full_trace_df[,"Membrane_potential_mV"] <- bwfilter(full_trace_df[,"Membrane_potential_mV"], f=sampling_freq, n=2, to=5000)
+      
+      
+      
+      
+     # full_trace_df[,"Membrane_potential_mV"] <- bwfilter(full_trace_df[,"Membrane_potential_mV"], f=sampling_freq, n=2, to=5000)
       
       
       colnames(full_trace_df) <- cell_tables_list$Full_TPC$TPC_colnames
       full_trace_df["Sweep"]=as.character(sweep_list[1])
+      
       stim_start=sweep_info_table[as.character(sweep_list[1]),"Stim_start_s"]
       stim_end=sweep_info_table[as.character(sweep_list[1]),"Stim_end_s"]
       full_trace_df=full_trace_df[which(full_trace_df$Time_s <= (stim_end+.05) & full_trace_df$Time_s >= (stim_start-.05) ),]
@@ -245,32 +254,203 @@ server <- function(session,input, output) {
         current_sweep=as.character(current_sweep)
         df=data.frame( cell_tables_list$Full_TPC[as.character(current_sweep)])
         colnames(df) <- cell_tables_list$Full_TPC$TPC_colnames
+        print(current_sweep)
         df["Sweep"]=current_sweep
+        
         stim_start=sweep_info_table[as.character(current_sweep),"Stim_start_s"]
         stim_end=sweep_info_table[as.character(current_sweep),"Stim_end_s"]
         df=df[which(df$Time_s <= (stim_end+.05) & df$Time_s >= (stim_start-.05) ),]
+        
         if (input$Apply_BE_correction == TRUE){
           BE=sweep_info_table[as.character(current_sweep),"Bridge_Error_GOhms"]
           full_trace_df[,"Membrane_potential_mV"]=full_trace_df[,"Membrane_potential_mV"]-BE*full_trace_df[,"Input_current_pA"]
         }
+        
+        filt_coeff = (5 * 1e3) / (sampling_freq / 2.)
+        bf <- butter(2, filt_coeff)
+        zi <- filter_zi(bf)
+        
+        
+        df[,"Membrane_potential_mV"] <- filter(bf, df[,"Membrane_potential_mV"],zi)$y      
+        df[,"Input_current_pA"] <-  filter(bf, df[,"Input_current_pA"],zi)$y
+      
         full_trace_df=rbind(full_trace_df,df)
         
       }
       
       for (elt in colnames(full_trace_df)){
+        if (elt != 'Sweep'){
         full_trace_df[,elt]=as.numeric(full_trace_df[,elt])
+        }
       }
       
       full_trace_df[,"Sweep"]=as.factor(full_trace_df[,"Sweep"])
+      new_df=full_trace_df[,c('Time_s','Membrane_potential_mV','Sweep')]
+      colnames(new_df) <- c('Time_s','Value','Sweep')
+      new_df['Measure']="Membrane_potential_mV"
       
       
-      full_trace_plot=ggplot(data=full_trace_df,aes(x=Time_s,y=Membrane_potential_mV,group=Sweep))+geom_line(aes(color=Sweep))
-      full_trace_plotly <- ggplotly(full_trace_plot,dynamicTicks=TRUE)
+      second_new_df=full_trace_df[,c('Time_s','Input_current_pA','Sweep')]
+      colnames(second_new_df) <- c('Time_s','Value','Sweep')
+      second_new_df['Measure']="Input_current_pA"
+      
+      third_new_df=rbind(new_df,second_new_df)
+      
+      third_new_df$Measure=factor(third_new_df$Measure,levels=c('Membrane_potential_mV','Input_current_pA'))
+      third_new_df=as.data.frame(lapply(third_new_df, unlist))
+      print(head(third_new_df))
+      full_trace_plot=ggplot()+geom_line(third_new_df,mapping=aes(x=Time_s,y=Value,group=Sweep,color=Sweep))+facet_grid(Measure ~ .,scales = "free")+ theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16))
+    
+      full_trace_plotly <- ggplotly(full_trace_plot,dynamicTicks=TRUE)      
+      # full_trace_plot=ggplot(data=full_trace_df,aes(x=Time_s,y=Membrane_potential_mV,group=Sweep))+geom_line(aes(color=Sweep))
+      # full_trace_plotly <- ggplotly(full_trace_plot,dynamicTicks=TRUE)
       
       full_trace_plotly
     })
     
+    SF_plolty_test <- reactive({b
+      
+        cell_tables_list=get_cell_file()
+        
+        sweep_info_table=cell_tables_list$Sweep_info_table
+        sweep_list=sweep_info_table$Sweep
+        selected_sweep=as.character(input$Sweep_to_analyse)
+        sampling_freq=mean(sweep_info_table$Sampling_Rate_Hz)
+        sweep_trace=data.frame(cell_tables_list$Full_TPC[[as.character(selected_sweep)]])
+        
+        colnames(sweep_trace) <- cell_tables_list$Full_TPC$TPC_colnames
+        filt_coeff = (5 * 1e3) / (sampling_freq / 2.)
+        bf <- butter(2, filt_coeff)
+        zi <- filter_zi(bf)
+        
+        
+        filtered_potential_trace <- filter(bf, sweep_trace[,"Membrane_potential_mV"],zi)$y      
+        filtered_current_trace <-  filter(bf, sweep_trace[,"Input_current_pA"],zi)$y
+        
+        
+        sweep_trace[,"Membrane_potential_mV"] <- filtered_potential_trace
+        sweep_trace[,"Input_current_pA"] <- filtered_current_trace
+        #sweep_trace[,"Membrane_potential_mV"] <- bwfilter(sweep_trace[,"Membrane_potential_mV"], f=sampling_freq, n=2, to=5000)
+        stim_start=sweep_info_table[as.character(selected_sweep),"Stim_start_s"]
+        stim_end=sweep_info_table[as.character(selected_sweep),"Stim_end_s"]
+        sweep_trace=sweep_trace[which(sweep_trace$Time_s <= (stim_end+.05) & sweep_trace$Time_s >= (stim_start-.05) ),]
+        SF_table=data.frame(cell_tables_list$Full_SF[[as.character(selected_sweep)]])
+        
+        if (input$Apply_BE_correction_single_sweep == TRUE){
+          BE=sweep_info_table[as.character(selected_sweep),"Bridge_Error_GOhms"]
+          if (input$superimpose == TRUE && input$Apply_BE_correction_single_sweep == TRUE){
+            raw_sweep_trace=sweep_trace
+          }
+          pre_stim_amp=mean(sweep_trace[which(sweep_trace$Time_s <= (stim_start-0.005) & sweep_trace$Time_s >= (stim_start-0.055)),"Input_current_pA"])
+          
+          post_stim_amp=mean(sweep_trace[which(sweep_trace$Time_s <= (stim_end+0.055) & sweep_trace$Time_s >= (stim_end+0.005) ),"Input_current_pA"])
+          sweep_trace[which(sweep_trace$Time_s < (stim_start)),"Membrane_potential_mV"]=sweep_trace[which(sweep_trace$Time_s < (stim_start)),"Membrane_potential_mV"]-BE*pre_stim_amp
+          sweep_trace[which(sweep_trace$Time_s > (stim_end)),"Membrane_potential_mV"]=sweep_trace[which(sweep_trace$Time_s > (stim_end)),"Membrane_potential_mV"]-BE*post_stim_amp
+          sweep_trace[which(sweep_trace$Time_s <= (stim_end) & sweep_trace$Time_s >= (stim_start) ),"Membrane_potential_mV"]=sweep_trace[which(sweep_trace$Time_s <= (stim_end) & sweep_trace$Time_s >= (stim_start) ),"Membrane_potential_mV"]-BE*sweep_info_table[as.character(selected_sweep),"Stim_amp_pA"]
+          
+          SF_table[,"Membrane_potential_mV"]=SF_table[,"Membrane_potential_mV"]-BE*sweep_info_table[as.character(selected_sweep),"Stim_amp_pA"]
+        }
+        colnames(SF_table) <- cell_tables_list$Full_TPC$TPC_colnames
+        
+        for (elt in colnames(sweep_trace)){
+          sweep_trace[,elt]=as.numeric(sweep_trace[,elt])
+        }
+        full_table=sweep_trace[,c('Time_s','Membrane_potential_mV')]
+        full_table['Measure']='Membrane_potential_mV'
+        full_table["Trace"]= "Raw_trace"
+        colnames(full_table) <-  c("Time_s",'Value','Measure','Trace')
+        
+        if (input$Apply_BE_correction_single_sweep == TRUE ){
+          full_table["Trace"]= "BE_corrected"
+          
+          if (input$superimpose == TRUE ){
+            
+            raw_sweep_trace_table=raw_sweep_trace[,c('Time_s','Membrane_potential_mV')]
+            raw_sweep_trace_table['Measure']='Membrane_potential_mV'
+            raw_sweep_trace_table["Trace"]= "Raw_trace"
+            colnames(raw_sweep_trace_table) <-  c("Time_s",'Value','Measure','Trace')
+            full_table=rbind(full_table,raw_sweep_trace_table)
+          }
+        }
+        
+        SF_Current_table=sweep_trace[,c('Time_s','Input_current_pA')]
+        SF_Current_table['Measure']='Input_current_pA'
+        SF_Current_table['Trace']='Raw_trace'
+        colnames(SF_Current_table) <-  c("Time_s",'Value','Measure','Trace')
+        full_table=rbind(full_table,SF_Current_table)
+        
+        if ( "First_derivative" %in% input$Derivative_to_display){
+          second_table=sweep_trace[,c('Time_s','Potential_first_time_derivative_mV/s')]
+          second_table['Measure']="Potential_first_time_derivative_mV/s"
+          second_table["Trace"]= "Raw_trace"
+          colnames(second_table) <-  c("Time_s",'Value','Measure','Trace')
+          full_table=rbind(full_table,second_table)
+        }
+        
+        if ('Second_derivative' %in% input$Derivative_to_display){
+          third_table=sweep_trace[,c('Time_s','Potential_second_time_derivative_mV/s/s')]
+          third_table['Measure']="Potential_second_time_derivative_mV/s/s"
+          third_table["Trace"]= "Raw_trace"
+          colnames(third_table) <-  c("Time_s",'Value','Measure','Trace')
+          full_table=rbind(full_table,third_table)
+          
+        }
+        
+        
+        # full_table=rbind(full_table,SF_Current_table,second_table,third_table)
+        full_table$Measure=factor(full_table$Measure,levels=c('Membrane_potential_mV','Input_current_pA',"Potential_first_time_derivative_mV/s","Potential_second_time_derivative_mV/s/s"))
+        full_table=as.data.frame(lapply(full_table, unlist))
+        
+        
+        for (elt2 in colnames(SF_table)[-length(colnames(SF_table))]){
+          SF_table[,elt2]=as.numeric(SF_table[,elt2])
+        }
+        colnames(SF_table) <- c(cell_tables_list$Full_TPC$TPC_colnames,'Feature')
+        
+        
+        SF_plot=ggplot()+geom_line(full_table,mapping=aes(x=Time_s,y=Value,group=Trace,color=Trace),size=.96)+facet_grid(Measure ~ .,scales = "free",space = 'free')+scale_colour_manual(values=c(BE_corrected="red",Raw_trace="black"))
+        SF_plot=SF_plot+force_panelsizes(rows=c(2,1))
+        
+        if (dim(SF_table)[1] != 0){
+          fullSF_table=SF_table[,c('Time_s','Membrane_potential_mV','Feature')]
+          fullSF_table['Measure']='Membrane_potential_mV'
+          colnames(fullSF_table) <-  c("Time_s",'Value','Feature','Measure')
+          
+          
+          if ( "First_derivative" %in% input$Derivative_to_display){
+            SF_Second_table=SF_table[,c('Time_s','Potential_first_time_derivative_mV/s','Feature')]
+            SF_Second_table['Measure']='Potential_first_time_derivative_mV/s'
+            colnames(SF_Second_table) <-  c("Time_s",'Value','Feature','Measure')
+            fullSF_table=rbind(fullSF_table,SF_Second_table)
+          }
+          
+          if ('Second_derivative' %in% input$Derivative_to_display){
+            SF_Third_table=SF_table[,c('Time_s','Potential_second_time_derivative_mV/s/s','Feature')]
+            SF_Third_table['Measure']='Potential_second_time_derivative_mV/s/s'
+            colnames(SF_Third_table) <-  c("Time_s",'Value','Feature','Measure')
+            fullSF_table=rbind(fullSF_table,SF_Third_table)
+          }
+          
+          #fullSF_table=rbind(SF_First_table,SF_Second_table,SF_Third_table)
+          fullSF_table$Measure=factor(fullSF_table$Measure,levels=c('Membrane_potential_mV',"Potential_first_time_derivative_mV/s","Potential_second_time_derivative_mV/s/s"))
+          SF_plot=SF_plot+geom_point(fullSF_table,mapping = aes(x=Time_s,y=Value,fill=Feature),stroke=0,size=2)
+        }
+        
+        SF_plotly <- ggplotly(SF_plot,dynamicTicks=TRUE)
+        return (SF_plot)
+      
+    })
+    
     output$Spike_feature_plot <- renderPlotly({
+      
+        SF_plot <- SF_plolty_test()
+        SF_plot=SF_plot+force_panelsizes(rows=c(2,1))+ theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16))
+        SF_plolty_test_result <- ggplotly(SF_plot,dynamicTicks=TRUE)
+        SF_plolty_test_result
+    })
+    
+    
+    output$Spike_feature_plot_old <- renderPlotly({
       
       cell_tables_list=get_cell_file()
       
@@ -370,8 +550,8 @@ server <- function(session,input, output) {
       colnames(SF_table) <- c(cell_tables_list$Full_TPC$TPC_colnames,'Feature')
       
       
-      SF_plot=ggplot()+geom_line(full_table,mapping=aes(x=Time_s,y=Value,group=Trace,color=Trace))+facet_grid(Measure ~ .,scales = "free")+scale_colour_manual(values=c(BE_corrected="red",Raw_trace="black"))
-      
+      SF_plot=ggplot()+geom_line(full_table,mapping=aes(x=Time_s,y=Value,group=Trace,color=Trace),size=2)+facet_grid(Measure ~ .,scales = "free")+scale_colour_manual(values=c(BE_corrected="red",Raw_trace="black"))
+      SF_plot=SF_plot+ theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16))
       
       if (dim(SF_table)[1] != 0){
         fullSF_table=SF_table[,c('Time_s','Membrane_potential_mV','Feature')]
@@ -471,7 +651,7 @@ server <- function(session,input, output) {
         }
         
       }
-      print('maximum_nb_interval=')
+      
       print(maximum_nb_interval)
       if (maximum_nb_interval>1){
         new_columns=as.character(seq(1,(maximum_nb_interval-1)))
@@ -511,7 +691,7 @@ server <- function(session,input, output) {
         
         Inst_freq_table$Stim_amp_pA <- as.numeric(Inst_freq_table$Stim_amp_pA)
         Inst_freq_table=gather(Inst_freq_table, key="Interval", value="Inst_freq_WU", 2:dim(Inst_freq_table)[2])
-        View(Inst_freq_table)
+        
         Inst_freq_table$Interval=str_remove(Inst_freq_table$Interval,'Interval_')
         Inst_freq_table <- Inst_freq_table %>% replace(.=="NULL", NaN)
         Inst_freq_table <- Inst_freq_table[!is.na(Inst_freq_table$Inst_freq_WU),]
@@ -538,12 +718,12 @@ server <- function(session,input, output) {
       full_median_table$Response_time_ms=factor(full_median_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
       full_median_table$Nb_of_obs=factor(full_median_table$Nb_of_obs)
       Adapt_plot=ggplot()+geom_point(full_inst_freq_table,mapping=aes(x=Interval,y=Inst_freq_WU,color=Stim_amp_pA))
-      print('coucou')
+      
       Adapt_plot=Adapt_plot+geom_point(full_median_table,mapping=aes(x=Interval,y=Inst_freq_WU,alpha=Nb_of_obs),shape="square",color='red')
       fit_table=sub_cell_fit_table
       fit_table=subset(fit_table,Adaptation_obs =="--")
-      Interval_seq = seq(1,max(Inst_freq_table$Interval))
-      View(full_inst_freq_table)
+      Interval_seq = seq(1,max(Inst_freq_table$Interval),0.1)
+      
       
       #Interval_seq=seq(1,length(seq(7,dim(Full_Sweep_metadata)[2])))
       if (dim(fit_table)[1] != 0){
@@ -560,19 +740,21 @@ server <- function(session,input, output) {
         # Adapt_fit_table=data.frame(cbind(Interval_seq,inst_freq_array))
         # Adapt_fit_table['Response_time_ms']=paste0(as.character(unname(unlist(fit_table[1,"Response_time_ms"]))*1e3),'ms')
         # 
-        A_norm=unname(unlist(fit_table["500","A"]))
+        A=unname(unlist(fit_table["500","A"]))
         Index_cst=unname(unlist(fit_table["500","B"]))
-        C_norm=unname(unlist(fit_table["500","C"]))
-        print('A')
-        print(A_norm)
-        View(fit_table)
-        # A_norm=A/(A+C)
-        # C_norm=C/(A+C)
+        C=unname(unlist(fit_table["500","C"]))
+        
+        A_norm=A/(A+C)
+        C_norm=C/(A+C)
         # 
-        A=(A_norm*C_norm-A_norm+C_norm)/(A_norm-2)
-        C=(C_norm*A_norm-C_norm+A_norm)/(C_norm-2)
-        inst_freq_array=A_norm*exp(-Interval_seq/Index_cst)+C_norm
-        #inst_freq_array=A*exp(-Interval_seq/Index_cst)+C
+        if (input$Normalize_adapt_params == TRUE){
+          inst_freq_array=A_norm*exp(-Interval_seq/Index_cst)+C_norm
+        }
+        else{
+          inst_freq_array=A*exp(-Interval_seq/Index_cst)+C
+        }
+        #inst_freq_array=A_norm*exp(-Interval_seq/Index_cst)+C_norm
+       
         new_table=data.frame(cbind(Interval_seq,inst_freq_array))
         Adapt_fit_table=data.frame(cbind(Interval_seq,inst_freq_array))
         Adapt_fit_table['Response_time_ms']='500ms'
@@ -595,15 +777,18 @@ server <- function(session,input, output) {
         #   
         #   
         # }
-        print('fhufr')
+        
         colnames(Adapt_fit_table) <- c("Interval","Inst_freq_WU",'Response_time_ms')
         Adapt_fit_table$Response_time_ms=as.factor(Adapt_fit_table$Response_time_ms)
         Adapt_fit_table$Response_time_ms=factor(Adapt_fit_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-        View(Adapt_fit_table)
+        
         Adapt_plot=Adapt_plot+geom_line(Adapt_fit_table,mapping=aes(x=Interval,y=Inst_freq_WU))
       }
       
-      Adapt_plot
+      Adapt_plotly <- ggplotly(Adapt_plot,dynamicTicks=TRUE)
+      Adapt_plotly
+      
+      
       
       
     })
@@ -849,12 +1034,13 @@ server <- function(session,input, output) {
       Stim_freq_table$Frequency_Hz=as.numeric(Stim_freq_table$Frequency_Hz)
       Stim_freq_table$Response_time=factor(Stim_freq_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
       if (fit_IO==FALSE){
-        IO_plot=ggplot(Stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz),color='grey')+geom_point()
+        
+        IO_plot=ggplot(Stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz),color='grey')+geom_point(aes(text=Sweep))
         IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : No computation of I/O relationship"))
       }
       
       else{
-        IO_plot=ggplot(Stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_time))+geom_point()
+        IO_plot=ggplot(Stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_time))+geom_point(aes(text=Sweep))
       # Create Hill fit traces  --> fit trace
       
       fit_table <- data.frame(Sweep = numeric(),    # Create empty data frame
@@ -975,7 +1161,7 @@ server <- function(session,input, output) {
       fit_table$Response_time=as.factor(fit_table$Response_time)
       fit_table$Response_time=factor(fit_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
       
-      IO_plot=IO_plot+geom_line(fit_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_time))
+      IO_plot=IO_plot+geom_line(fit_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_time),size=.95)
       
       colnames(IO_table) <- c("Stim_amp_pA","Frequency_Hz",'Response_time')
       IO_table$Response_time=as.factor(IO_table$Response_time)
@@ -993,7 +1179,9 @@ server <- function(session,input, output) {
       IO_plot=IO_plot + scale_colour_manual(values=my_orange)
       }
       }
+      IO_plot=IO_plot+ theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16)) #All font sizes
       IO_plotly <- ggplotly(IO_plot,dynamicTicks=TRUE)
+      
       IO_plotly
       
     })
