@@ -7,7 +7,7 @@
 #    http://shiny.rstudio.com/
 #
 
-required_packages=c("rhdf5","plyr","dplyr","shiny","ggplot2","GGally","plotly","tidyverse","gghighlight","ggpubr","shinyFiles",'gghalves','shinyWidgets','orca',"gsignal","RColorBrewer","processx",'ggh4x')
+required_packages=c("rhdf5","plyr","dplyr","shiny","ggplot2","GGally","plotly","tidyverse","gghighlight","ggpubr","shinyFiles",'gghalves','shinyWidgets',"gsignal","RColorBrewer","processx",'ggh4x')
 install.packages(setdiff(required_packages,rownames(installed.packages())))
 source(file="/Users/julienballbe/My_Work/Data_Analysis/Import_h5_file.R")
 #source_python("/Users/julienballbe/My_Work/My_Librairies/read_pickle.py")
@@ -308,7 +308,7 @@ server <- function(session,input, output) {
       full_trace_plotly
     })
     
-    SF_plolty_test <- reactive({b
+    SF_plolty_test <- reactive({
       
         cell_tables_list=get_cell_file()
         
