@@ -180,6 +180,7 @@ ui <- fluidPage(
                                      selectInput("Factor_of_analysis_Distrib","Choose factor of analysis",choices=""),
                                      selectInput("select_outliers_to_remove_Distrib","Select outliers to remove",choices=c('None','Outliers (Q1/Q3 ± 1.5*IQ)','Extreme outliers (Q1/Q3 ± 3*IQ)'),selected='None'),
                                      checkboxInput("normalize_per_input_resistance_Distrib","Normalize current per input resistance"),
+                                     checkboxInput("fit_distribution","Fit Distribution"),
                                      numericInput('distribution_bin_width','Width of bins:',value = 1.,min=.001,max=100),
                                      checkboxInput('Distrib_custom_x_range','Use custom x-axis range'),
                                      numericInput('Minimum_x_limit','Select minimum x',value=0),
@@ -375,8 +376,7 @@ server <- function(session,input, output) {
 
     updateSelectInput(session,"File_to_select_Var","Select file to analyse",choices = file_list)
     updateSelectInput(session,"File_to_select_Distrib","Select file to analyse",choices = file_list)
-    print(paste0('fefe',input$Feature_to_analyse_data_repartition))
-    View(file_import)
+    
     # full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,'Database','Database')
     # 
     # minimum_value=min(full_data_frame[,as.character(input$Feature_to_analyse_data_repartition)])
@@ -691,10 +691,7 @@ server <- function(session,input, output) {
     
     
     group_list=levels(population_class[,factor_Distrib])
-    print(paste0('coucou',factor_Distrib))
-    mytest=population_class
-    View(mytest)
-    print(paste0('hyhy',group_list))
+    
     
     updateSelectizeInput(session,'Subset_population_Distrib','Select group ',choices=group_list,selected=group_list)
     print(paste0('mpmp',input$Subset_population_Distrib))
@@ -1805,8 +1802,8 @@ output$PWC_test_Plot_Variance <- renderPlot({
     factor=input$Factor_of_analysis_Distrib
 
     value=as.character(input$Feature_to_analyse_Distrib)
-    my_test_second=full_data_frame_distrib
-    View(my_test_second)
+    
+    
     original_dataframe_distrib=perform_ANOVA(full_data_frame_distrib,feature_col = value,factor = factor,remove_outliers = input$select_outliers_to_remove_Distrib,what_to_return =  "DF_without_removed_levels")
 
     distribution_array=array(original_dataframe_distrib[,value])
@@ -1816,42 +1813,51 @@ output$PWC_test_Plot_Variance <- renderPlot({
     nb_bins=as.integer((max(distribution_array)-min(distribution_array))/bin_width)
     #nb_bins=input$distribution_bins
     bin_df=reticulate_data_distribution(distribution_array,nb_bins)
-    # bin_df --> center of each bins
-    # if (input$distrib_fit_function == "Skewed Gaussian"){
-    #   
-    # }
-    parameters_df=fit_distribution(distribution_array,nb_bins)
-    
-    A=parameters_df[1,"A"]
-    gamma=parameters_df[1,"gamma"]
-    mu=parameters_df[1,"mu"]
-    sigma=parameters_df[1,"sigma"]
-    
-    
-    data_x_array=array(seq(min(distribution_array),max(distribution_array),.01))
-    fitted_values=skewedgaussian(data_x_array, A, gamma, mu, sigma)
-    fit_df=data.frame(cbind(data_x_array,fitted_values))
-    colnames(fit_df) <- c(as.character(value),'Count')
-
-
+    if (input$fit_distribution == TRUE){
+      
+      # bin_df --> center of each bins
+      # if (input$distrib_fit_function == "Skewed Gaussian"){
+      #   
+      # }
+      parameters_df=fit_distribution(distribution_array,nb_bins)
+      
+      A=parameters_df[1,"A"]
+      gamma=parameters_df[1,"gamma"]
+      mu=parameters_df[1,"mu"]
+      sigma=parameters_df[1,"sigma"]
+      data_x_array=array(seq(min(distribution_array),max(distribution_array),.01))
+      fitted_values=skewedgaussian(data_x_array, A, gamma, mu, sigma)
+      fit_df=data.frame(cbind(data_x_array,fitted_values))
+      colnames(fit_df) <- c(as.character(value),'Count')
+      
+      
+      
+      
+    }
     bin_edges <- bin_df
-
+    
     bin_edges['Feature']=bin_edges['Feature']-(bin_edges[2,"Feature"]-bin_edges[1,"Feature"])/2
     #bin_edges['Feature']=bin_edges['Feature']-bin_edges[1,"Feature"]
     colnames(bin_edges) <- c(as.character(value),"Count")
     colnames(bin_df) <- c(as.character(value),'Count')
+    
+    
+    
 
 
 
     distribution_plot=ggplot(original_dataframe_distrib,mapping=aes_string(x=as.character(value)))+
       geom_histogram(breaks=unlist(bin_edges[as.character(value)]),fill='darkgrey')+
       geom_point(bin_df,mapping=aes(x=unlist(bin_df[,as.character(value)]),y=unlist(bin_df[,"Count"])))
-
-
-    distribution_plot=distribution_plot+ geom_line(fit_df,mapping=aes(x=unlist(fit_df[,as.character(value)]),y=unlist(fit_df[,"Count"])))
-
     distribution_plot=distribution_plot+labs(y='Nb_of_observation',x=as.character(value))+ggtitle(paste0(as.character(value),' distribution fit'))
+    if (input$fit_distribution == TRUE){
+      distribution_plot=distribution_plot+ geom_line(fit_df,mapping=aes(x=unlist(fit_df[,as.character(value)]),y=unlist(fit_df[,"Count"])))
+    
+    
 
+   
+
+    
     if (input$show_stats == TRUE){
       distribution_stats <- data.frame(matrix(ncol = 4, nrow = 0))
       x <- c("Q1", "Med", "Q3","Mean")
@@ -1890,6 +1896,7 @@ output$PWC_test_Plot_Variance <- renderPlot({
 
 
     }
+  }
     if (input$Distrib_custom_x_range == TRUE){
       distribution_plot=distribution_plot+xlim(input$Minimum_x_limit,input$Maximum_x_limit)+xlab(current_unit)
     }

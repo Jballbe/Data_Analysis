@@ -105,13 +105,16 @@ ui <- fluidPage(
              
              # Sidebar with a slider input for number of bins 
              sidebarLayout(
-               sidebarPanel(width=1
+               sidebarPanel(width=1,
+                            checkboxInput("for_saving_plot","For plot saving")
                  
                ),
                
                # Show a plot of the generated distribution ;;; ;;;;
                mainPanel(width = 11,
-                 plotlyOutput("I_O_feature_plot",height = 800),
+                         tabsetPanel(
+                           tabPanel("Time_based",
+                 plotlyOutput("I_O_feature_plot_time_based",height = 800),
                  fluidRow(
                    column(3,
                           plotlyOutput("Gain_time_plot"),
@@ -129,16 +132,67 @@ ui <- fluidPage(
                             plotlyOutput("Saturation_freq_time_plot"),
                             tableOutput("Saturation_freq_time_metrics")
                  )),
-                 tableOutput('IO_table_fit'),
-                 tableOutput('IO_table_feature'),
-                 plotlyOutput("Adaptation_plot",height=800),
-                 checkboxInput("Normalize_adapt_params","Normalize Adaptation Parameters"),
-                 tableOutput('Adapt_table'),
-                 tableOutput('Stim_freq_table')
+                 tableOutput('IO_table_time_fit'),
+                 tableOutput('IO_table_time_feature'),
                  
-               )
+                 tableOutput('Stim_freq_time_table')
+                 
+               ),
+               tabPanel("Index_based",
+                        plotlyOutput("I_O_feature_plot_index_based",height = 800),
+                        fluidRow(
+                          column(3,
+                                 plotlyOutput("Gain_index_plot"),
+                                 tableOutput("Gain_index_metrics")
+                          ),
+                          column(3,
+                                 plotlyOutput("Threshold_index_plot"),
+                                 tableOutput("Threshold_index_metrics")
+                          ),
+                          column(3,
+                                 plotlyOutput("Saturation_stimulus_index_plot"),
+                                 tableOutput("Saturation_stimulus_index_metrics")
+                          ),
+                          column(3,
+                                 plotlyOutput("Saturation_freq_index_plot"),
+                                 tableOutput("Saturation_freq_index_metrics")
+                          )),
+                        tableOutput('IO_table_index_fit'),
+                        tableOutput('IO_index_table_feature'),
+                        
+                        
+                        
+                        tableOutput('Stim_freq_index_table')
+               ),
+               tabPanel("Interval_based",
+                        plotlyOutput("I_O_feature_plot_interval_based",height = 800),
+                        fluidRow(
+                          column(3,
+                                 plotlyOutput("Gain_interval_plot"),
+                                 tableOutput("Gain_interval_metrics")
+                          ),
+                          column(3,
+                                 plotlyOutput("Threshold_interval_plot"),
+                                 tableOutput("Threshold_interval_metrics")
+                          ),
+                          column(3,
+                                 plotlyOutput("Saturation_stimulus_interval_plot"),
+                                 tableOutput("Saturation_stimulus_interval_metrics")
+                          ),
+                          column(3,
+                                 plotlyOutput("Saturation_freq_interval_plot"),
+                                 tableOutput("Saturation_freq_interval_metrics")
+                          )),
+                        tableOutput('IO_table_interval_fit'),
+                        tableOutput('IO_interval_table_feature'),
+                        
+                        tableOutput('Stim_freq_interval_table')),
+               tabPanel("Adaptation",
+                        plotlyOutput("Adaptation_plot",height=800),
+                        checkboxInput("Normalize_adapt_params","Normalize Adaptation Parameters"),
+                        tableOutput('Adapt_table'),))
              )
-    ),
+    )),
     tabPanel("Raw traces",
 
              # Sidebar with a slider input for number of bins
@@ -450,140 +504,6 @@ server <- function(session,input, output) {
     })
     
     
-    output$Spike_feature_plot_old <- renderPlotly({
-      
-      cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      sweep_list=sweep_info_table$Sweep
-      selected_sweep=as.character(input$Sweep_to_analyse)
-      sampling_freq=mean(sweep_info_table$Sampling_Rate_Hz)
-      sweep_trace=data.frame(cell_tables_list$Full_TPC[[as.character(selected_sweep)]])
-      
-      colnames(sweep_trace) <- cell_tables_list$Full_TPC$TPC_colnames
-      filt_coeff = (5 * 1e3) / (sampling_freq / 2.)
-      bf <- butter(2, filt_coeff)
-      zi <- filter_zi(bf)
-      
-      
-      filtered_potential_trace <- filter(bf, sweep_trace[,"Membrane_potential_mV"],zi)$y      
-      filtered_current_trace <-  filter(bf, sweep_trace[,"Input_current_pA"],zi)$y
-      
-      
-      sweep_trace[,"Membrane_potential_mV"] <- filtered_potential_trace
-      sweep_trace[,"Input_current_pA"] <- filtered_current_trace
-      #sweep_trace[,"Membrane_potential_mV"] <- bwfilter(sweep_trace[,"Membrane_potential_mV"], f=sampling_freq, n=2, to=5000)
-      stim_start=sweep_info_table[as.character(selected_sweep),"Stim_start_s"]
-      stim_end=sweep_info_table[as.character(selected_sweep),"Stim_end_s"]
-      sweep_trace=sweep_trace[which(sweep_trace$Time_s <= (stim_end+.05) & sweep_trace$Time_s >= (stim_start-.05) ),]
-      SF_table=data.frame(cell_tables_list$Full_SF[[as.character(selected_sweep)]])
-      
-      if (input$Apply_BE_correction_single_sweep == TRUE){
-        BE=sweep_info_table[as.character(selected_sweep),"Bridge_Error_GOhms"]
-        if (input$superimpose == TRUE && input$Apply_BE_correction_single_sweep == TRUE){
-          raw_sweep_trace=sweep_trace
-        }
-        pre_stim_amp=mean(sweep_trace[which(sweep_trace$Time_s <= (stim_start-0.005) & sweep_trace$Time_s >= (stim_start-0.055)),"Input_current_pA"])
-      
-        post_stim_amp=mean(sweep_trace[which(sweep_trace$Time_s <= (stim_end+0.055) & sweep_trace$Time_s >= (stim_end+0.005) ),"Input_current_pA"])
-        sweep_trace[which(sweep_trace$Time_s < (stim_start)),"Membrane_potential_mV"]=sweep_trace[which(sweep_trace$Time_s < (stim_start)),"Membrane_potential_mV"]-BE*pre_stim_amp
-        sweep_trace[which(sweep_trace$Time_s > (stim_end)),"Membrane_potential_mV"]=sweep_trace[which(sweep_trace$Time_s > (stim_end)),"Membrane_potential_mV"]-BE*post_stim_amp
-        sweep_trace[which(sweep_trace$Time_s <= (stim_end) & sweep_trace$Time_s >= (stim_start) ),"Membrane_potential_mV"]=sweep_trace[which(sweep_trace$Time_s <= (stim_end) & sweep_trace$Time_s >= (stim_start) ),"Membrane_potential_mV"]-BE*sweep_info_table[as.character(selected_sweep),"Stim_amp_pA"]
-        
-        SF_table[,"Membrane_potential_mV"]=SF_table[,"Membrane_potential_mV"]-BE*sweep_info_table[as.character(selected_sweep),"Stim_amp_pA"]
-      }
-      colnames(SF_table) <- cell_tables_list$Full_TPC$TPC_colnames
-      
-      for (elt in colnames(sweep_trace)){
-        sweep_trace[,elt]=as.numeric(sweep_trace[,elt])
-      }
-      full_table=sweep_trace[,c('Time_s','Membrane_potential_mV')]
-      full_table['Measure']='Membrane_potential_mV'
-      full_table["Trace"]= "Raw_trace"
-      colnames(full_table) <-  c("Time_s",'Value','Measure','Trace')
-      
-      if (input$Apply_BE_correction_single_sweep == TRUE ){
-        full_table["Trace"]= "BE_corrected"
-      
-      if (input$superimpose == TRUE ){
-       
-        raw_sweep_trace_table=raw_sweep_trace[,c('Time_s','Membrane_potential_mV')]
-        raw_sweep_trace_table['Measure']='Membrane_potential_mV'
-        raw_sweep_trace_table["Trace"]= "Raw_trace"
-        colnames(raw_sweep_trace_table) <-  c("Time_s",'Value','Measure','Trace')
-        full_table=rbind(full_table,raw_sweep_trace_table)
-      }
-      }
-      
-      SF_Current_table=sweep_trace[,c('Time_s','Input_current_pA')]
-      SF_Current_table['Measure']='Input_current_pA'
-      SF_Current_table['Trace']='Raw_trace'
-      colnames(SF_Current_table) <-  c("Time_s",'Value','Measure','Trace')
-      full_table=rbind(full_table,SF_Current_table)
-      
-      if ( "First_derivative" %in% input$Derivative_to_display){
-        second_table=sweep_trace[,c('Time_s','Potential_first_time_derivative_mV/s')]
-        second_table['Measure']="Potential_first_time_derivative_mV/s"
-        second_table["Trace"]= "Raw_trace"
-        colnames(second_table) <-  c("Time_s",'Value','Measure','Trace')
-        full_table=rbind(full_table,second_table)
-      }
-      
-      if ('Second_derivative' %in% input$Derivative_to_display){
-        third_table=sweep_trace[,c('Time_s','Potential_second_time_derivative_mV/s/s')]
-        third_table['Measure']="Potential_second_time_derivative_mV/s/s"
-        third_table["Trace"]= "Raw_trace"
-        colnames(third_table) <-  c("Time_s",'Value','Measure','Trace')
-        full_table=rbind(full_table,third_table)
-        
-      }
-      
-      
-     # full_table=rbind(full_table,SF_Current_table,second_table,third_table)
-      full_table$Measure=factor(full_table$Measure,levels=c('Membrane_potential_mV','Input_current_pA',"Potential_first_time_derivative_mV/s","Potential_second_time_derivative_mV/s/s"))
-      full_table=as.data.frame(lapply(full_table, unlist))
-      
-      
-      for (elt2 in colnames(SF_table)[-length(colnames(SF_table))]){
-        SF_table[,elt2]=as.numeric(SF_table[,elt2])
-      }
-      colnames(SF_table) <- c(cell_tables_list$Full_TPC$TPC_colnames,'Feature')
-      
-      
-      SF_plot=ggplot()+geom_line(full_table,mapping=aes(x=Time_s,y=Value,group=Trace,color=Trace),size=2)+facet_grid(Measure ~ .,scales = "free")+scale_colour_manual(values=c(BE_corrected="red",Raw_trace="black"))
-      SF_plot=SF_plot+ theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16))
-      
-      if (dim(SF_table)[1] != 0){
-        fullSF_table=SF_table[,c('Time_s','Membrane_potential_mV','Feature')]
-        fullSF_table['Measure']='Membrane_potential_mV'
-        colnames(fullSF_table) <-  c("Time_s",'Value','Feature','Measure')
-        
-        
-        if ( "First_derivative" %in% input$Derivative_to_display){
-          SF_Second_table=SF_table[,c('Time_s','Potential_first_time_derivative_mV/s','Feature')]
-          SF_Second_table['Measure']='Potential_first_time_derivative_mV/s'
-          colnames(SF_Second_table) <-  c("Time_s",'Value','Feature','Measure')
-          fullSF_table=rbind(fullSF_table,SF_Second_table)
-        }
-        
-        if ('Second_derivative' %in% input$Derivative_to_display){
-          SF_Third_table=SF_table[,c('Time_s','Potential_second_time_derivative_mV/s/s','Feature')]
-          SF_Third_table['Measure']='Potential_second_time_derivative_mV/s/s'
-          colnames(SF_Third_table) <-  c("Time_s",'Value','Feature','Measure')
-          fullSF_table=rbind(fullSF_table,SF_Third_table)
-        }
-        
-        #fullSF_table=rbind(SF_First_table,SF_Second_table,SF_Third_table)
-        fullSF_table$Measure=factor(fullSF_table$Measure,levels=c('Membrane_potential_mV',"Potential_first_time_derivative_mV/s","Potential_second_time_derivative_mV/s/s"))
-        SF_plot=SF_plot+geom_point(fullSF_table,mapping = aes(x=Time_s,y=Value,fill=Feature),stroke=0,size=2)
-      }
-      
-      SF_plotly <- ggplotly(SF_plot,dynamicTicks=TRUE)
-      
-      SF_plotly
-      
-    })
-    
     output$Adaptation_plot <- renderPlotly({
       
       cell_tables_list=get_cell_file()
@@ -607,7 +527,7 @@ server <- function(session,input, output) {
         full_median_table=data.frame(Interval = numeric(),    # Create empty data frame
                                      Inst_freq_WU = numeric(),
                                      Nb_of_obs = numeric(),
-                                     Response_time_ms=character())
+                                     Output_Duration=character())
         
         full_inst_freq_table=data.frame(Stim_amp_pA=numeric(),
                                         Interval=numeric(),
@@ -626,7 +546,7 @@ server <- function(session,input, output) {
       full_median_table=data.frame(Interval = numeric(),    # Create empty data frame
                                    Inst_freq_WU = numeric(),
                                    Nb_of_obs = numeric(),
-                                   Response_time_ms=character())
+                                   Output_Duration=character())
       
       full_inst_freq_table=data.frame(Stim_amp_pA=numeric(),
                                       Interval=numeric(),
@@ -652,7 +572,7 @@ server <- function(session,input, output) {
         
       }
       
-      print(maximum_nb_interval)
+      
       if (maximum_nb_interval>1){
         new_columns=as.character(seq(1,(maximum_nb_interval-1)))
         Inst_freq_table = data.frame(sweep_list,Stim_amp_pA)
@@ -708,41 +628,34 @@ server <- function(session,input, output) {
           median_table$Interval <- as.numeric(median_table$Interval)
           count_df$Interval <- as.numeric(count_df$Interval)
           median_table <- merge(median_table,count_df,by=c("Interval"))
-          median_table['Response_time_ms']=paste0(as.character(0.500*1e3),'ms')
+          median_table['Output_Duration']='500ms'
           
           full_median_table=rbind(full_median_table,median_table)
           full_inst_freq_table=rbind(full_inst_freq_table,Inst_freq_table)
         }
       }
       
-      full_median_table$Response_time_ms=factor(full_median_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
+      full_median_table$Output_Duration=factor(full_median_table$Output_Duration,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
       full_median_table$Nb_of_obs=factor(full_median_table$Nb_of_obs)
       Adapt_plot=ggplot()+geom_point(full_inst_freq_table,mapping=aes(x=Interval,y=Inst_freq_WU,color=Stim_amp_pA))
       
       Adapt_plot=Adapt_plot+geom_point(full_median_table,mapping=aes(x=Interval,y=Inst_freq_WU,alpha=Nb_of_obs),shape="square",color='red')
       fit_table=sub_cell_fit_table
       fit_table=subset(fit_table,Adaptation_obs =="--")
+      fit_table=subset(fit_table,Response_type =="Time_based")
+      
       Interval_seq = seq(1,max(Inst_freq_table$Interval),0.1)
       
       
       #Interval_seq=seq(1,length(seq(7,dim(Full_Sweep_metadata)[2])))
       if (dim(fit_table)[1] != 0){
         
-        # A=unname(unlist(fit_table[1,"A"]))
-        # Index_cst=unname(unlist(fit_table[1,"B"]))
-        # C=unname(unlist(fit_table[1,"C"]))
-        # 
-        # A_norm=A/(A+C)
-        # C_norm=C/(A+C)
-        # 
-        # inst_freq_array=A*exp(-Interval_seq/Index_cst)+C
+       
         
-        # Adapt_fit_table=data.frame(cbind(Interval_seq,inst_freq_array))
-        # Adapt_fit_table['Response_time_ms']=paste0(as.character(unname(unlist(fit_table[1,"Response_time_ms"]))*1e3),'ms')
-        # 
-        A=unname(unlist(fit_table["500","A"]))
-        Index_cst=unname(unlist(fit_table["500","B"]))
-        C=unname(unlist(fit_table["500","C"]))
+        A=fit_table[which(fit_table["Output_Duration"]==0.5),"A"]
+        Index_cst=fit_table[which(fit_table["Output_Duration"]==0.5),"B"]
+        C=fit_table[which(fit_table["Output_Duration"]==0.5),"C"]
+       
         
         A_norm=A/(A+C)
         C_norm=C/(A+C)
@@ -757,30 +670,14 @@ server <- function(session,input, output) {
        
         new_table=data.frame(cbind(Interval_seq,inst_freq_array))
         Adapt_fit_table=data.frame(cbind(Interval_seq,inst_freq_array))
-        Adapt_fit_table['Response_time_ms']='500ms'
-        new_table['Response_time_ms']='500ms'
+        Adapt_fit_table['Output_Duration']='500ms'
+        new_table['Output_Duration']='500ms'
         Adapt_fit_table=rbind(Adapt_fit_table,new_table)
-        # 
-        # for (time in 2:dim(fit_table)[1]){
-        #   
-        #   A_norm=unname(unlist(fit_table[time,"A"]))
-        #   Index_cst=unname(unlist(fit_table[time,"B"]))
-        #   C_norm=unname(unlist(fit_table[time,"C"]))
-        #   # A_norm=A/(A+C)
-        #   # C_norm=C/(A+C)
-        #   # 
-        #   inst_freq_array=A_norm*exp(-Interval_seq/Index_cst)+C_norm
-        #   new_table=data.frame(cbind(Interval_seq,inst_freq_array))
-        #   new_table['Response_time_ms']=paste0(as.character(unname(unlist(fit_table[time,"Response_time_ms"]))*1e3),'ms')
-        #   Adapt_fit_table=rbind(Adapt_fit_table,new_table)
-        #   
-        #   
-        #   
-        # }
+     
         
-        colnames(Adapt_fit_table) <- c("Interval","Inst_freq_WU",'Response_time_ms')
-        Adapt_fit_table$Response_time_ms=as.factor(Adapt_fit_table$Response_time_ms)
-        Adapt_fit_table$Response_time_ms=factor(Adapt_fit_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
+        colnames(Adapt_fit_table) <- c("Interval","Inst_freq_WU",'Output_Duration')
+        Adapt_fit_table$Output_Duration=as.factor(Adapt_fit_table$Output_Duration)
+        Adapt_fit_table$Output_Duration=factor(Adapt_fit_table$Output_Duration,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
         
         Adapt_plot=Adapt_plot+geom_line(Adapt_fit_table,mapping=aes(x=Interval,y=Inst_freq_WU))
       }
@@ -792,478 +689,663 @@ server <- function(session,input, output) {
       
       
     })
-    ####HEre
-    output$Adaptation_plot_old <- renderPlotly({
-      cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      Adaptation_fit_table=cell_tables_list$Adaptation_fit_table
-      cell_fit_table=cell_tables_list$Cell_fit_table
-      sub_cell_fit_table=cell_fit_table[which(cell_fit_table$Adaptation_obs == '--'),]
-      if (dim(sub_cell_fit_table)[1] == 0){
-        Adapt_plot=ggplot() + theme_void() + ggtitle('Not able to compute adaptation')
-        
-      }
-      
-      else{
-      
-      time_list <- unique(Adaptation_fit_table$Response_time_ms)
-      
-      
-      
-      
-     
-      
-      full_inst_freq_table=data.frame(Stim_amp_pA=numeric(),
-                                      Interval=numeric(),
-                                      Inst_freq_WU = numeric(),
-                                      Max_nb_spike = numeric(),
-                                      Sweep = numeric(),
-                                      Response_time_ms = character())
-      
-        
-      
-      for(current_time in time_list){
-      maximum_nb_interval = 0
-      sub_adaptation_table=Adaptation_fit_table[which(Adaptation_fit_table$Response_time_ms == current_time),]
-      sweep_list=sub_adaptation_table$Sweep
-      sweep_list <-  unlist(unname(sweep_list))
-      for (current_sweep in sweep_list){
-        current_SF_table = data.frame(cell_tables_list$Full_SF[[as.character(current_sweep)]])
-        
-        start_time=sweep_info_table[current_sweep,'Stim_start_s']
-        current_SF_tableSpike_time=current_SF_table[which(current_SF_table$Feature == 'Upstroke' & current_SF_table$Time_s <=(start_time+current_time*1e-3)),]
-        
-        nb_spikes=dim(current_SF_tableSpike_time)[1]
-        
-      if (nb_spikes>maximum_nb_interval ){
-        maximum_nb_interval=nb_spikes
-      }
-        
-      }
-      
-      
-      new_columns=as.character(seq(1,(maximum_nb_interval-1)))
-      
-      
-      Inst_freq_table=data.frame(Stim_amp_pA=numeric(),
-                                 Interval=numeric(),
-                                 Inst_freq_WU = numeric(),
-                                 Max_nb_spike = numeric(),
-                                 Sweep = numeric(),
-                                 Response_time_ms = character())
-   
-      
-      for (current_sweep in sweep_list){
-        current_SF_table = data.frame(cell_tables_list$Full_SF[[as.character(current_sweep)]])
-        start_time=sweep_info_table[as.character(current_sweep),'Stim_start_s']
-        stim_amp=sweep_info_table[as.character(current_sweep),'Stim_amp_pA']
-        current_SF_tableSpike_time=current_SF_table[which(current_SF_table$Feature == 'Upstroke' & current_SF_table$Time_s <=(start_time+current_time*1e-3)),]
-        spike_times=unlist(unname(current_SF_tableSpike_time$Time_s))
-        max_nb_of_spike=length(spike_times)
-        
-        if (max_nb_of_spike>=5){
-          sub_Adaptation_table=Adaptation_fit_table[which(Adaptation_fit_table$Response_time_ms == current_time),]
-          
-          Max_nb_spike=sub_Adaptation_table[which(sub_Adaptation_table$Sweep == current_sweep),'Nb_of_spikes']
-          
-          first_inst_freq=1/(spike_times[2]-spike_times[1])
-          for (current_spike_time_index in 2:length(spike_times)){
-            current_frequency=1/(spike_times[current_spike_time_index]-spike_times[current_spike_time_index-1])
-            current_frequency_normalized=current_frequency/first_inst_freq
-            current_interval=current_spike_time_index-1
-            #Inst_freq_table[as.character(current_sweep),as.character(current_interval)]=current_frequency
-            
-            new_df=data.frame(sweep_info_table[as.character(current_sweep),"Stim_amp_pA"],
-                       current_interval,
-                       current_frequency_normalized,
-                       Max_nb_spike,
-                       current_sweep,
-                       paste0(as.character(current_time),'ms'))
-            colnames(new_df) <- c("Stim_amp_pA","Interval","Inst_freq_WU","Nb_of_spikes","Sweep","Response_time_ms")
-            
-            
-            Inst_freq_table=rbind(Inst_freq_table,new_df)
-          }
-         
-        }
-      }
-      full_inst_freq_table=rbind(full_inst_freq_table,Inst_freq_table)
-      
     
-      
-      }
-      
-      
-      full_inst_freq_table$Interval=as.numeric(full_inst_freq_table$Interval)
-      full_inst_freq_table$Inst_freq_WU=as.numeric(full_inst_freq_table$Inst_freq_WU)
-      full_inst_freq_table$Stim_amp_pA=as.numeric(full_inst_freq_table$Stim_amp_pA)
-      full_inst_freq_table$Response_time_ms=factor(full_inst_freq_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-      full_inst_freq_table$Nb_of_spikes=as.factor(full_inst_freq_table$Nb_of_spikes)
-      
-      #Adapt_plot=ggplot()+geom_point(full_inst_freq_table,mapping=aes(x=Interval,y=Inst_freq_WU))
-      
-      Adapt_plot=ggplot()+geom_point(full_inst_freq_table,mapping=aes(x=Interval,y=Inst_freq_WU,colour=Stim_amp_pA,alpha=Nb_of_spikes))
-      
-      #,color=Stim_amp_pA,alpha=Max_nb_spike
-      
-      
-      full_Adapt_fit_table=data.frame(Interval=numeric(),
-                                 Inst_freq_WU = numeric(),
-                                 Response_time_ms = character())
-      sweep_adapt_fit_table=data.frame(Interval=numeric(),
-                                       Inst_freq_WU = numeric(),
-                                       Response_time_ms = character(),
-                                       Sweep = character(),
-                                       Stim_amp_pA = numeric(),
-                                       Nb_of_spikes = numeric())
-      
-      Interval_seq=seq(1,max(full_inst_freq_table$Interval),.1)
-      
-      
-      
-      for (current_time in time_list){
-        sub_Adaptation_table=Adaptation_fit_table[which(Adaptation_fit_table$Response_time_ms == current_time),]
-        sub_sweep_list=sub_Adaptation_table$Sweep
-        for (current_sweep in sub_sweep_list){
-          if (is.na(sub_Adaptation_table[which(sub_Adaptation_table$Sweep == current_sweep),'A']) == FALSE){
-            sweep_current_A=sub_Adaptation_table[which(sub_Adaptation_table$Sweep == current_sweep),'A']
-            sweep_current_B=sub_Adaptation_table[which(sub_Adaptation_table$Sweep == current_sweep),'B']
-            sweep_current_C=sub_Adaptation_table[which(sub_Adaptation_table$Sweep == current_sweep),'C']
-            sweep_inst_freq_array=sweep_current_A*exp(-(Interval_seq-1)/sweep_current_B)+sweep_current_C
-            
-            current_sweep_Adapt_fit_table=data.frame(cbind(Interval_seq,sweep_inst_freq_array))
-            current_sweep_Adapt_fit_table['Response_time_ms']=paste0(as.character(current_time),'ms')
-            current_sweep_Adapt_fit_table['Sweep']=as.character(current_sweep)
-            current_sweep_Adapt_fit_table['Stim_amp_pA']=sweep_info_table[as.character(current_sweep),"Stim_amp_pA"]
-            Max_nb_spike=sub_Adaptation_table[which(sub_Adaptation_table$Sweep == current_sweep),'Nb_of_spikes']
-            current_sweep_Adapt_fit_table['Nb_of_spikes']=Max_nb_spike
-            
-            sweep_adapt_fit_table=rbind(sweep_adapt_fit_table,current_sweep_Adapt_fit_table)
-           }
-        }
-        
-        current_A=weighted.mean(sub_Adaptation_table$A,sub_Adaptation_table$Nb_of_spikes,na.rm=TRUE)
-        current_B=weighted.mean(sub_Adaptation_table$B,sub_Adaptation_table$Nb_of_spikes,na.rm=TRUE)
-        current_C=weighted.mean(sub_Adaptation_table$C,sub_Adaptation_table$Nb_of_spikes,na.rm=TRUE)
-        A_norm=current_A/(current_A+current_C)
-        C_norm=current_C/(current_A+current_C)
-        
-        inst_freq_array=current_A*exp(-(Interval_seq-1)/current_B)+current_C
-        
-        current_Adapt_fit_table=data.frame(cbind(Interval_seq,inst_freq_array))
-        # current_Adapt_fit_table['Stim_amp_pA']=
-        current_Adapt_fit_table['Response_time_ms']=paste0(as.character(current_time),'ms')
-        
-        full_Adapt_fit_table=rbind(full_Adapt_fit_table,current_Adapt_fit_table)
-      }
-      
-      colnames(sweep_adapt_fit_table) <- c("Interval","Inst_freq_WU",'Response_time_ms','Sweep','Stim_amp_pA','Nb_of_spikes')
-      sweep_adapt_fit_table$Interval=as.numeric(sweep_adapt_fit_table$Interval)
-      sweep_adapt_fit_table$Inst_freq_WU=as.numeric(sweep_adapt_fit_table$Inst_freq_WU)
-      sweep_adapt_fit_table$Response_time_ms=as.factor(sweep_adapt_fit_table$Response_time_ms)
-      sweep_adapt_fit_table$Response_time_ms=factor(sweep_adapt_fit_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-      sweep_adapt_fit_table$Sweep=as.factor(sweep_adapt_fit_table$Sweep)
-      sweep_adapt_fit_table$Sweep=factor(sweep_adapt_fit_table$Sweep,levels=sweep_list)
-      
-      sweep_adapt_fit_table$Nb_of_spikes = as.factor(sweep_adapt_fit_table$Nb_of_spikes)
-      
-      colnames(full_Adapt_fit_table) <- c("Interval","Inst_freq_WU",'Response_time_ms')
-      full_Adapt_fit_table$Response_time_ms=as.factor(full_Adapt_fit_table$Response_time_ms)
-      full_Adapt_fit_table$Response_time_ms=factor(full_Adapt_fit_table$Response_time_ms,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-      Adapt_plot=Adapt_plot+geom_line(sweep_adapt_fit_table,mapping=aes(x=Interval,y=Inst_freq_WU,colour=Stim_amp_pA,alpha=Nb_of_spikes,group=Sweep),linetype = "dashed")
-      Adapt_plot=Adapt_plot+geom_line(full_Adapt_fit_table,mapping=aes(x=Interval,y=Inst_freq_WU),color="red")
-      Adapt_plot=Adapt_plot+ggtitle('Spike_frequency_adaptation')
-      
-      }
-      Adapt_plotly <- ggplotly(Adapt_plot,dynamicTicks=TRUE)
-      Adapt_plotly
-      
-      
-    })
-    output$I_O_feature_plot <- renderPlotly({
-      
+    output$Adapt_table <- renderTable({
       cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      Cell_feature_table=cell_tables_list$Cell_feature_table
-      rownames(Cell_feature_table) <- Cell_feature_table$Response_time_ms
-      time_list <- unique(Cell_feature_table$Response_time_ms)
-      
-      
-      Full_Sweep_metadata=cell_tables_list$Sweep_info_table
-      sweep_list=Full_Sweep_metadata$Sweep
-      
-      Stim_freq_table <- data.frame(Sweep = numeric(),    # Create empty data frame
-                          Stim_amp_pA = numeric(),
-                          Frequency_Hz = numeric(),
-                          Response_time = character(),
-                          stringsAsFactors = FALSE)
-      
-      if (time_list[1] == 0){
-        time_list=c(500.0)
-        fit_IO=FALSE
-        
-      }
-      else {fit_IO=TRUE}
-      
-      for (current_time in time_list){
-        
-        sub_cell_feature_table=Cell_feature_table[which(Cell_feature_table$Response_time_ms == current_time),]
-        for (current_sweep in sweep_list){
-          stim_start=sweep_info_table[as.character(current_sweep),"Stim_start_s"]
-          stim_end=sweep_info_table[as.character(current_sweep),"Stim_end_s"]
-          stim_amp=sweep_info_table[as.character(current_sweep),"Stim_amp_pA"]
-          SF_table=data.frame(cell_tables_list$Full_SF[[as.character(current_sweep)]])
-          spike_table=SF_table[which(SF_table$Feature == 'Upstroke'),]
-          spike_table=spike_table[which(spike_table$Time_s<=(stim_start+current_time*1e-3)),]
-          current_frequency=dim(spike_table)[1]/(current_time*1e-3)
-          time=paste0(as.character(current_time),'ms')
-          new_line=data.frame(list(current_sweep,stim_amp,current_frequency,time))
-          colnames(new_line) <- c('Sweep','Stim_amp_pA',"Frequency_Hz","Response_time")
-          Stim_freq_table=rbind(Stim_freq_table,new_line)
-         
-          
-        }
-      }
-      
-      
-      
-      
-      Stim_freq_table$Stim_amp_pA=as.numeric(Stim_freq_table$Stim_amp_pA)
-      Stim_freq_table$Frequency_Hz=as.numeric(Stim_freq_table$Frequency_Hz)
-      Stim_freq_table$Response_time=factor(Stim_freq_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-      if (fit_IO==FALSE){
-        
-        IO_plot=ggplot(Stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz),color='grey')+geom_point(aes(text=Sweep))
-        IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : No computation of I/O relationship"))
-      }
-      
-      else{
-        IO_plot=ggplot(Stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_time))+geom_point(aes(text=Sweep))
-      # Create Hill fit traces  --> fit trace
-      
-      fit_table <- data.frame(Sweep = numeric(),    # Create empty data frame
-                                    Stim_amp_pA = numeric(),
-                                    Frequency_Hz = numeric(),
-                                    Response_time = character(),
-                                    stringsAsFactors = FALSE)
-      
-      
       cell_fit_table=cell_tables_list$Cell_fit_table
+      cell_fit_table=cell_fit_table[which(cell_fit_table$Response_type == 'Time_based' ),]
+      cell_fit_table=cell_fit_table[which(cell_fit_table$Output_Duration == 0.5 ),]
+      sub_cell_fit_table=cell_fit_table[,c('Adaptation_obs','Adaptation_RMSE','A','B','C')]
       
-      sub_cell_fit_table = cell_fit_table[which(cell_fit_table$I_O_obs == "Hill-Sigmoid" | (cell_fit_table$I_O_obs == "Hill")),]
+      sub_cell_fit_table
+    })
+    ####HEre
+    
+    
+    output$I_O_feature_plot_time_based <- renderPlotly({
+      cell_tables_list=get_cell_file()
+      Sweep_QC_table=cell_tables_list$Sweep_QC_table
+      stim_freq_table=get_stim_freq_table(cell_tables_list,'Time_based')
+      stim_freq_table<- merge(x=stim_freq_table,y=Sweep_QC_table[,c('Passed_QC','Sweep')], 
+                             by=c("Sweep"))
+      fit_table_list=get_fit_tables(cell_tables_list,"Time_based")
       
-      #sub_cell_fit_table=cell_fit_table[which(cell_fit_table$I_O_obs == "--"),]
-      if (dim(sub_cell_fit_table)[1]!=0){
+      scale_dict=c("TRUE" = "16","FALSE" = "1")
       
-      sub_time_list=sub_cell_fit_table$Response_time_ms
-      stim_array=Full_Sweep_metadata$Stim_amp_pA
-      stim_array=seq(min(stim_array,na.rm = TRUE),max(stim_array,na.rm = TRUE),.1)
-      stim_array_shifted=stim_array+abs(min(stim_array))
-      min_x=min(Cell_feature_table$Threshold, na.rm = TRUE )-10
-      max_x=max(Full_Sweep_metadata$Stim_amp_pA, na.rm = TRUE )+10
+      fit_table = fit_table_list$fit_table
+      IO_table = fit_table_list$IO_table
+      Sat_table = fit_table_list$Sat_table
+      View(Sat_table)
       
-      IO_stim_array=seq(min_x,max_x,.1)
-      IO_table <- data.frame(Stim_amp_pA = numeric(),
-                             Frequency_Hz = numeric(),
-                             Response_time = character(),
-                             stringsAsFactors = FALSE)
-      Sat_table=data.frame(Stim_amp_pA = numeric(),
-                           Frequency_Hz = numeric(),
-                           Response_time = character(),
-                           stringsAsFactors = FALSE)
-      
-      sat_table_line=1
-      
-      for (current_time in sub_time_list ){
-
-        I_O_obs = sub_cell_fit_table[as.character(current_time),"I_O_obs"]
-        Hill_amplitude=sub_cell_fit_table[as.character(current_time),"Hill_amplitude"]
-        Hill_coef=sub_cell_fit_table[as.character(current_time),"Hill_coef"]
-        Hill_Half_cst=sub_cell_fit_table[as.character(current_time),"Hill_Half_cst"]
-        Hill_x0 = sub_cell_fit_table[as.character(current_time),"Hill_x0"]
-        x0=sub_cell_fit_table[as.character(current_time),"Sigmoid_x0"]
-        sigma=sub_cell_fit_table[as.character(current_time),"Sigmoid_sigma"]
-        freq_array = c(rep(0,length(stim_array_shifted)))
+      if (input$for_saving_plot == TRUE){
+        IO_plot=ggplot(stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_Duration))+geom_point(aes(text=Sweep))
+        IO_plot=IO_plot+geom_line(fit_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),size=.95)
+        IO_plot=IO_plot+geom_line(IO_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),linetype='dashed')
+        IO_plot=IO_plot+geom_point(Sat_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),shape=3,size=25)
+        IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : I/O relationship"))
+        my_blues = brewer.pal(n = 9, "Blues")[3:9] #there are 9, I exluded the two lighter hues
+        IO_plot=IO_plot + scale_colour_manual(values=my_blues)
+        IO_plot=IO_plot + scale_shape_manual(values=scale_dict)
         
-        I_O_obs = sub_cell_fit_table[as.character(current_time),"I_O_obs"]
-        Hill_amplitude=sub_cell_fit_table[as.character(current_time),"Hill_amplitude"]
-        Hill_coef=sub_cell_fit_table[as.character(current_time),"Hill_coef"]
-        Hill_Half_cst=sub_cell_fit_table[as.character(current_time),"Hill_Half_cst"]
-        Hill_x0 = sub_cell_fit_table[as.character(current_time),"Hill_x0"]
-        x0=sub_cell_fit_table[as.character(current_time),"Sigmoid_x0"]
-        sigma=sub_cell_fit_table[as.character(current_time),"Sigmoid_sigma"]
-        freq_array = c(rep(0,length(stim_array_shifted)))
-        
-        if (I_O_obs == 'Hill-Sigmoid'){
-          if (Hill_x0<min(stim_array_shifted)){
-            freq_array =Hill_amplitude* (((stim_array_shifted-Hill_x0)**(Hill_coef))/((Hill_Half_cst**Hill_coef)+((stim_array_shifted-Hill_x0)**(Hill_coef)))) *  (1-(1/(1+exp((stim_array_shifted-x0)/sigma))))
-          }
-          else{
-            x0_index=which(stim_array_shifted < Hill_x0)[length(which(stim_array_shifted < Hill_x0))]
-            freq_array [x0_index:length(freq_array)] =Hill_amplitude* (((stim_array_shifted[x0_index:length(freq_array)]-Hill_x0)**(Hill_coef))/((Hill_Half_cst**Hill_coef)+((stim_array_shifted[x0_index:length(freq_array)]-Hill_x0)**(Hill_coef)))) *  (1-(1/(1+exp((stim_array_shifted[x0_index:length(freq_array)]-x0)/sigma))))
-          }
-          
-          
-        }
-        
-        if (I_O_obs == 'Hill'){
-          
-          if (Hill_x0<min(stim_array_shifted)){
-            freq_array =Hill_amplitude* (((stim_array_shifted-Hill_x0)**(Hill_coef))/((Hill_Half_cst**Hill_coef)+((stim_array_shifted-Hill_x0)**(Hill_coef))))
-          }
-          else{
-            x0_index=which(stim_array_shifted < Hill_x0)[length(which(stim_array_shifted < Hill_x0))]
-            
-            freq_array [x0_index:length(freq_array)] =Hill_amplitude* (((stim_array_shifted[x0_index:length(freq_array)]-Hill_x0)**(Hill_coef))/((Hill_Half_cst**Hill_coef)+((stim_array_shifted[x0_index:length(freq_array)]-Hill_x0)**(Hill_coef))))
-          }
-        }
-       
-        new_table=data.frame(cbind(stim_array,freq_array))
-        new_table['Response_time']=paste0(as.character(current_time),'ms')
-        colnames(new_table) <- c('Stim_amp_pA','Frequency_Hz','Response_time')
-        fit_table=rbind(fit_table,new_table)
-        
-        Threshold=Cell_feature_table[as.character(current_time),"Threshold"]
-        Gain=Cell_feature_table[as.character(current_time),"Gain"]
-        
-        
-        Intercept=-Gain*Threshold
-        IO_freq_array=Gain*IO_stim_array+Intercept
-        current_IO_table=data.frame(cbind(IO_stim_array,IO_freq_array))
-        current_IO_table['Response_time']=paste0(as.character(current_time),'ms')
-        
-        
-        if (is.null(Cell_feature_table[as.character(current_time),"Saturation_Frequency"]) == FALSE){
-          current_sat_table=data.frame(Stim_amp_pA = numeric(),
-                                       Frequency_Hz = numeric(),
-                                       Response_time = character())
-          
-          Saturation_Frequency=as.numeric(Cell_feature_table[as.character(current_time),"Saturation_Frequency"])
-          Saturation_Stimulus=as.numeric(Cell_feature_table[as.character(current_time),"Saturation_Stimulus"])
-          
-          current_sat_table <- c(Saturation_Stimulus,Saturation_Frequency, paste0(as.character(current_time),'ms'))
-          
-          Sat_table[sat_table_line,] <- current_sat_table
-          sat_table_line=sat_table_line+1
-          
-          
-        }
-       
-        IO_table=rbind(IO_table,current_IO_table)
-        
+        IO_plot=IO_plot+ theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16)) #All font sizes
+      }
+      else{
+        IO_plot=ggplot(stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_Duration))+geom_point(aes(text=Sweep))
+        IO_plot=IO_plot+geom_line(fit_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration))
+        IO_plot=IO_plot+geom_line(IO_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),linetype='dashed')
+        IO_plot=IO_plot+geom_point(Sat_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),shape=3,size=10)
+        IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : I/O relationship"))
+        my_blues = brewer.pal(n = 9, "Blues")[3:9] #there are 9, I exluded the two lighter hues
+        IO_plot=IO_plot + scale_colour_manual(values=my_blues)
+        IO_plot=IO_plot + scale_shape_manual(values=scale_dict)
         
       }
-      
-      
-      colnames(fit_table) <- c("Stim_amp_pA","Frequency_Hz",'Response_time')
-      fit_table$Response_time=as.factor(fit_table$Response_time)
-      fit_table$Response_time=factor(fit_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-      
-      IO_plot=IO_plot+geom_line(fit_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_time),size=.95)
-      
-      colnames(IO_table) <- c("Stim_amp_pA","Frequency_Hz",'Response_time')
-      IO_table$Response_time=as.factor(IO_table$Response_time)
-      IO_table$Response_time=factor(IO_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-      IO_plot=IO_plot+geom_line(IO_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_time),linetype='dashed')
-      colnames(Sat_table) <- c("Stim_amp_pA","Frequency_Hz",'Response_time')
-      Sat_table$Stim_amp_pA=as.numeric(Sat_table$Stim_amp_pA)
-      Sat_table$Frequency_Hz=as.numeric(Sat_table$Frequency_Hz)
-      Sat_table$Response_time=as.factor(Sat_table$Response_time)
-      Sat_table$Response_time=factor(Sat_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-      
-      IO_plot=IO_plot+geom_point(Sat_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_time),shape=3,size=25)
-      IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : I/O relationship"))
-      my_orange = brewer.pal(n = 9, "Blues")[3:9] #there are 9, I exluded the two lighter hues
-      IO_plot=IO_plot + scale_colour_manual(values=my_orange)
-      }
-      }
-      IO_plot=IO_plot+ theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16)) #All font sizes
       IO_plotly <- ggplotly(IO_plot,dynamicTicks=TRUE)
       
       IO_plotly
       
     })
     
-    output$IO_table_fit <- renderTable({
+    output$IO_table_time_fit <- renderTable({
       cell_tables_list=get_cell_file()
       cell_fit_table=cell_tables_list$Cell_fit_table
-      sub_cell_fit_table=cell_fit_table[,c('Response_time_ms', 'I_O_obs', 'I_O_QNRMSE', 'Hill_amplitude',
+      cell_fit_table = cell_fit_table[which(cell_fit_table$Response_type == 'Time_based' ),]
+      cell_fit_table=cell_fit_table[,c('Response_type','Output_Duration', 'I_O_obs', 'I_O_QNRMSE', 'Hill_amplitude',
                                            'Hill_coef', 'Hill_Half_cst','Hill_x0','Sigmoid_x0','Sigmoid_sigma')]
       
-      sub_cell_fit_table
+      cell_fit_table
     })
     
     
-    output$IO_table_feature <- renderTable({
+    output$IO_table_time_feature <- renderTable({
       cell_tables_list=get_cell_file()
-      cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Time_based' ),]
      
-      cell_feature_table
+      Cell_feature_table
     })
     
-    
-    output$Adapt_table <- renderTable({
+    output$Stim_freq_time_table <- renderTable({
       cell_tables_list=get_cell_file()
-      cell_fit_table=cell_tables_list$Cell_fit_table
-      sub_cell_fit_table=cell_fit_table[,c("Response_time_ms", 'Adaptation_obs','Adaptation_RMSE','A','B','C')]
       
-      sub_cell_fit_table
+      Sweep_QC_table=cell_tables_list$Sweep_QC_table
+      stim_freq_table=get_stim_freq_table(cell_tables_list,'Time_based')
+      stim_freq_table<- merge(x=stim_freq_table,y=Sweep_QC_table[,c('Passed_QC','Sweep')], 
+                              by=c("Sweep"))
+      
+      stim_freq_table
+      
     })
     
     
-    
-    output$Stim_freq_table <- renderTable({
+    output$Gain_time_plot <- renderPlotly(({
       cell_tables_list=get_cell_file()
       
       sweep_info_table=cell_tables_list$Sweep_info_table
       Cell_feature_table=cell_tables_list$Cell_feature_table
-      rownames(Cell_feature_table) <- Cell_feature_table$Response_time_ms
-      time_list <- unique(Cell_feature_table$Response_time_ms)
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Time_based' ),]
+      lmgain = lm(Gain~Output_Duration, data = Cell_feature_table)
+      
+      gain_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Gain))+geom_point()
+      gain_time_plot=gain_time_plot+geom_abline(intercept=lmgain$coefficients[1],slope=lmgain$coefficients[2],color='red')
       
       
-      Full_Sweep_metadata=cell_tables_list$Sweep_info_table
-      sweep_list=Full_Sweep_metadata$Sweep
+      gain_time_plotly <- ggplotly(gain_time_plot,dynamicTicks=TRUE)
+      gain_time_plotly
+    }))
+    
+    output$Gain_time_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
       
-      Stim_freq_table <- data.frame(Sweep = numeric(),    # Create empty data frame
-                                    Stim_amp_pA = numeric(),
-                                    Frequency_Hz = numeric(),
-                                    Response_time = character(),
-                                    stringsAsFactors = FALSE)
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Time_based' ),]
+      lmgain = lm(Gain~Output_Duration, data = Cell_feature_table)
+      
+      gain_df=data.frame(Intercept = numeric(),  
+                         Slope = numeric(),
+                         `R^2` = numeric())
+      rsquared=summary(lmgain)$r.squared
+      
+      gain_df[1,] <- list(lmgain$coefficients[1],lmgain$coefficients[2],rsquared)
+      
+      gain_df
+    }))
+    
+    output$Threshold_time_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Time_based' ),]
+      lmthreshold = lm(Threshold~Output_Duration, data = Cell_feature_table)
+      
+      threshold_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Threshold))+geom_point()
+      threshold_time_plot=threshold_time_plot+geom_abline(intercept=lmthreshold$coefficients[1],slope=lmthreshold$coefficients[2],color='red')
       
       
+      threshold_time_plot <- ggplotly(threshold_time_plot,dynamicTicks=TRUE)
+      threshold_time_plot
+    }))
+    
+    output$Threshold_time_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
       
-      for (current_time in time_list){
-        sub_cell_feature_table=Cell_feature_table[which(Cell_feature_table$Response_time_ms == current_time),]
-        for (current_sweep in sweep_list){
-          stim_start=sweep_info_table[as.character(current_sweep),"Stim_start_s"]
-          stim_end=sweep_info_table[as.character(current_sweep),"Stim_end_s"]
-          stim_amp=sweep_info_table[as.character(current_sweep),"Stim_amp_pA"]
-          SF_table=data.frame(cell_tables_list$Full_SF[[as.character(current_sweep)]])
-          spike_table=SF_table[which(SF_table$Feature == 'Upstroke'),]
-          spike_table=spike_table[which(spike_table$Time_s<=(stim_start+current_time*1e-3)),]
-          current_frequency=dim(spike_table)[1]/(current_time*1e-3)
-          time=paste0(as.character(current_time),'ms')
-          new_line=data.frame(list(current_sweep,stim_amp,current_frequency,time))
-          colnames(new_line) <- c('Sweep','Stim_amp_pA',"Frequency_Hz","Response_time")
-          Stim_freq_table=rbind(Stim_freq_table,new_line)
-          
-          
-        }
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Time_based' ),]
+      lmthreshold = lm(Threshold~Output_Duration, data = Cell_feature_table)
+      
+      threshold_df=data.frame(Intercept = numeric(),  
+                              Slope = numeric(),
+                              `R^2` = numeric())
+      rsquared=summary(lmthreshold)$r.squared
+      threshold_df[1,] <- list(lmthreshold$coefficients[1],lmthreshold$coefficients[2],rsquared)
+      
+      threshold_df
+    }))
+    
+    output$Saturation_stimulus_time_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Time_based' ),]
+      lmsat_stim = lm(Saturation_Stimulus~Output_Duration, data = Cell_feature_table)
+      
+      sat_stim_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Saturation_Stimulus))+geom_point()
+      sat_stim_time_plot=sat_stim_time_plot+geom_abline(intercept=lmsat_stim$coefficients[1],slope=lmsat_stim$coefficients[2],color='red')
+      
+      
+      sat_stim_time_plot <- ggplotly(sat_stim_time_plot,dynamicTicks=TRUE)
+      sat_stim_time_plot
+    }))
+    
+    output$Saturation_stimulus_time_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Time_based' ),]
+      lmsat_stim = lm(Saturation_Stimulus~Output_Duration, data = Cell_feature_table)
+      
+      sat_stim_df=data.frame(Intercept = numeric(),  
+                             Slope = numeric(),
+                             `R^2` = numeric())
+      rsquared=summary(lmsat_stim)$r.squared
+      sat_stim_df[1,] <- list(lmsat_stim$coefficients[1],lmsat_stim$coefficients[2],rsquared)
+      
+      sat_stim_df
+    }))
+    
+    output$Saturation_freq_time_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Time_based' ),]
+      lmsat_freq = lm(Saturation_Frequency~Output_Duration, data = Cell_feature_table)
+      
+      sat_freq_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Saturation_Frequency))+geom_point()
+      sat_freq_time_plot=sat_freq_time_plot+geom_abline(intercept=lmsat_freq$coefficients[1],slope=lmsat_freq$coefficients[2],color='red')
+      
+      
+      sat_freq_time_plot <- ggplotly(sat_freq_time_plot,dynamicTicks=TRUE)
+      sat_freq_time_plot
+    }))
+    
+    output$Saturation_freq_time_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Time_based' ),]
+      lmsat_freq = lm(Saturation_Frequency~Output_Duration, data = Cell_feature_table)
+      
+      sat_freq_df=data.frame(Intercept = numeric(),  
+                             Slope = numeric(),
+                             `R^2` = numeric())
+      rsquared=summary(lmsat_freq)$r.squared
+      sat_freq_df[1,] <- list(lmsat_freq$coefficients[1],lmsat_freq$coefficients[2],rsquared)
+      
+      sat_freq_df
+    }))
+    
+    
+    ##### Index
+    
+    output$I_O_feature_plot_index_based <- renderPlotly({
+      cell_tables_list=get_cell_file()
+      Sweep_QC_table=cell_tables_list$Sweep_QC_table
+      stim_freq_table=get_stim_freq_table(cell_tables_list,'Index_based')
+      stim_freq_table<- merge(x=stim_freq_table,y=Sweep_QC_table[,c('Passed_QC','Sweep')], 
+                              by=c("Sweep"))
+      fit_table_list=get_fit_tables(cell_tables_list,"Index_based")
+      
+      scale_dict=c("TRUE" = "16","FALSE" = "1")
+      
+      fit_table = fit_table_list$fit_table
+      IO_table = fit_table_list$IO_table
+      Sat_table = fit_table_list$Sat_table
+      
+      
+      if (input$for_saving_plot == TRUE){
+        IO_plot=ggplot(stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_Duration))+geom_point(aes(text=Sweep))
+        IO_plot=IO_plot+geom_line(fit_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),size=.95)
+        IO_plot=IO_plot+geom_line(IO_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),linetype='dashed')
+        IO_plot=IO_plot+geom_point(Sat_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),shape=3,size=25)
+        IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : I/O relationship"))
+       
+        green_palet = colorRampPalette(brewer.pal(9, "Greens")[3:9])
+        
+        IO_plot=IO_plot + scale_colour_manual(values=green_palet(10))
+        IO_plot=IO_plot + scale_shape_manual(values=scale_dict)
+        
+        IO_plot=IO_plot+ theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16)) #All font sizes
       }
+      else{
+        IO_plot=ggplot(stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_Duration))+geom_point(aes(text=Sweep))
+        IO_plot=IO_plot+geom_line(fit_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration))
+        IO_plot=IO_plot+geom_line(IO_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),linetype='dashed')
+        IO_plot=IO_plot+geom_point(Sat_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),shape=3,size=10)
+        IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : I/O relationship"))
+        
+        green_palet = colorRampPalette(brewer.pal(9, "Greens")[3:9])
+        
+        IO_plot=IO_plot + scale_colour_manual(values=green_palet(10))
+        IO_plot=IO_plot + scale_shape_manual(values=scale_dict)
+        
+      }
+      IO_plotly <- ggplotly(IO_plot,dynamicTicks=TRUE)
       
-      
-      
-      
-      Stim_freq_table$Stim_amp_pA=as.numeric(Stim_freq_table$Stim_amp_pA)
-      Stim_freq_table$Frequency_Hz=as.numeric(Stim_freq_table$Frequency_Hz)
-      Stim_freq_table$Response_time=factor(Stim_freq_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-      
-      
-      Stim_freq_table
+      IO_plotly
       
     })
+    
+    output$IO_table_index_fit <- renderTable({
+      cell_tables_list=get_cell_file()
+      cell_fit_table=cell_tables_list$Cell_fit_table
+      cell_fit_table = cell_fit_table[which(cell_fit_table$Response_type == 'Index_based' ),]
+      cell_fit_table=cell_fit_table[,c('Response_type','Output_Duration', 'I_O_obs', 'I_O_QNRMSE', 'Hill_amplitude',
+                                       'Hill_coef', 'Hill_Half_cst','Hill_x0','Sigmoid_x0','Sigmoid_sigma')]
+      
+      cell_fit_table
+    })
+    
+    
+    output$IO_index_table_feature <- renderTable({
+      cell_tables_list=get_cell_file()
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Index_based' ),]
+      
+      Cell_feature_table
+    })
+    
+    output$Stim_freq_index_table <- renderTable({
+      cell_tables_list=get_cell_file()
+      
+      Sweep_QC_table=cell_tables_list$Sweep_QC_table
+      stim_freq_table=get_stim_freq_table(cell_tables_list,'Index_based')
+      stim_freq_table<- merge(x=stim_freq_table,y=Sweep_QC_table[,c('Passed_QC','Sweep')], 
+                              by=c("Sweep"))
+      
+      stim_freq_table
+      
+    })
+    
+    
+    output$Gain_index_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Index_based' ),]
+      lmgain = lm(Gain~Output_Duration, data = Cell_feature_table)
+      
+      gain_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Gain))+geom_point()
+      gain_time_plot=gain_time_plot+geom_abline(intercept=lmgain$coefficients[1],slope=lmgain$coefficients[2],color='red')
+      
+      
+      gain_time_plotly <- ggplotly(gain_time_plot,dynamicTicks=TRUE)
+      gain_time_plotly
+    }))
+    
+    output$Gain_index_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Index_based' ),]
+      lmgain = lm(Gain~Output_Duration, data = Cell_feature_table)
+      
+      gain_df=data.frame(Intercept = numeric(),  
+                         Slope = numeric(),
+                         `R^2` = numeric())
+      rsquared=summary(lmgain)$r.squared
+      
+      gain_df[1,] <- list(lmgain$coefficients[1],lmgain$coefficients[2],rsquared)
+      
+      gain_df
+    }))
+    
+    output$Threshold_index_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Index_based' ),]
+      lmthreshold = lm(Threshold~Output_Duration, data = Cell_feature_table)
+      
+      threshold_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Threshold))+geom_point()
+      threshold_time_plot=threshold_time_plot+geom_abline(intercept=lmthreshold$coefficients[1],slope=lmthreshold$coefficients[2],color='red')
+      
+      
+      threshold_time_plot <- ggplotly(threshold_time_plot,dynamicTicks=TRUE)
+      threshold_time_plot
+    }))
+    
+    output$Threshold_index_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Index_based' ),]
+      lmthreshold = lm(Threshold~Output_Duration, data = Cell_feature_table)
+      
+      threshold_df=data.frame(Intercept = numeric(),  
+                              Slope = numeric(),
+                              `R^2` = numeric())
+      rsquared=summary(lmthreshold)$r.squared
+      threshold_df[1,] <- list(lmthreshold$coefficients[1],lmthreshold$coefficients[2],rsquared)
+      
+      threshold_df
+    }))
+    
+    output$Saturation_stimulus_index_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Index_based' ),]
+      lmsat_stim = lm(Saturation_Stimulus~Output_Duration, data = Cell_feature_table)
+      
+      sat_stim_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Saturation_Stimulus))+geom_point()
+      sat_stim_time_plot=sat_stim_time_plot+geom_abline(intercept=lmsat_stim$coefficients[1],slope=lmsat_stim$coefficients[2],color='red')
+      
+      
+      sat_stim_time_plot <- ggplotly(sat_stim_time_plot,dynamicTicks=TRUE)
+      sat_stim_time_plot
+    }))
+    
+    output$Saturation_stimulus_index_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Index_based' ),]
+      lmsat_stim = lm(Saturation_Stimulus~Output_Duration, data = Cell_feature_table)
+      
+      sat_stim_df=data.frame(Intercept = numeric(),  
+                             Slope = numeric(),
+                             `R^2` = numeric())
+      rsquared=summary(lmsat_stim)$r.squared
+      sat_stim_df[1,] <- list(lmsat_stim$coefficients[1],lmsat_stim$coefficients[2],rsquared)
+      
+      sat_stim_df
+    }))
+    
+    output$Saturation_freq_index_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Index_based' ),]
+      lmsat_freq = lm(Saturation_Frequency~Output_Duration, data = Cell_feature_table)
+      
+      sat_freq_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Saturation_Frequency))+geom_point()
+      sat_freq_time_plot=sat_freq_time_plot+geom_abline(intercept=lmsat_freq$coefficients[1],slope=lmsat_freq$coefficients[2],color='red')
+      
+      
+      sat_freq_time_plot <- ggplotly(sat_freq_time_plot,dynamicTicks=TRUE)
+      sat_freq_time_plot
+    }))
+    
+    output$Saturation_freq_index_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Index_based' ),]
+      lmsat_freq = lm(Saturation_Frequency~Output_Duration, data = Cell_feature_table)
+      
+      sat_freq_df=data.frame(Intercept = numeric(),  
+                             Slope = numeric(),
+                             `R^2` = numeric())
+      rsquared=summary(lmsat_freq)$r.squared
+      sat_freq_df[1,] <- list(lmsat_freq$coefficients[1],lmsat_freq$coefficients[2],rsquared)
+      
+      sat_freq_df
+    }))
+    
+    ##### Interval
+    
+    output$I_O_feature_plot_interval_based <- renderPlotly({
+      cell_tables_list=get_cell_file()
+      Sweep_QC_table=cell_tables_list$Sweep_QC_table
+      stim_freq_table=get_stim_freq_table(cell_tables_list,'Interval_based')
+      stim_freq_table<- merge(x=stim_freq_table,y=Sweep_QC_table[,c('Passed_QC','Sweep')], 
+                              by=c("Sweep"))
+      fit_table_list=get_fit_tables(cell_tables_list,"Interval_based")
+      
+      scale_dict=c("TRUE" = "16","FALSE" = "1")
+      
+      fit_table = fit_table_list$fit_table
+      IO_table = fit_table_list$IO_table
+      Sat_table = fit_table_list$Sat_table
+      
+      
+      
+     
+      if (input$for_saving_plot == TRUE){
+        IO_plot=ggplot(stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_Duration))+geom_point(aes(text=Sweep))
+        IO_plot=IO_plot+geom_line(fit_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),size=.95)
+        IO_plot=IO_plot+geom_line(IO_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),linetype='dashed')
+        IO_plot=IO_plot+geom_point(Sat_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),shape=3,size=25)
+        IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : I/O relationship"))
+        
+        green_palet = colorRampPalette(brewer.pal(9, "Reds")[3:9])
+        
+        IO_plot=IO_plot + scale_colour_manual(values=green_palet(10))
+        IO_plot=IO_plot + scale_shape_manual(values=scale_dict)
+        IO_plot=IO_plot+ theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16)) #All font sizes
+      }
+      else{
+        IO_plot=ggplot(stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_Duration))+geom_point(aes(text=Sweep))
+        IO_plot=IO_plot+geom_line(fit_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration))
+        IO_plot=IO_plot+geom_line(IO_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),linetype='dashed')
+        IO_plot=IO_plot+geom_point(Sat_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_Duration),shape=3,size=10)
+        IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : I/O relationship"))
+        
+        green_palet = colorRampPalette(brewer.pal(9, "Reds")[3:9])
+        
+        IO_plot=IO_plot + scale_colour_manual(values=green_palet(10))
+        IO_plot=IO_plot + scale_shape_manual(values=scale_dict)
+        
+      }
+      
+      IO_plotly <- ggplotly(IO_plot,dynamicTicks=TRUE)
+      
+      IO_plotly
+      
+    })
+    
+    output$IO_table_interval_fit <- renderTable({
+      cell_tables_list=get_cell_file()
+      cell_fit_table=cell_tables_list$Cell_fit_table
+      cell_fit_table = cell_fit_table[which(cell_fit_table$Response_type == 'Interval_based' ),]
+      cell_fit_table=cell_fit_table[,c('Response_type','Output_Duration', 'I_O_obs', 'I_O_QNRMSE', 'Hill_amplitude',
+                                       'Hill_coef', 'Hill_Half_cst','Hill_x0','Sigmoid_x0','Sigmoid_sigma')]
+      
+      cell_fit_table
+    })
+    
+    
+    output$IO_interval_table_feature <- renderTable({
+      cell_tables_list=get_cell_file()
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Interval_based' ),]
+      
+      Cell_feature_table
+    })
+    
+    output$Stim_freq_interval_table <- renderTable({
+      cell_tables_list=get_cell_file()
+      
+      Sweep_QC_table=cell_tables_list$Sweep_QC_table
+      stim_freq_table=get_stim_freq_table(cell_tables_list,'Interval_based')
+      stim_freq_table<- merge(x=stim_freq_table,y=Sweep_QC_table[,c('Passed_QC','Sweep')], 
+                              by=c("Sweep"))
+      
+      stim_freq_table
+      
+    })
+    
+    
+    output$Gain_interval_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Interval_based' ),]
+      lmgain = lm(Gain~Output_Duration, data = Cell_feature_table)
+      
+      gain_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Gain))+geom_point()
+      gain_time_plot=gain_time_plot+geom_abline(intercept=lmgain$coefficients[1],slope=lmgain$coefficients[2],color='red')
+      
+      
+      gain_time_plotly <- ggplotly(gain_time_plot,dynamicTicks=TRUE)
+      gain_time_plotly
+    }))
+    
+    output$Gain_interval_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Interval_based' ),]
+      lmgain = lm(Gain~Output_Duration, data = Cell_feature_table)
+      
+      gain_df=data.frame(Intercept = numeric(),  
+                         Slope = numeric(),
+                         `R^2` = numeric())
+      rsquared=summary(lmgain)$r.squared
+      
+      gain_df[1,] <- list(lmgain$coefficients[1],lmgain$coefficients[2],rsquared)
+      
+      gain_df
+    }))
+    
+    output$Threshold_interval_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Interval_based' ),]
+      lmthreshold = lm(Threshold~Output_Duration, data = Cell_feature_table)
+      
+      threshold_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Threshold))+geom_point()
+      threshold_time_plot=threshold_time_plot+geom_abline(intercept=lmthreshold$coefficients[1],slope=lmthreshold$coefficients[2],color='red')
+      
+      
+      threshold_time_plot <- ggplotly(threshold_time_plot,dynamicTicks=TRUE)
+      threshold_time_plot
+    }))
+    
+    output$Threshold_interval_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Interval_based' ),]
+      lmthreshold = lm(Threshold~Output_Duration, data = Cell_feature_table)
+      
+      threshold_df=data.frame(Intercept = numeric(),  
+                              Slope = numeric(),
+                              `R^2` = numeric())
+      rsquared=summary(lmthreshold)$r.squared
+      threshold_df[1,] <- list(lmthreshold$coefficients[1],lmthreshold$coefficients[2],rsquared)
+      
+      threshold_df
+    }))
+    
+    output$Saturation_stimulus_interval_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Interval_based' ),]
+      lmsat_stim = lm(Saturation_Stimulus~Output_Duration, data = Cell_feature_table)
+      
+      sat_stim_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Saturation_Stimulus))+geom_point()
+      sat_stim_time_plot=sat_stim_time_plot+geom_abline(intercept=lmsat_stim$coefficients[1],slope=lmsat_stim$coefficients[2],color='red')
+      
+      
+      sat_stim_time_plot <- ggplotly(sat_stim_time_plot,dynamicTicks=TRUE)
+      sat_stim_time_plot
+    }))
+    
+    output$Saturation_stimulus_interval_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Interval_based' ),]
+      lmsat_stim = lm(Saturation_Stimulus~Output_Duration, data = Cell_feature_table)
+      
+      sat_stim_df=data.frame(Intercept = numeric(),  
+                             Slope = numeric(),
+                             `R^2` = numeric())
+      rsquared=summary(lmsat_stim)$r.squared
+      sat_stim_df[1,] <- list(lmsat_stim$coefficients[1],lmsat_stim$coefficients[2],rsquared)
+      
+      sat_stim_df
+    }))
+    
+    output$Saturation_freq_interval_plot <- renderPlotly(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Interval_based' ),]
+      lmsat_freq = lm(Saturation_Frequency~Output_Duration, data = Cell_feature_table)
+      
+      sat_freq_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Output_Duration,y=Saturation_Frequency))+geom_point()
+      sat_freq_time_plot=sat_freq_time_plot+geom_abline(intercept=lmsat_freq$coefficients[1],slope=lmsat_freq$coefficients[2],color='red')
+      
+      
+      sat_freq_time_plot <- ggplotly(sat_freq_time_plot,dynamicTicks=TRUE)
+      sat_freq_time_plot
+    }))
+    
+    output$Saturation_freq_interval_metrics <- renderTable(({
+      cell_tables_list=get_cell_file()
+      
+      sweep_info_table=cell_tables_list$Sweep_info_table
+      Cell_feature_table=cell_tables_list$Cell_feature_table
+      Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Interval_based' ),]
+      lmsat_freq = lm(Saturation_Frequency~Output_Duration, data = Cell_feature_table)
+      
+      sat_freq_df=data.frame(Intercept = numeric(),  
+                             Slope = numeric(),
+                             `R^2` = numeric())
+      rsquared=summary(lmsat_freq)$r.squared
+      sat_freq_df[1,] <- list(lmsat_freq$coefficients[1],lmsat_freq$coefficients[2],rsquared)
+      
+      sat_freq_df
+    }))
+    
+    
+    
     
     output$Metadata <- renderTable({
       cell_tables_list=get_cell_file()
@@ -1332,133 +1414,7 @@ server <- function(session,input, output) {
       TC_boxplotly
     }))
     
-    output$Gain_time_plot <- renderPlotly(({
-      cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      Cell_feature_table=cell_tables_list$Cell_feature_table
-      lmgain = lm(Gain~Response_time_ms, data = Cell_feature_table)
-      
-      gain_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Response_time_ms,y=Gain))+geom_point()
-      gain_time_plot=gain_time_plot+geom_abline(intercept=lmgain$coefficients[1],slope=lmgain$coefficients[2],color='red')
-      
-      
-      gain_time_plotly <- ggplotly(gain_time_plot,dynamicTicks=TRUE)
-      gain_time_plotly
-    }))
-    
-    output$Gain_time_metrics <- renderTable(({
-      cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      Cell_feature_table=cell_tables_list$Cell_feature_table
-      lmgain = lm(Gain~Response_time_ms, data = Cell_feature_table)
-      
-      gain_df=data.frame(Intercept = numeric(),  
-                         Slope = numeric(),
-                         `R^2` = numeric())
-      rsquared=summary(lmgain)$r.squared
-      
-      gain_df[1,] <- list(lmgain$coefficients[1],lmgain$coefficients[2],rsquared)
-      
-      gain_df
-    }))
-    
-    
-    output$Threshold_time_plot <- renderPlotly(({
-      cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      Cell_feature_table=cell_tables_list$Cell_feature_table
-      lmthreshold = lm(Threshold~Response_time_ms, data = Cell_feature_table)
-      
-      threshold_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Response_time_ms,y=Threshold))+geom_point()
-      threshold_time_plot=threshold_time_plot+geom_abline(intercept=lmthreshold$coefficients[1],slope=lmthreshold$coefficients[2],color='red')
-      
-      
-      threshold_time_plot <- ggplotly(threshold_time_plot,dynamicTicks=TRUE)
-      threshold_time_plot
-    }))
-    
-    output$Threshold_time_metrics <- renderTable(({
-      cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      Cell_feature_table=cell_tables_list$Cell_feature_table
-      lmthreshold = lm(Threshold~Response_time_ms, data = Cell_feature_table)
-      
-      threshold_df=data.frame(Intercept = numeric(),  
-                         Slope = numeric(),
-                         `R^2` = numeric())
-      rsquared=summary(lmthreshold)$r.squared
-      threshold_df[1,] <- list(lmthreshold$coefficients[1],lmthreshold$coefficients[2],rsquared)
-      
-      threshold_df
-    }))
-    
-    output$Saturation_stimulus_time_plot <- renderPlotly(({
-      cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      Cell_feature_table=cell_tables_list$Cell_feature_table
-      lmsat_stim = lm(Saturation_Stimulus~Response_time_ms, data = Cell_feature_table)
-      
-      sat_stim_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Response_time_ms,y=Saturation_Stimulus))+geom_point()
-      sat_stim_time_plot=sat_stim_time_plot+geom_abline(intercept=lmsat_stim$coefficients[1],slope=lmsat_stim$coefficients[2],color='red')
-      
-      
-      sat_stim_time_plot <- ggplotly(sat_stim_time_plot,dynamicTicks=TRUE)
-      sat_stim_time_plot
-    }))
-    
-    output$Saturation_stimulus_time_metrics <- renderTable(({
-      cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      Cell_feature_table=cell_tables_list$Cell_feature_table
-      lmsat_stim = lm(Saturation_Stimulus~Response_time_ms, data = Cell_feature_table)
-      
-      sat_stim_df=data.frame(Intercept = numeric(),  
-                              Slope = numeric(),
-                             `R^2` = numeric())
-      rsquared=summary(lmsat_stim)$r.squared
-      sat_stim_df[1,] <- list(lmsat_stim$coefficients[1],lmsat_stim$coefficients[2],rsquared)
-      
-      sat_stim_df
-    }))
-    
-    output$Saturation_freq_time_plot <- renderPlotly(({
-      cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      Cell_feature_table=cell_tables_list$Cell_feature_table
-      lmsat_freq = lm(Saturation_Frequency~Response_time_ms, data = Cell_feature_table)
-      
-      sat_freq_time_plot=ggplot(Cell_feature_table,mapping=aes(x=Response_time_ms,y=Saturation_Frequency))+geom_point()
-      sat_freq_time_plot=sat_freq_time_plot+geom_abline(intercept=lmsat_freq$coefficients[1],slope=lmsat_freq$coefficients[2],color='red')
-      
-      
-      sat_freq_time_plot <- ggplotly(sat_freq_time_plot,dynamicTicks=TRUE)
-      sat_freq_time_plot
-    }))
-    
-    output$Saturation_freq_time_metrics <- renderTable(({
-      cell_tables_list=get_cell_file()
-      
-      sweep_info_table=cell_tables_list$Sweep_info_table
-      Cell_feature_table=cell_tables_list$Cell_feature_table
-      lmsat_freq = lm(Saturation_Frequency~Response_time_ms, data = Cell_feature_table)
-      
-      sat_freq_df=data.frame(Intercept = numeric(),  
-                             Slope = numeric(),
-                             `R^2` = numeric())
-      rsquared=summary(lmsat_freq)$r.squared
-      sat_freq_df[1,] <- list(lmsat_freq$coefficients[1],lmsat_freq$coefficients[2],rsquared)
-      
-      sat_freq_df
-    }))
-    
-   
+ 
 
 }
 
