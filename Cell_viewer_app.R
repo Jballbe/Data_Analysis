@@ -1207,7 +1207,6 @@ server <- function(session,input, output) {
       cell_fit_table
     })
     
-    
     output$IO_interval_table_feature <- renderTable({
       cell_tables_list=get_cell_file()
       Cell_feature_table=cell_tables_list$Cell_feature_table
@@ -1227,7 +1226,6 @@ server <- function(session,input, output) {
       stim_freq_table
       
     })
-    
     
     output$Gain_interval_plot <- renderPlotly(({
       cell_tables_list=get_cell_file()
