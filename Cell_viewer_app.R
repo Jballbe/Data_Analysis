@@ -708,6 +708,23 @@ server <- function(session,input, output) {
       stim_freq_table=get_stim_freq_table(cell_tables_list,'Time_based')
       stim_freq_table<- merge(x=stim_freq_table,y=Sweep_QC_table[,c('Passed_QC','Sweep')], 
                              by=c("Sweep"))
+      fit_table=cell_tables_list$Cell_fit_table
+      if (dim(fit_table)[1]==1){
+        #if the fit was rejected
+        if (input$for_saving_plot == TRUE){
+          IO_plot=ggplot(stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_Duration))+geom_point(aes(text=Sweep),color="black")
+          IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : I/O relationship"))
+          IO_plot=IO_plot+ theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16)) #All font sizes
+        }
+        else{
+          IO_plot=ggplot(stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_Duration))+geom_point(aes(text=Sweep),color="black")
+          IO_plot=IO_plot+ggtitle(paste0(input$Cell_id_to_analyse," : I/O relationship"))
+        }
+        
+      }
+      
+      else{
+        
       fit_table_list=get_fit_tables(cell_tables_list,"Time_based")
       
       scale_dict=c("TRUE" = "16","FALSE" = "1")
@@ -715,7 +732,7 @@ server <- function(session,input, output) {
       fit_table = fit_table_list$fit_table
       IO_table = fit_table_list$IO_table
       Sat_table = fit_table_list$Sat_table
-      View(Sat_table)
+      
       
       if (input$for_saving_plot == TRUE){
         IO_plot=ggplot(stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_Duration))+geom_point(aes(text=Sweep))
@@ -739,6 +756,7 @@ server <- function(session,input, output) {
         IO_plot=IO_plot + scale_colour_manual(values=my_blues)
         IO_plot=IO_plot + scale_shape_manual(values=scale_dict)
         
+      }
       }
       IO_plotly <- ggplotly(IO_plot,dynamicTicks=TRUE)
       

@@ -17,6 +17,7 @@ ui <- fluidPage(
              tabPanel("Files",
                       sidebarLayout(
                         sidebarPanel(
+                          selectInput('Selected_Response_Type','Select Response Type',choices=c('Time_based','Index_based','Interval_based'),selected='Time_based'),
                           shinyDirButton('folder', 'Select a folder', 'Please select a folder', FALSE),
                           textOutput('file_path'),
                           checkboxGroupButtons('Population_files','Select files',choices = ""),
@@ -207,10 +208,37 @@ ui <- fluidPage(
                           
                         ),#mainpanel
                       )#sidebarLayout
-             ),#tabpanel
+             ),
+             #tabpanel
              
              
-  )
+  ),
+  navbarPage('Cell_analysis',
+             tabPanel("Cell id",
+                      
+                      # Sidebar with a slider input for number of bins 
+                      sidebarLayout(
+                        sidebarPanel(
+                          shinyDirButton('folder', 'Select a folder', 'Please select a folder', FALSE),
+                          selectizeInput("Cell_id_to_analyse","Select_cell_id",choices="", selected = NULL, multiple = FALSE, options = NULL),
+                          
+                          actionButton("Change_cell", "Show Cell Trace")
+                          
+                        ),
+                        
+                        
+                        mainPanel(
+                          
+                          dataTableOutput('cell_list_csv')
+                          # plotlyOutput("Spike_feature_plot",height = 800)
+                          #plotlyOutput("traces_plot")
+                          
+                          
+                          
+                          
+                        )
+                      )
+             ))
   ##3
   
 )
@@ -245,6 +273,7 @@ server <- function(session,input, output) {
   observeEvent(ignoreNULL = TRUE,
                eventExpr = {
                  input$folder
+                 input$Selected_Response_Type
                },
                handlerExpr = {
                  if (!"path" %in% names(dir())) return()
@@ -255,8 +284,8 @@ server <- function(session,input, output) {
                  
                  file_list=list.files(path= global$datapath, pattern=".csv", all.files=FALSE,
                                       full.names=FALSE)
-                 
-                 updateCheckboxGroupButtons(session,"Population_files","Select_population_files",choices=file_list)
+                 sub_file_list <- file_list[grepl(input$Selected_Response_Type, file_list) | grepl('linear_values', file_list)|grepl('Population_Class', file_list)]
+                 updateCheckboxGroupButtons(session,"Population_files","Select_population_files",choices=sub_file_list)
                  
                })
   
@@ -294,21 +323,18 @@ server <- function(session,input, output) {
                  
                  
                  print(cell_file_list[1:5])
-                 #updateCheckboxGroupButtons(session,"Population_files","Select_population_files",choices=cell_file_list)
+                
                  
                })
   
   
   import_csv_files <- eventReactive(input$import_files,{
     req(input$Population_files)
+    print('zoeicoei')
     print(input$Population_files)
-    current_cell_file <- load_population_csv_file(global$datapath,input$Population_files)
+    current_cell_file <- load_population_csv_file(global$datapath,input$Population_files,input$Selected_Response_Type)
     
-    
-    # 
-    # updateSelectInput(session,"Factor_of_analysis_data_repartition","Choose factor of analysis",choices=category_list)
-    # updateSelectInput(session,"Feature_to_analyse_data_repartition","Choose factor of analysis",choices=feature_list)
-    # 
+   
     return (current_cell_file)
     
   })
@@ -350,17 +376,6 @@ server <- function(session,input, output) {
     updateSelectInput(session,"Factor_of_analysis_Distrib","Choose factor of analysis",choices=category_list)
     updateSelectInput(session,"Feature_to_analyse_Distrib","Choose feature to analyse",choices=feature_list)
 
-
-
-    # factor_RM=input$Factor_of_analysis_RM
-    #
-    # population_class[,factor_RM] <- as.factor(population_class[,factor_RM])
-    #
-    #
-    # group_list=levels(population_class[,factor_RM])
-    #
-    # updateSelectizeInput(session,'Subset_population_RM','Select group',choices=group_list,selected=group_list)
-    #
     category_list_faceting=category_list[category_list!=input$Factor_of_analysis_data_repartition]
 
     updateSelectInput(session,"Factor_to_facet"," Facet plot per",choices=category_list_faceting)
@@ -377,13 +392,7 @@ server <- function(session,input, output) {
     updateSelectInput(session,"File_to_select_Var","Select file to analyse",choices = file_list)
     updateSelectInput(session,"File_to_select_Distrib","Select file to analyse",choices = file_list)
     
-    # full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,'Database','Database')
-    # 
-    # minimum_value=min(full_data_frame[,as.character(input$Feature_to_analyse_data_repartition)])
-    # maximum_value=max(full_data_frame[,as.character(input$Feature_to_analyse_data_repartition)])
-    # 
-    # updateSliderInput(session, "Slider_density_plot_xlim", value = c(minimum_value,maximum_value),
-    #                   min = minimum_value, max =maximum_value, step = 0.5)
+   
 
     population_class
 
@@ -397,7 +406,7 @@ server <- function(session,input, output) {
     file_import <- import_csv_files()
     
     
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,keep_na=FALSE)
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_data_repartition]
     if (input$normalize_per_input_resistance_Data_overview){
@@ -422,7 +431,7 @@ server <- function(session,input, output) {
     req(input$import_files)
     file_import <- import_csv_files()
     
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,keep_na=FALSE)
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
     
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_Distrib]
@@ -472,7 +481,7 @@ server <- function(session,input, output) {
     req(input$import_files)
     file_import <- import_csv_files()
     
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,keep_na=FALSE)
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_Distrib]
     if (input$normalize_per_input_resistance_Data_overview){
@@ -523,7 +532,7 @@ server <- function(session,input, output) {
     req(input$import_files)
     file_import <- import_csv_files()
     
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,keep_na=FALSE)
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_data_repartition]
      if (input$normalize_per_input_resistance_Data_overview){
@@ -596,7 +605,7 @@ server <- function(session,input, output) {
     
     if (input$group_specific == TRUE){
       
-      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,keep_na=FALSE)
+      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
 
       Factor_list=levels(full_data_frame[,input$Factor_of_analysis_data_repartition])
 
@@ -611,7 +620,7 @@ server <- function(session,input, output) {
     }
     
     else{
-      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet)
+      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type)
 
       index=relayout$pointNumber+1
 
@@ -628,7 +637,7 @@ server <- function(session,input, output) {
     file_import <- import_csv_files()
     relayout <- event_data("plotly_click",source='varibility_plot_time_response')
     if (input$group_specific == TRUE){
-      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet)
+      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type)
       
       Factor_list=levels(full_data_frame[,input$Factor_of_analysis_data_repartition])
       
@@ -643,7 +652,7 @@ server <- function(session,input, output) {
     }
     
     else{
-      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet)
+      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type)
       
       index=relayout$pointNumber+1
       
@@ -941,7 +950,7 @@ server <- function(session,input, output) {
     req(input$import_files)
     file_import <- import_csv_files()
     
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,keep_na=FALSE)
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_data_repartition]
     if (input$normalize_per_input_resistance_Data_overview){
@@ -967,7 +976,7 @@ server <- function(session,input, output) {
     req(input$import_files)
     file_import <- import_csv_files()
     
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,keep_na=FALSE)
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
     
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_data_repartition]
@@ -1016,7 +1025,7 @@ server <- function(session,input, output) {
     req(input$import_files)
     file_import <- import_csv_files()
     
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,keep_na=FALSE)
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
     outlier_df=dataframe_outliers(full_data_frame,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition)
     if (input$select_outliers_to_remove == 'None'){
       outlier_count <- outlier_df%>%
@@ -1051,25 +1060,14 @@ server <- function(session,input, output) {
                                                      input$Feature_to_analyse_RM,
                                                      input$Factor_of_analysis_RM,
                                                      'Response_Duration',
+                                                     input$Selected_Response_Type,
                                                      First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
     
     
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-    if (input$normalize_per_input_resistance_RM){
-      
-      if (grepl("/pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-      
-      else if (grepl("pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-    }
-   
+    
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
@@ -1084,6 +1082,19 @@ server <- function(session,input, output) {
     }
     
     colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
+    if (input$normalize_per_input_resistance_RM){
+      
+      if (grepl("/pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+      
+      else if (grepl("pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+    }
+    
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     original_dataframe=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "Oulier_df")
     
@@ -1120,37 +1131,13 @@ server <- function(session,input, output) {
                                                      input$Feature_to_analyse_RM,
                                                      input$Factor_of_analysis_RM,
                                                      'Response_Duration',
+                                                     input$Selected_Response_Type,
                                                      First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
-    Unit_list=file_import$Unit_File
-    current_unit=Unit_list[,input$Feature_to_analyse_RM]
-    if (input$normalize_per_input_resistance_RM){
-      
-      if (grepl("/pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-      
-      else if (grepl("pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-    }
     
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-    if (input$normalize_per_input_resistance_RM){
-      
-      if (grepl("/pA",current_unit)==TRUE){
-        full_data_frame[,input$Feature_to_analyse_RM]=full_data_frame[,input$Feature_to_analyse_RM]*(1/(full_data_frame[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-      
-      else if (grepl("pA",current_unit)==TRUE){
-        full_data_frame[,input$Feature_to_analyse_RM]=full_data_frame[,input$Feature_to_analyse_RM]*((full_data_frame[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-    }
+    
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
@@ -1163,7 +1150,18 @@ server <- function(session,input, output) {
         convert_as_factor(Cell_id, Response_Duration)
     }
     colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
-    
+    if (input$normalize_per_input_resistance_RM){
+      
+      if (grepl("/pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+      
+      else if (grepl("pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+    }
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     
     original_dataframe=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "DF_without_outliers")
@@ -1182,22 +1180,12 @@ server <- function(session,input, output) {
                                                      input$Feature_to_analyse_RM,
                                                      input$Factor_of_analysis_RM,
                                                      'Response_Duration',
+                                                     input$Selected_Response_Type,
                                                      First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-    if (input$normalize_per_input_resistance_RM){
-      
-      if (grepl("/pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-      
-      else if (grepl("pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-    }
+    
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
@@ -1210,6 +1198,19 @@ server <- function(session,input, output) {
         convert_as_factor(Cell_id, Response_Duration)
     }
     colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
+    
+    if (input$normalize_per_input_resistance_RM){
+      
+      if (grepl("/pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+      
+      else if (grepl("pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+    }
     
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     
@@ -1225,22 +1226,12 @@ server <- function(session,input, output) {
                                                      input$Feature_to_analyse_RM,
                                                      input$Factor_of_analysis_RM,
                                                      'Response_Duration',
+                                                     input$Selected_Response_Type,
                                                      First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-    if (input$normalize_per_input_resistance_RM){
-      
-      if (grepl("/pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-      
-      else if (grepl("pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-    }
+   
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
@@ -1254,6 +1245,18 @@ server <- function(session,input, output) {
     }
     colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     
+    if (input$normalize_per_input_resistance_RM){
+      
+      if (grepl("/pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+      
+      else if (grepl("pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+    }
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     
     normality_table=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "Normality_table")
@@ -1268,22 +1271,12 @@ server <- function(session,input, output) {
                                                      input$Feature_to_analyse_RM,
                                                      input$Factor_of_analysis_RM,
                                                      'Response_Duration',
+                                                     input$Selected_Response_Type,
                                                      First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-    if (input$normalize_per_input_resistance_RM){
-      
-      if (grepl("/pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-      
-      else if (grepl("pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-    }
+   
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
@@ -1297,6 +1290,18 @@ server <- function(session,input, output) {
     }
     colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     
+    if (input$normalize_per_input_resistance_RM){
+      
+      if (grepl("/pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+      
+      else if (grepl("pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+    }
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     
     Variance_test_table=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "Variance_test")
@@ -1312,22 +1317,12 @@ server <- function(session,input, output) {
                                                      input$Feature_to_analyse_RM,
                                                      input$Factor_of_analysis_RM,
                                                      'Response_Duration',
+                                                     input$Selected_Response_Type,
                                                      First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-    if (input$normalize_per_input_resistance_RM){
-      
-      if (grepl("/pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-      
-      else if (grepl("pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-    }
+   
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
@@ -1341,6 +1336,18 @@ server <- function(session,input, output) {
     }
     colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     
+    if (input$normalize_per_input_resistance_RM){
+      
+      if (grepl("/pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+      
+      else if (grepl("pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+    }
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     
     PWC_test_table=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "PWC_without_position")
@@ -1358,25 +1365,13 @@ server <- function(session,input, output) {
                                                      input$Feature_to_analyse_RM,
                                                      input$Factor_of_analysis_RM,
                                                      'Response_Duration',
+                                                     input$Selected_Response_Type,
                                                      First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
+    
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-    
-    if (input$normalize_per_input_resistance_RM){
-      
-      if (grepl("/pA",current_unit)==TRUE){
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-      
-      else if (grepl("pA",current_unit)==TRUE){
-        View(full_data_frame_Anova)
-        
-        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
-        current_unit=chartr('pA','mV',current_unit)
-      }
-    }
+   
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
@@ -1390,6 +1385,20 @@ server <- function(session,input, output) {
     }
     colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     
+    if (input$normalize_per_input_resistance_RM){
+      
+      if (grepl("/pA",current_unit)==TRUE){
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*(1/(full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+      
+      else if (grepl("pA",current_unit)==TRUE){
+        
+        
+        full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+    }
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     original_dataframe=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "DF_without_outliers")
     Variance_test_table=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "Variance_test_original_table")
@@ -1733,41 +1742,7 @@ output$PWC_test_Plot_Variance <- renderPlot({
 
   
 
-  # observeEvent({
-  #   #input$cohort_file
-  #   input$Feature_to_analyse_Distrib
-  #   input$Factor_of_analysis_Distrib
-  #   input$File_to_select_Distrib
-  #   input$Subset_population_Distrib
-  # 
-  # },{
-  #   req(input$import_files)
-  #   file_import <- import_csv_files()
-  #   full_data_frame_distrib <- create_full_df_ANOVA(file_import,
-  #                                                   input$Feature_to_analyse_Distrib,
-  #                                                   input$Factor_of_analysis_Distrib,
-  #                                                   input$File_to_select_Distrib,
-  #                                                   Factor_Second=NULL,
-  #                                                   First_factor_subset=input$Subset_population_Distrib,
-  #                                                   keep_na=FALSE)
-  #   print(paste0('rere',input$Subset_population_Distrib))
-  #   factor=input$Factor_of_analysis_Distrib
-  #   value=as.character(input$Feature_to_analyse_Distrib)
-  #   original_dataframe_distrib=perform_ANOVA(full_data_frame_distrib,feature_col = value,factor = factor,remove_outliers = input$select_outliers_to_remove_Distrib,what_to_return =  "DF_without_removed_levels")
-  #   distribution_array=array(original_dataframe_distrib[,value])
-  # 
-  # 
-  #   maximum_width=round((max(distribution_array)-min(distribution_array))/10,2)
-  # 
-  #   minimum_width=.01
-  #   original_value=round((minimum_width+maximum_width)/2,2)
-  #   minimum_x=min(distribution_array)
-  #   maximum_x=max(distribution_array)
-  #   updateNumericInput(session,"Minimum_x_limit",value=minimum_x)
-  #   updateNumericInput(session,"Maximum_x_limit",value=maximum_x)
-  #   updateSliderInput(session,'distribution_bin_width','Select bin width ',min=minimum_width, max=maximum_width, value=original_value,step=.01)
-  # })
-
+  
   
 
 #### DISTRIBUTION
@@ -2007,14 +1982,6 @@ output$PWC_test_Plot_Variance <- renderPlot({
 
     distribution_stats
   })
-
-
-  
-  
-  
-  
-  
-  
   
   observeEvent(input$save_ANOVA_plot,{
     myenv$plot_to_save=myenv$anova_plot
