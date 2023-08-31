@@ -137,7 +137,25 @@ load_h5_file <- function(filename){
   return(cell_tables_list)
 }
 
-
+nest_Full_DF <- function(Full_SF,table_type){
+  
+  sweep_list=names(Full_SF)
+  sweep_list = sweep_list[sweep_list %in% "TPC_colnames" == FALSE]
+  first_df_nested=nest(Full_SF[[as.character(sweep_list[1])]])
+  first_df_nested["Sweep"]=sweep_list[1]
+  
+  
+  for (current_sweep in sweep_list[2:length(sweep_list)]){
+    new_line_nested=nest(Full_SF[[as.character(current_sweep)]])
+    new_line_nested["Sweep"]=current_sweep
+    
+    first_df_nested=rbind(first_df_nested,new_line_nested)
+    
+  }
+  colnames(first_df_nested) <- c(as.character(table_type),"Sweep")
+  rownames(first_df_nested) <- first_df_nested$Sweep
+  return(first_df_nested)
+}
 get_stim_freq_table_R <- function(cell_tables_list,response_type){
   
   sweep_info_table=cell_tables_list$Sweep_info_table
@@ -487,11 +505,12 @@ load_population_csv_file <- function(directory,file_list,Selected_Response_Type)
     else{
       
       if (grepl("Full_Feature_Table_",file)==TRUE){
+        
         current_duration=str_remove(file, "Full_Feature_Table_")
+        current_duration=str_remove(current_duration, "Fernandez_")
         current_duration=str_remove(current_duration,Selected_Response_Type)
         current_duration=str_remove(current_duration,'_')
-        print('ojoij')
-        print(current_duration)
+       
         my_file=data.frame(read.csv(file = paste0(directory,'/',file),header=T,row.names = 1,skip=1))
       }
       else if (grepl("FR_Hz_",file)==TRUE){
@@ -515,6 +534,7 @@ load_population_csv_file <- function(directory,file_list,Selected_Response_Type)
       for (col in seq(3,ncol(my_file))){
         my_file[,col]=as.numeric(my_file[,col])
       }
+      
       colnames(my_file) <- my_colnames
       
       file_dict <- append(file_dict,list(my_file))
@@ -529,20 +549,22 @@ load_population_csv_file <- function(directory,file_list,Selected_Response_Type)
 }
 
 
-create_full_df <- function(file_import,Feature_to_analyse,Factor_first,Factor_Second,Response_type,keep_na=FALSE){
-  
-  
+create_full_df <- function(file_import,Feature_to_analyse,subset_filter,Response_type,keep_na=FALSE){
   
   
   population_class = data.frame(file_import$Population_Class)
   current_population_file <- population_class
-  if (Factor_Second == 'Response_Duration'){
-    current_population_file <- current_population_file[,c('Cell_id',Factor_first)]
+  
+  
+  for (category in names(subset_filter)){
+    current_population_file <-current_population_file[which(current_population_file[,category] %in% subset_filter[category][[1]]),]
+    
   }
-  else{
-    current_population_file <- current_population_file[,c('Cell_id',Factor_first,Factor_Second)]
+  
+  for (current_col in colnames(current_population_file)){
+    current_population_file[,current_col]=as.factor(current_population_file[,current_col])
   }
- 
+  
   
   file_list <- names(file_import)
  
@@ -589,11 +611,9 @@ create_full_df <- function(file_import,Feature_to_analyse,Factor_first,Factor_Se
   }
   
   
-  full_data_frame[,Factor_first]=as.factor(full_data_frame[,Factor_first])
-  full_data_frame[,'Response_Duration'] <- as.factor(full_data_frame[,'Response_Duration'])
-  
+  full_data_frame$Response_Duration <- as.factor(full_data_frame$Response_Duration)
   full_data_frame$Response_Duration <- factor(full_data_frame$Response_Duration,levels=mixedsort(levels(full_data_frame$Response_Duration)))
-  full_data_frame[,Factor_Second]=as.factor(full_data_frame[,Factor_Second])
+  
   
   if (keep_na == FALSE){
     full_data_frame <- full_data_frame %>% drop_na()
@@ -610,27 +630,22 @@ create_full_df <- function(file_import,Feature_to_analyse,Factor_first,Factor_Se
   return (full_data_frame)
 }
 
-create_full_df_RM_ANOVA <- function(file_import,Feature_to_analyse,Factor_first,Factor_Second,Response_type,First_factor_subset=NULL,keep_na=FALSE){
-  
-  
-  # input$Factor_of_analysis_data_repartition=Factor_first
-  # input$Factor_to_facet=Factor_Second
-  # input$Feature_to_analyse_data_repartition=Feature_to_analyse
-  # 
+create_full_df_RM_ANOVA <- function(file_import,Feature_to_analyse,subset_filter,Response_type,keep_na=FALSE){
   
   
   population_class = data.frame(file_import$Population_Class)
   current_population_file <- population_class
-  current_population_file[,Factor_first]=as.factor(current_population_file[,Factor_first])
   
-  cell_id_to_keep = current_population_file[which(current_population_file[,Factor_first] %in% First_factor_subset),'Cell_id']
   
-  if (Factor_Second == 'Response_Duration'){
-    current_population_file <- current_population_file[,c('Cell_id',Factor_first)]
+  for (category in names(subset_filter)){
+    current_population_file <-current_population_file[which(current_population_file[,category] %in% subset_filter[category][[1]]),]
+     
   }
-  else{
-    current_population_file <- current_population_file[,c('Cell_id',Factor_first,Factor_Second)]
+  
+  for (current_col in colnames(current_population_file)){
+    current_population_file[,current_col]=as.factor(current_population_file[,current_col])
   }
+  
   
   
   file_list <- names(file_import)
@@ -667,10 +682,7 @@ create_full_df_RM_ANOVA <- function(file_import,Feature_to_analyse,Factor_first,
   if(keep_na==F){
     full_data_frame=full_data_frame%>%drop_na()
   }
-  
-  if (is.null(First_factor_subset)==FALSE){
-    full_data_frame=full_data_frame[which(full_data_frame$Cell_id %in% cell_id_to_keep),]
-  }
+
   if ('Linear_Values' %in% names(file_import)){
     Linear_values=file_import$Linear_Values
     
@@ -865,16 +877,23 @@ perform_repeated_measure_one_way_ANOVA <- function(population_dataframe,feature_
   
 }
 
-create_full_df_ANOVA <- function(file_import,Feature_to_analyse,Factor_first,file_to_select,Response_type,Factor_Second=NULL,First_factor_subset=NULL,keep_na=FALSE){
+create_full_df_ANOVA <- function(file_import,Feature_to_analyse,file_to_select,subset_filter,keep_na=FALSE){
   
   population_class = data.frame(file_import$Population_Class)
   current_population_file <- population_class
-  for (column in colnames(current_population_file)){
-    current_population_file[,column]=as.factor(current_population_file[,column])
+  
+  for (category in names(subset_filter)){
+    current_population_file <-current_population_file[which(current_population_file[,category] %in% subset_filter[category][[1]]),]
+    
+  }
+  
+  for (current_col in colnames(current_population_file)){
+    current_population_file[,current_col]=as.factor(current_population_file[,current_col])
   }
   
   
-  cell_id_to_keep = current_population_file[which(current_population_file[,Factor_first] %in% First_factor_subset),'Cell_id']
+  
+  
  
   file_list <- names(file_import)
   
@@ -895,9 +914,7 @@ create_full_df_ANOVA <- function(file_import,Feature_to_analyse,Factor_first,fil
     full_data_frame=full_data_frame%>%drop_na()
   }
   
-  if (is.null(First_factor_subset)==FALSE){
-    full_data_frame=full_data_frame[which(full_data_frame$Cell_id %in% cell_id_to_keep),]
-  }
+ 
   
   if ('Linear_Values' %in% names(file_import)){
     Linear_values=file_import$Linear_Values
@@ -924,7 +941,7 @@ perform_ANOVA <- function(population_dataframe,feature_col,factor,remove_outlier
   
   #### if required, remove outliers per factor levels
   
- 
+  
   population_dataframe=dataframe_outliers(population_dataframe,feature_col,factor)
   
   if (what_to_return=='Outlier_df'){

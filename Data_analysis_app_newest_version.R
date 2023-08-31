@@ -18,32 +18,32 @@ ui <- fluidPage(
                       
                       sidebarLayout(
                         sidebarPanel(
-                          selectInput('Selected_Response_Type','Select Response Type',choices=c('Time_based','Index_based','Interval_based'),selected='Time_based'),
                           shinyDirButton('population_data_folder', 'Select a folder', 'Please select a folder', FALSE),
+                          selectInput('Selected_Response_Type','Select Response Type',choices=c('Time_based','Index_based','Interval_based'),selected='Time_based'),
+                          
                           textOutput('file_path'),
                           checkboxGroupButtons('Population_files','Select files',choices = ""),
-                          
-                          
-                          
                           actionButton("import_files","Import_files"),
-                          
-                          
                         ),
                         mainPanel(
-                                  dataTableOutput('mytest')
+                                  actionButton("subset_data","Update Data"),
+                                  uiOutput("selectInputs"),
+                                  
+                                  dataTableOutput('population_class')
                                   )
                       ),
                       
              ),##1
              tabPanel(title = "Data Analysis",
                       sidebarLayout(
-                        sidebarPanel(width=2,
-                          
-                          selectInput("Factor_of_analysis_data_repartition","Choose factor of analysis",choices=""),
-                          selectInput("Feature_to_analyse_data_repartition",'Choose feature to analyse',choices=""),
+                        sidebarPanel(width=3,
+                          fluidRow(column(width=6,selectInput("Factor_of_analysis_data_repartition","Choose factor of analysis",choices="")),
+                                   column(width=6,selectInput("Feature_to_analyse_data_repartition",'Choose feature to analyse',choices=""))),
+                          selectInput("select_outliers_to_remove_repartition","Select outliers to remove",choices=c('None','Outliers (Q1/Q3 ± 1.5*IQ)','Extreme outliers (Q1/Q3 ± 3*IQ)'),selected='None'),
                           checkboxInput('normalise_descriptive_plot','Normalize'),
-                          checkboxInput("Facet_decriptive_plot","Facet plot"),
-                          selectInput("Factor_to_facet"," Facet plot per",choices=''),
+                          fluidRow(column(width=6,selectInput("Factor_to_facet"," Facet plot per",choices='')),
+                                   column(width=6,checkboxInput("Facet_decriptive_plot","Facet plot"))),
+                          
                           checkboxInput("normalize_per_input_resistance_Data_overview","Normalize current per input resistance"),
                           sliderInput(inputId = "bins_width_histogram",
                                       label = "Width of bins:",
@@ -55,7 +55,7 @@ ui <- fluidPage(
                           
                           
                         ),
-                        mainPanel(width = 10,
+                        mainPanel(width = 9,
                           tabsetPanel(
                             tabPanel(title="Data Overview",
                                      
@@ -88,20 +88,14 @@ ui <- fluidPage(
              
              tabPanel(title="Repeated Measure Analysis",
                       sidebarLayout(
-                        sidebarPanel(width=2,
-                                     
-                                     selectInput("Feature_to_analyse_RM",'Choose feature to analyse',choices=""),
-                                     selectizeInput('Subset_population_RM','Select group', choices="", selected = "", multiple = TRUE,
-                                                    options = NULL),
-                                     
-                                     selectInput("Factor_of_analysis_RM","Choose factor of analysis",choices=""),
-                                     selectInput("select_outliers_to_remove","Select outliers to remove",choices=c('None','Outliers (Q1/Q3 ± 1.5*IQ)','Extreme outliers (Q1/Q3 ± 3*IQ)'),selected='None'),
-                                     
-                                     checkboxInput("normalize_per_input_resistance_RM","Normalize current per input resistance"),
-                                     
+                        sidebarPanel(width=3,
+                                     fluidRow(column(width = 6,selectInput("Feature_to_analyse_RM",'Choose feature to analyse',choices="")),
+                                              column(width = 6,selectInput("Factor_of_analysis_RM","Choose factor of analysis",choices=""))),
+                                     fluidRow(column(width = 6,checkboxInput("normalize_per_input_resistance_RM","Normalize current per input resistance")),
+                                              column(width = 6,selectInput("select_outliers_to_remove","Select outliers to remove",choices=c('None','Outliers (Q1/Q3 ± 1.5*IQ)','Extreme outliers (Q1/Q3 ± 3*IQ)'),selected='None')))
                                      
                         ),
-                        mainPanel(width = 10,
+                        mainPanel(width = 9,
                                   tabsetPanel(
                                     
                                     tabPanel(title='Repeated Measure Analysis',
@@ -126,19 +120,18 @@ ui <- fluidPage(
              
              tabPanel(title="Variance Analysis",
                       sidebarLayout(
-                        sidebarPanel(width=2,
-                                     selectInput('File_to_select_Var','Select file to study',choices=''),
-                                     selectInput("Feature_to_analyse_Variance",'Choose feature to analyse',choices=""),
-                                     selectizeInput('Subset_population_Variance','Select group', choices="", selected = "", multiple = TRUE,
-                                                    options = NULL),
+                        sidebarPanel(width=3,
+                                     fluidRow(column(width=4,selectInput('File_to_select_Var','Select file to study',choices='')),
+                                              column(width=4,selectInput("Feature_to_analyse_Variance",'Choose feature to analyse',choices="")),
+                                              column(width=4,selectInput("Factor_of_analysis_Variance","Choose factor of analysis",choices=""))),
+                                     fluidRow(column(width=6,checkboxInput("normalize_per_input_resistance_Variance","Normalize current per input resistance")),
+                                              column(width=6,selectInput("select_outliers_to_remove_Variance","Select outliers to remove",choices=c('None','Outliers (Q1/Q3 ± 1.5*IQ)','Extreme outliers (Q1/Q3 ± 3*IQ)'),selected='None')))
                                      
-                                     selectInput("Factor_of_analysis_Variance","Choose factor of analysis",choices=""),
-                                     selectInput("select_outliers_to_remove_Variance","Select outliers to remove",choices=c('None','Outliers (Q1/Q3 ± 1.5*IQ)','Extreme outliers (Q1/Q3 ± 3*IQ)'),selected='None'),
-                                     checkboxInput("normalize_per_input_resistance_Variance","Normalize current per input resistance"),
+                                     
                                      
                                      
                         ),
-                        mainPanel(width = 10,
+                        mainPanel(width = 9,
                                   tabsetPanel(
                                     
                                      tabPanel(title='Independant Measure Analysis',
@@ -163,33 +156,40 @@ ui <- fluidPage(
              ),
              tabPanel(title = "Distribution",
                       sidebarLayout(
-                        sidebarPanel(width=2,
-                                     selectInput('File_to_select_Distrib','Select file to study',choices=''),
-                                     selectInput("Feature_to_analyse_Distrib",'Choose feature to analyse',choices=""),
-                                     selectizeInput('Subset_population_Distrib','Select group', choices="", selected = "", multiple = TRUE,
-                                                    options = NULL),
-                                     
-                                     selectInput("Factor_of_analysis_Distrib","Choose factor of analysis",choices=""),
-                                     selectInput("select_outliers_to_remove_Distrib","Select outliers to remove",choices=c('None','Outliers (Q1/Q3 ± 1.5*IQ)','Extreme outliers (Q1/Q3 ± 3*IQ)'),selected='None'),
+                        sidebarPanel(width=3,
+                                     fluidRow(column(width=6,
+                                     selectInput('File_to_select_Distrib','Select file to study',choices='')),
+                                     column(width=6,selectInput("Feature_to_analyse_Distrib",'Choose feature to analyse',choices=""))),
                                      checkboxInput("normalize_per_input_resistance_Distrib","Normalize current per input resistance"),
-                                     checkboxInput("fit_distribution","Fit Distribution"),
-                                     numericInput('distribution_bin_width','Width of bins:',value = 1.,min=.001,max=100),
+                                     
+                                     selectInput("select_outliers_to_remove_Distrib","Select outliers to remove",choices=c('None','Outliers (Q1/Q3 ± 1.5*IQ)','Extreme outliers (Q1/Q3 ± 3*IQ)'),selected='None'),
+                                     fluidRow(column(width=6,selectInput('bin_estim_rule','Bin estimation rule',choices=c("Sturge","Freedman-Diaconis",'Doane','Scott'),selected='Sturge')),
+                                              column(width = 6, numericInput('distribution_bin_width','Width of bins:',1))),
+                                     verbatimTextOutput('bin_estimation_rule_explanation'),
+                                     fluidRow(column(width=6,fluidRow(checkboxInput("fit_distribution","Fit Distribution"),
+                                                                      checkboxInput("fit_all_distribution","Super impose distributions"))),
+                                              column(width=6,selectInput('distribution_to_fit','Select distribution to fit',choices=c("Gaussian","Exponential",'LogNormal',"Skewed Gaussian"),selected='Gaussian'))),
+                                     
                                      checkboxInput('Distrib_custom_x_range','Use custom x-axis range'),
-                                     numericInput('Minimum_x_limit','Select minimum x',value=0),
-                                     numericInput('Maximum_x_limit','Select maximum x',value=1),
+                                     fluidRow(column(width=6,numericInput('Minimum_x_limit','Select minimum x',value=0)),
+                                              column(width=6,numericInput('Maximum_x_limit','Select maximum x',value=1))),
                                      checkboxInput('show_stats','Show stats')
+                                     
                                      
                                      
                                      
                         ),
                         mainPanel(
                            tabsetPanel(
-                             tabPanel(title="General time evolution",
+                             tabPanel(title="Population distribution",
                                      
                                      textOutput("textOutput"),
-                                    plotOutput('Skew_Gauss'),
-                                    tableOutput("distrib_fit_parameters"),
-                                    tableOutput("distrib_stats")
+                                    plotOutput('fit_distribution_plot'),
+                                    
+                                    tableOutput("distribution_plot_table"),
+                                    tableOutput("distrib_stats"),
+                                    plotOutput('QQPlot'),
+                                    
                              )
 
 
@@ -239,10 +239,17 @@ ui <- fluidPage(
                           textOutput('single_cell_file_path'),
                           tableOutput('Metadata'),
                           dataTableOutput('Sweep_info'),
-                          plotlyOutput('BE_plot'),
-                          plotlyOutput('BE_boxplot'),
-                          plotlyOutput('Time_cst_plot'),
-                          plotlyOutput('Time_cst_boxplot')
+                          fluidRow(
+                          column(6,
+                                 plotlyOutput('BE_plot')),
+                          column(3,plotlyOutput('BE_boxplot')))
+                          ,
+                          fluidRow(column(6,
+                                  plotlyOutput('Time_cst_plot')),
+                                  column(3,plotlyOutput('Time_cst_boxplot'))),
+                          fluidRow(column(6,
+                                 plotlyOutput('Input_resistance_plot')),
+                                 column(3,plotlyOutput('Input_resistance_boxplot')))
 
                         )
                       )
@@ -264,9 +271,10 @@ ui <- fluidPage(
                         # Show a plot of the generated distribution
                         mainPanel(width=10,
                           plotlyOutput("Spike_feature_plot",height = 800),
-                          actionButton('Save_spike_feature_plot',"Save plot")
+                          actionButton('Save_spike_feature_plot',"Save plot"),
+                          plotlyOutput("linear_properties_plot")
 
-
+  
                         )
                       )
              ),
@@ -382,7 +390,10 @@ ui <- fluidPage(
 
 
 
-source_python ('/Users/julienballbe/My_Work/Data_Analysis/python_ref.py')
+#source_python ('/Users/julienballbe/My_Work/Data_Analysis/python_ref.py')
+source_python ('/Users/julienballbe/My_Work/My_Librairies/Fit_library.py')
+source_python ('/Users/julienballbe/My_Work/My_Librairies/Data_treatment.py')
+#source_python ("/Users/julienballbe/My_Work/My_Librairies/Electrophy_treatment.py")
 
 server <- function(session,input, output) {
   
@@ -429,7 +440,7 @@ server <- function(session,input, output) {
   import_csv_files <- eventReactive(input$import_files,{
     req(input$Population_files)
     
-    print(input$Population_files)
+    
     current_cell_file <- load_population_csv_file(global$population_datapath,input$Population_files,input$Selected_Response_Type)
     
    
@@ -438,16 +449,60 @@ server <- function(session,input, output) {
   })
   
 ##### FILES #####
-  output$mytest <- renderDataTable ({
+  output$selectInputs <- renderUI({ 
     req(input$Population_files)
     req(input$import_files)
     file_import <- import_csv_files()
     population_class = data.frame(file_import$Population_Class)
-
+    
     
     category_list = colnames(population_class)
     category_list=category_list[category_list != "Cell_id"]
-
+    
+    
+   
+    selectInputs <- lapply(category_list, function(i) {
+      population_class[,i] <- as.factor(population_class[,i])
+      group_list=levels(population_class[,i])
+      selectizeInput(paste0('Subset_',i),paste0('Subset ',i), choices=group_list, selected = group_list, multiple = TRUE,
+                     options = NULL)
+      
+    }) 
+    do.call(tagList, selectInputs) 
+  })
+  
+  
+  subset_filter<- eventReactive(input$subset_data,{
+    req(input$Population_files)
+    req(input$import_files)
+    file_import <- import_csv_files()
+    population_class = data.frame(file_import$Population_Class)
+    
+    
+    category_list = colnames(population_class)
+    category_list=category_list[category_list != "Cell_id"]
+    
+    subset_dict <- lapply(category_list, function(i) {
+      paste0(input[[paste0('Subset_',i)]])
+    })
+    
+    names(subset_dict) <- category_list
+    return(subset_dict)
+  })
+  
+  
+  
+  
+  output$population_class <- renderDataTable ({
+    req(input$Population_files)
+    req(input$import_files)
+    file_import <- import_csv_files()
+    population_class = data.frame(file_import$Population_Class)
+    subset_filter_dict <- subset_filter()
+    
+    category_list = colnames(population_class)
+    category_list=category_list[category_list != "Cell_id"]
+    
     file_list <- names(file_import)
     file_list = file_list[file_list != 'Population_Class']
     file_list = file_list[file_list != 'Linear_Values']
@@ -473,22 +528,20 @@ server <- function(session,input, output) {
 
     updateSelectInput(session,"Factor_of_analysis_Distrib","Choose factor of analysis",choices=category_list)
     updateSelectInput(session,"Feature_to_analyse_Distrib","Choose feature to analyse",choices=feature_list)
-
+    
+    
     category_list_faceting=category_list[category_list!=input$Factor_of_analysis_data_repartition]
-
+    
     updateSelectInput(session,"Factor_to_facet"," Facet plot per",choices=category_list_faceting)
     density_category=append(category_list,'Response_Duration')
     
-  
-    
-    
-
-    
     updateSelectInput(session,'Factor_for_density_plot','Choose density factor',choices=density_category)
-
-
+    
+    
     updateSelectInput(session,"File_to_select_Var","Select file to analyse",choices = file_list)
     updateSelectInput(session,"File_to_select_Distrib","Select file to analyse",choices = file_list)
+    
+    
     
    
 
@@ -507,9 +560,8 @@ server <- function(session,input, output) {
     req(input$import_files)
     
     file_import <- import_csv_files()
-    
-    
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
+    subset_filter_dict <- subset_filter()
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_data_repartition]
     if (input$normalize_per_input_resistance_Data_overview){
@@ -534,22 +586,27 @@ server <- function(session,input, output) {
     
     req(input$import_files)
     file_import <- import_csv_files()
-    
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
+    subset_filter_dict <- subset_filter()
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
     Unit_list=file_import$Unit_File
-    current_unit=Unit_list[,input$Feature_to_analyse_Distrib]
+    current_unit=Unit_list[,input$Feature_to_analyse_data_repartition]
     if (input$normalize_per_input_resistance_Data_overview){
       
       if (grepl("/pA",current_unit)==TRUE){
-        full_data_frame[,input$Feature_to_analyse_Distrib]=full_data_frame[,input$Feature_to_analyse_Distrib]*(1/(full_data_frame[,'Input_Resistance_MOhms']*1e-3))
+        full_data_frame[,input$Feature_to_analyse_data_repartition]=full_data_frame[,input$Feature_to_analyse_data_repartition]*(1/(full_data_frame[,'Input_Resistance_MOhms']*1e-3))
         current_unit=chartr('pA','mV',current_unit)
       }
       
       else if (grepl("pA",current_unit)==TRUE){
-        full_data_frame[,input$Feature_to_analyse_Distrib]=full_data_frame[,input$Feature_to_analyse_Distrib]*((full_data_frame[,'Input_Resistance_MOhms']*1e-3))
+        full_data_frame[,input$Feature_to_analyse_data_repartition]=full_data_frame[,input$Feature_to_analyse_data_repartition]*((full_data_frame[,'Input_Resistance_MOhms']*1e-3))
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+    
+    if (input$select_outliers_to_remove_repartition != 'None'){
+      full_data_frame <- perform_ANOVA(full_data_frame,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,remove_outliers = input$select_outliers_to_remove_repartition,what_to_return = "DF_without_outliers")
+    }
+    
     histogram_plot = ggplot2::ggplot(full_data_frame, aes_string(x = input$Feature_to_analyse_data_repartition, fill = input$Factor_of_analysis_data_repartition))+
       ggplot2::geom_histogram( position='identity',alpha = 0.6, binwidth  = input$bins_width_histogram,center=input$bins_width_histogram/2,)
     
@@ -584,23 +641,26 @@ server <- function(session,input, output) {
   output$Data_repartition <- renderPlotly({
     req(input$import_files)
     file_import <- import_csv_files()
-    
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
-    
+    subset_filter_dict <- subset_filter()
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
     Unit_list=file_import$Unit_File
-    current_unit=Unit_list[,input$Feature_to_analyse_Distrib]
+    current_unit=Unit_list[,input$Feature_to_analyse_data_repartition]
     if (input$normalize_per_input_resistance_Data_overview){
       
       if (grepl("/pA",current_unit)==TRUE){
-        full_data_frame[,input$Feature_to_analyse_Distrib]=full_data_frame[,input$Feature_to_analyse_Distrib]*(1/(full_data_frame[,'Input_Resistance_MOhms']*1e-3))
+        full_data_frame[,input$Feature_to_analyse_data_repartition]=full_data_frame[,input$Feature_to_analyse_data_repartition]*(1/(full_data_frame[,'Input_Resistance_MOhms']*1e-3))
         current_unit=chartr('pA','mV',current_unit)
       }
       
       else if (grepl("pA",current_unit)==TRUE){
-        full_data_frame[,input$Feature_to_analyse_Distrib]=full_data_frame[,input$Feature_to_analyse_Distrib]*((full_data_frame[,'Input_Resistance_MOhms']*1e-3))
+        full_data_frame[,input$Feature_to_analyse_data_repartition]=full_data_frame[,input$Feature_to_analyse_data_repartition]*((full_data_frame[,'Input_Resistance_MOhms']*1e-3))
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+    if (input$select_outliers_to_remove_repartition != 'None'){
+      full_data_frame <- perform_ANOVA(full_data_frame,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,remove_outliers = input$select_outliers_to_remove_repartition,what_to_return = "DF_without_outliers")
+    }
+    
     if (input$normalise_descriptive_plot == TRUE){
       geombar_position='fill'
     }
@@ -638,7 +698,11 @@ server <- function(session,input, output) {
     file_import <- import_csv_files()
     relayout <- event_data("plotly_click",source='varibility_plot_time_response')
     if (input$group_specific == TRUE){
-      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type)
+      subset_filter_dict <- subset_filter()
+      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
+      if (input$select_outliers_to_remove_repartition != 'None'){
+        full_data_frame <- perform_ANOVA(full_data_frame,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,remove_outliers = input$select_outliers_to_remove_repartition,what_to_return = "DF_without_outliers")
+      }
       
       Factor_list=levels(full_data_frame[,input$Factor_of_analysis_data_repartition])
       
@@ -653,265 +717,19 @@ server <- function(session,input, output) {
     }
     
     else{
-      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type)
+      subset_filter_dict <- subset_filter()
+      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
+      if (input$select_outliers_to_remove_repartition != 'None'){
+        full_data_frame <- perform_ANOVA(full_data_frame,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,remove_outliers = input$select_outliers_to_remove_repartition,what_to_return = "DF_without_outliers")
+      }
       
       index=relayout$pointNumber+1
       
       cell_id=full_data_frame[index,"Cell_id"]
       global$cell_id_to_analyse=cell_id
     }
-
+    
     return(cell_id)
-  })
-
-  observeEvent(input$Factor_of_analysis_RM,{
-    file_import <- import_csv_files()
-    population_class = data.frame(file_import$Population_Class)
-    factor_RM=input$Factor_of_analysis_RM
-    
-    population_class[,factor_RM] <- as.factor(population_class[,factor_RM])
-    
-    
-    group_list=levels(population_class[,factor_RM])
-    
-    updateSelectizeInput(session,'Subset_population_RM','Select group',choices=group_list,selected=group_list)
-  })
-  
-  observeEvent(input$Factor_of_analysis_Variance,{
-    file_import <- import_csv_files()
-    population_class = data.frame(file_import$Population_Class)
-    factor_Variance=input$Factor_of_analysis_Variance
-    
-    population_class[,factor_Variance] <- as.factor(population_class[,factor_Variance])
-    
-    
-    group_list=levels(population_class[,factor_Variance])
-    
-    updateSelectizeInput(session,'Subset_population_Variance','Select group ',choices=group_list,selected=group_list)
-    
-  })
-
-  
-  observeEvent(input$Factor_of_analysis_Distrib,{
-    file_import <- import_csv_files()
-    population_class = data.frame(file_import$Population_Class)
-    factor_Distrib=input$Factor_of_analysis_Distrib
-   
-    population_class[,factor_Distrib] <- as.factor(population_class[,factor_Distrib])
-    
-    
-    group_list=levels(population_class[,factor_Distrib])
-    
-    
-    updateSelectizeInput(session,'Subset_population_Distrib','Select group ',choices=group_list,selected=group_list)
-    print(paste0('mpmp',input$Subset_population_Distrib))
-  })
-  
-  
-  
- 
-  
-  output$I_O_feature_plot <- renderPlotly({
-
-    cell_tables_list=load_h5_file(file=paste0(paste0(global$datapath_cell_files,'/Cell_',cell_id_to_analyse(),'_data_file.h5')))
-
-    sweep_info_table=cell_tables_list$Sweep_info_table
-    Cell_feature_table=cell_tables_list$Cell_feature_table
-    rownames(Cell_feature_table) <- Cell_feature_table$Response_time_ms
-    time_list <- unique(Cell_feature_table$Response_time_ms)
-
-
-    Full_Sweep_metadata=cell_tables_list$Sweep_info_table
-    sweep_list=Full_Sweep_metadata$Sweep
-
-    Stim_freq_table <- data.frame(Sweep = numeric(),    # Create empty data frame
-                                  Stim_amp_pA = numeric(),
-                                  Frequency_Hz = numeric(),
-                                  Response_time = character(),
-                                  stringsAsFactors = FALSE)
-
-    if (time_list[1] == 0){
-      time_list=c(500.0)
-      fit_IO=FALSE
-
-    }
-    else {fit_IO=TRUE}
-
-    for (current_time in time_list){
-
-      sub_cell_feature_table=Cell_feature_table[which(Cell_feature_table$Response_time_ms == current_time),]
-      for (current_sweep in sweep_list){
-        stim_start=sweep_info_table[as.character(current_sweep),"Stim_start_s"]
-        stim_end=sweep_info_table[as.character(current_sweep),"Stim_end_s"]
-        stim_amp=sweep_info_table[as.character(current_sweep),"Stim_amp_pA"]
-        SF_table=data.frame(cell_tables_list$Full_SF[[as.character(current_sweep)]])
-        spike_table=SF_table[which(SF_table$Feature == 'Upstroke'),]
-        spike_table=spike_table[which(spike_table$Time_s<=(stim_start+current_time*1e-3)),]
-        current_frequency=dim(spike_table)[1]/(current_time*1e-3)
-        time=paste0(as.character(current_time),'ms')
-        new_line=data.frame(list(current_sweep,stim_amp,current_frequency,time))
-        colnames(new_line) <- c('Sweep','Stim_amp_pA',"Frequency_Hz","Response_time")
-        Stim_freq_table=rbind(Stim_freq_table,new_line)
-
-
-      }
-    }
-
-    Stim_freq_table$Stim_amp_pA=as.numeric(Stim_freq_table$Stim_amp_pA)
-    Stim_freq_table$Frequency_Hz=as.numeric(Stim_freq_table$Frequency_Hz)
-    Stim_freq_table$Response_time=factor(Stim_freq_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-    if (fit_IO==FALSE){
-
-      IO_plot=ggplot2::ggplot(Stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz),color='grey')+ggplot2::geom_point(aes(text=Sweep))
-      IO_plot=IO_plot+ggplot2::ggtitle(paste0(input$Cell_id_to_analyse," : No computation of I/O relationship"))
-    }
-
-    else{
-      IO_plot=ggplot2::ggplot(Stim_freq_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,colour=Response_time))+ggplot2::geom_point(aes(text=Sweep))
-      # Create Hill fit traces  --> fit trace
-
-      fit_table <- data.frame(Sweep = numeric(),    # Create empty data frame
-                              Stim_amp_pA = numeric(),
-                              Frequency_Hz = numeric(),
-                              Response_time = character(),
-                              stringsAsFactors = FALSE)
-
-
-      cell_fit_table=cell_tables_list$Cell_fit_table
-
-      sub_cell_fit_table = cell_fit_table[which(cell_fit_table$I_O_obs == "Hill-Sigmoid" | (cell_fit_table$I_O_obs == "Hill")),]
-
-      #sub_cell_fit_table=cell_fit_table[which(cell_fit_table$I_O_obs == "--"),]
-      if (dim(sub_cell_fit_table)[1]!=0){
-
-        sub_time_list=sub_cell_fit_table$Response_time_ms
-        stim_array=Full_Sweep_metadata$Stim_amp_pA
-        stim_array=seq(min(stim_array,na.rm = TRUE),max(stim_array,na.rm = TRUE),.1)
-        stim_array_shifted=stim_array+abs(min(stim_array))
-        min_x=min(Cell_feature_table$Threshold, na.rm = TRUE )-10
-        max_x=max(Full_Sweep_metadata$Stim_amp_pA, na.rm = TRUE )+10
-
-        IO_stim_array=seq(min_x,max_x,.1)
-        IO_table <- data.frame(Stim_amp_pA = numeric(),
-                               Frequency_Hz = numeric(),
-                               Response_time = character(),
-                               stringsAsFactors = FALSE)
-        Sat_table=data.frame(Stim_amp_pA = numeric(),
-                             Frequency_Hz = numeric(),
-                             Response_time = character(),
-                             stringsAsFactors = FALSE)
-
-        sat_table_line=1
-
-        for (current_time in sub_time_list ){
-
-          I_O_obs = sub_cell_fit_table[as.character(current_time),"I_O_obs"]
-          Hill_amplitude=sub_cell_fit_table[as.character(current_time),"Hill_amplitude"]
-          Hill_coef=sub_cell_fit_table[as.character(current_time),"Hill_coef"]
-          Hill_Half_cst=sub_cell_fit_table[as.character(current_time),"Hill_Half_cst"]
-          Hill_x0 = sub_cell_fit_table[as.character(current_time),"Hill_x0"]
-          x0=sub_cell_fit_table[as.character(current_time),"Sigmoid_x0"]
-          sigma=sub_cell_fit_table[as.character(current_time),"Sigmoid_sigma"]
-          freq_array = c(rep(0,length(stim_array_shifted)))
-
-          I_O_obs = sub_cell_fit_table[as.character(current_time),"I_O_obs"]
-          Hill_amplitude=sub_cell_fit_table[as.character(current_time),"Hill_amplitude"]
-          Hill_coef=sub_cell_fit_table[as.character(current_time),"Hill_coef"]
-          Hill_Half_cst=sub_cell_fit_table[as.character(current_time),"Hill_Half_cst"]
-          Hill_x0 = sub_cell_fit_table[as.character(current_time),"Hill_x0"]
-          x0=sub_cell_fit_table[as.character(current_time),"Sigmoid_x0"]
-          sigma=sub_cell_fit_table[as.character(current_time),"Sigmoid_sigma"]
-          freq_array = c(rep(0,length(stim_array_shifted)))
-
-          if (I_O_obs == 'Hill-Sigmoid'){
-            if (Hill_x0<min(stim_array_shifted)){
-              freq_array =Hill_amplitude* (((stim_array_shifted-Hill_x0)**(Hill_coef))/((Hill_Half_cst**Hill_coef)+((stim_array_shifted-Hill_x0)**(Hill_coef)))) *  (1-(1/(1+exp((stim_array_shifted-x0)/sigma))))
-            }
-            else{
-              x0_index=which(stim_array_shifted < Hill_x0)[length(which(stim_array_shifted < Hill_x0))]
-              freq_array [x0_index:length(freq_array)] =Hill_amplitude* (((stim_array_shifted[x0_index:length(freq_array)]-Hill_x0)**(Hill_coef))/((Hill_Half_cst**Hill_coef)+((stim_array_shifted[x0_index:length(freq_array)]-Hill_x0)**(Hill_coef)))) *  (1-(1/(1+exp((stim_array_shifted[x0_index:length(freq_array)]-x0)/sigma))))
-            }
-
-
-          }
-
-          if (I_O_obs == 'Hill'){
-
-            if (Hill_x0<min(stim_array_shifted)){
-              freq_array =Hill_amplitude* (((stim_array_shifted-Hill_x0)**(Hill_coef))/((Hill_Half_cst**Hill_coef)+((stim_array_shifted-Hill_x0)**(Hill_coef))))
-            }
-            else{
-              x0_index=which(stim_array_shifted < Hill_x0)[length(which(stim_array_shifted < Hill_x0))]
-
-              freq_array [x0_index:length(freq_array)] =Hill_amplitude* (((stim_array_shifted[x0_index:length(freq_array)]-Hill_x0)**(Hill_coef))/((Hill_Half_cst**Hill_coef)+((stim_array_shifted[x0_index:length(freq_array)]-Hill_x0)**(Hill_coef))))
-            }
-          }
-
-          new_table=data.frame(cbind(stim_array,freq_array))
-          new_table['Response_time']=paste0(as.character(current_time),'ms')
-          colnames(new_table) <- c('Stim_amp_pA','Frequency_Hz','Response_time')
-          fit_table=rbind(fit_table,new_table)
-
-          Threshold=Cell_feature_table[as.character(current_time),"Threshold"]
-          Gain=Cell_feature_table[as.character(current_time),"Gain"]
-
-
-          Intercept=-Gain*Threshold
-          IO_freq_array=Gain*IO_stim_array+Intercept
-          current_IO_table=data.frame(cbind(IO_stim_array,IO_freq_array))
-          current_IO_table['Response_time']=paste0(as.character(current_time),'ms')
-
-
-          if (is.null(Cell_feature_table[as.character(current_time),"Saturation_Frequency"]) == FALSE){
-            current_sat_table=data.frame(Stim_amp_pA = numeric(),
-                                         Frequency_Hz = numeric(),
-                                         Response_time = character())
-
-            Saturation_Frequency=as.numeric(Cell_feature_table[as.character(current_time),"Saturation_Frequency"])
-            Saturation_Stimulus=as.numeric(Cell_feature_table[as.character(current_time),"Saturation_Stimulus"])
-
-            current_sat_table <- c(Saturation_Stimulus,Saturation_Frequency, paste0(as.character(current_time),'ms'))
-
-            Sat_table[sat_table_line,] <- current_sat_table
-            sat_table_line=sat_table_line+1
-
-
-          }
-
-          IO_table=rbind(IO_table,current_IO_table)
-
-
-        }
-
-
-        colnames(fit_table) <- c("Stim_amp_pA","Frequency_Hz",'Response_time')
-        fit_table$Response_time=as.factor(fit_table$Response_time)
-        fit_table$Response_time=factor(fit_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-
-        IO_plot=IO_plot+ggplot2::geom_line(fit_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_time))
-
-        colnames(IO_table) <- c("Stim_amp_pA","Frequency_Hz",'Response_time')
-        IO_table$Response_time=as.factor(IO_table$Response_time)
-        IO_table$Response_time=factor(IO_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-        IO_plot=IO_plot+ggplot2::geom_line(IO_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_time),linetype='dashed')
-        colnames(Sat_table) <- c("Stim_amp_pA","Frequency_Hz",'Response_time')
-        Sat_table$Stim_amp_pA=as.numeric(Sat_table$Stim_amp_pA)
-        Sat_table$Frequency_Hz=as.numeric(Sat_table$Frequency_Hz)
-        Sat_table$Response_time=as.factor(Sat_table$Response_time)
-        Sat_table$Response_time=factor(Sat_table$Response_time,levels=c('5ms',"10ms","25ms","50ms",'100ms','250ms','500ms'))
-
-        IO_plot=IO_plot+ggplot2::geom_point(Sat_table,mapping=aes(x=Stim_amp_pA,y=Frequency_Hz,color=Response_time),shape=3)
-        IO_plot=IO_plot+ggplot2::ggtitle(paste0(input$Cell_id_to_analyse," : I/O relationship"))
-        my_orange = brewer.pal(n = 9, "Blues")[3:9] #there are 9, I excluded the two lighter hues
-        IO_plot=IO_plot + ggplot2::scale_colour_manual(values=my_orange)
-      }
-    }
-    
-    IO_plot=IO_plot+ ggplot2::theme(text = element_text(size = 10,face="bold"),axis.text = element_text(size = 12)) #All font sizes
-    IO_plotly <- ggplotly(IO_plot,dynamicTicks=TRUE)
-
-    IO_plotly
-
   })
 
   
@@ -920,8 +738,8 @@ server <- function(session,input, output) {
     
     req(input$import_files)
     file_import <- import_csv_files()
-    
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
+    subset_filter_dict <- subset_filter()
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_data_repartition]
     if (input$normalize_per_input_resistance_Data_overview){
@@ -936,6 +754,10 @@ server <- function(session,input, output) {
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+    if (input$select_outliers_to_remove_repartition != 'None'){
+      full_data_frame <- perform_ANOVA(full_data_frame,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,remove_outliers = input$select_outliers_to_remove_repartition,what_to_return = "DF_without_outliers")
+    }
+    
     if (input$group_specific == TRUE){
       
       filling=input$Factor_of_analysis_data_repartition
@@ -962,7 +784,7 @@ server <- function(session,input, output) {
       
       else{
         p <- ggplot2::ggplot(full_data_frame, aes_string(x="Response_Duration", y=input$Feature_to_analyse_data_repartition,colour=input$Factor_of_analysis_data_repartition,text =  "Cell_id"))+
-          ggplot2::geom_jitter(position=position_jitterdodge())+geom_point(alpha=.2)
+          ggplot2::geom_jitter(position=position_jitterdodge())+ggplot2::geom_point(alpha=.2)
         
         ggplot2::labs(x='Response_Duration',y=as.character(input$Feature_to_analyse_data_repartition))+ggplot2::scale_fill_discrete(name=as.character(input$Factor_of_analysis_data_repartition))+
           ggplot2::theme(axis.text.x=element_text(angle=45, vjust=0.4,hjust=1),legend.position="bottom")
@@ -993,27 +815,36 @@ server <- function(session,input, output) {
 
     if (input$group_specific == TRUE){
 
-      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
-
+      subset_filter_dict <- subset_filter()
+      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
+      if (input$select_outliers_to_remove_repartition != 'None'){
+        full_data_frame <- perform_ANOVA(full_data_frame,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,remove_outliers = input$select_outliers_to_remove_repartition,what_to_return = "DF_without_outliers")
+      }
+      
       Factor_list=levels(full_data_frame[,input$Factor_of_analysis_data_repartition])
-
+      
       point_factor=Factor_list[relayout$curveNumber+1]
-
+      
       subset_df=full_data_frame[full_data_frame[,input$Factor_of_analysis_data_repartition] %in% point_factor,]
-
+      
       index=relayout$pointNumber+1
-
+      
       cell_id=subset_df[index,"Cell_id"]
+      global$cell_id_to_analyse=cell_id
       
     }
 
     else{
-      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type)
-
-      index=relayout$pointNumber+1
-
-      cell_id=full_data_frame[index,"Cell_id"]
+      subset_filter_dict <- subset_filter()
+      full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
+      if (input$select_outliers_to_remove_repartition != 'None'){
+        full_data_frame <- perform_ANOVA(full_data_frame,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,remove_outliers = input$select_outliers_to_remove_repartition,what_to_return = "DF_without_outliers")
+      }
       
+      index=relayout$pointNumber+1
+      
+      cell_id=full_data_frame[index,"Cell_id"]
+      global$cell_id_to_analyse=cell_id
     }
 
     print(cell_id)
@@ -1025,8 +856,8 @@ server <- function(session,input, output) {
   output$summary_statistics <- renderTable({
     req(input$import_files)
     file_import <- import_csv_files()
-    
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
+    subset_filter_dict <- subset_filter()
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_data_repartition]
     if (input$normalize_per_input_resistance_Data_overview){
@@ -1041,6 +872,11 @@ server <- function(session,input, output) {
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+    if (input$select_outliers_to_remove_repartition != 'None'){
+      full_data_frame <- perform_ANOVA(full_data_frame,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,remove_outliers = input$select_outliers_to_remove_repartition,what_to_return = "DF_without_outliers")
+    }
+    
+    
     summary_stats=full_data_frame %>%
       group_by_(input$Factor_of_analysis_data_repartition, "Response_Duration") %>%
       get_summary_stats(input$Feature_to_analyse_data_repartition, type = "mean_sd")
@@ -1052,8 +888,9 @@ server <- function(session,input, output) {
   output$outlier_count <- renderTable({
     req(input$import_files)
     file_import <- import_csv_files()
-    
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
+    subset_filter_dict <- subset_filter()
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
+    Unit_list=file_import$Unit_File
     outlier_df=dataframe_outliers(full_data_frame,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition)
     if (input$select_outliers_to_remove == 'None'){
       outlier_count <- outlier_df%>%
@@ -1081,9 +918,8 @@ server <- function(session,input, output) {
   output$outliers_plot <- renderPlotly({
     req(input$import_files)
     file_import <- import_csv_files()
-    
-    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,input$Factor_of_analysis_data_repartition,input$Factor_to_facet,input$Selected_Response_Type,keep_na=FALSE)
-    
+    subset_filter_dict <- subset_filter()
+    full_data_frame <- create_full_df(file_import,input$Feature_to_analyse_data_repartition,subset_filter_dict,input$Selected_Response_Type,keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_data_repartition]
     if (input$normalize_per_input_resistance_Data_overview){
@@ -1133,13 +969,11 @@ server <- function(session,input, output) {
   output$Original_RM_Data_Plot <- renderPlotly({
     req(input$import_files)
     file_import <- import_csv_files()
-    
+    subset_filter_dict <- subset_filter()
     full_data_frame_Anova <- create_full_df_RM_ANOVA(file_import,
                                                      input$Feature_to_analyse_RM,
-                                                     input$Factor_of_analysis_RM,
-                                                     'Response_Duration',
+                                                     subset_filter_dict,
                                                      input$Selected_Response_Type,
-                                                     First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
     
     
@@ -1150,9 +984,15 @@ server <- function(session,input, output) {
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
     
+    
     if ('Linear_Values' %in% names(file_import)){
-      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor, -"Input_Resistance_MOhms") %>%
+      population_class_list <- colnames(file_import$Population_Class)
+      col_list <- colnames(full_data_frame_Anova)
+      col_list_to_remove <- c(population_class_list,"Input_Resistance_MOhms")
+      
+      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -col_list_to_remove) %>%
         convert_as_factor(Cell_id, Response_Duration)
+    
     }
     else{
       full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor) %>%
@@ -1172,8 +1012,9 @@ server <- function(session,input, output) {
         current_unit=chartr('pA','mV',current_unit)
       }
     }
-    
+  
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
+    
     original_dataframe=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "Oulier_df")
     
     if (input$select_outliers_to_remove == 'None'){
@@ -1213,13 +1054,13 @@ server <- function(session,input, output) {
   output$RM_Data_without_outliers_Plot <- renderPlotly({
     req(input$import_files)
     file_import <- import_csv_files()
+    subset_filter_dict <- subset_filter()
     full_data_frame_Anova <- create_full_df_RM_ANOVA(file_import,
                                                      input$Feature_to_analyse_RM,
-                                                     input$Factor_of_analysis_RM,
-                                                     'Response_Duration',
+                                                     subset_filter_dict,
                                                      input$Selected_Response_Type,
-                                                     First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
+    
     
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
@@ -1227,14 +1068,22 @@ server <- function(session,input, output) {
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
+    
+    
     if ('Linear_Values' %in% names(file_import)){
-      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor, -"Input_Resistance_MOhms") %>%
+      population_class_list <- colnames(file_import$Population_Class)
+      col_list <- colnames(full_data_frame_Anova)
+      col_list_to_remove <- c(population_class_list,"Input_Resistance_MOhms")
+      
+      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -col_list_to_remove) %>%
         convert_as_factor(Cell_id, Response_Duration)
+      
     }
     else{
       full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor) %>%
         convert_as_factor(Cell_id, Response_Duration)
     }
+    
     colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     if (input$normalize_per_input_resistance_RM){
       
@@ -1248,6 +1097,7 @@ server <- function(session,input, output) {
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+    
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     
     original_dataframe=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "DF_without_outliers")
@@ -1264,29 +1114,37 @@ server <- function(session,input, output) {
   output$category_count_table <- renderTable({
     req(input$import_files)
     file_import <- import_csv_files()
+    subset_filter_dict <- subset_filter()
     full_data_frame_Anova <- create_full_df_RM_ANOVA(file_import,
                                                      input$Feature_to_analyse_RM,
-                                                     input$Factor_of_analysis_RM,
-                                                     'Response_Duration',
+                                                     subset_filter_dict,
                                                      input$Selected_Response_Type,
-                                                     First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
+    
+    
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
     
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
+    
+    
     if ('Linear_Values' %in% names(file_import)){
-      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor, -"Input_Resistance_MOhms") %>%
+      population_class_list <- colnames(file_import$Population_Class)
+      col_list <- colnames(full_data_frame_Anova)
+      col_list_to_remove <- c(population_class_list,"Input_Resistance_MOhms")
+      
+      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -col_list_to_remove) %>%
         convert_as_factor(Cell_id, Response_Duration)
+      
     }
     else{
       full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor) %>%
         convert_as_factor(Cell_id, Response_Duration)
     }
-    colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     
+    colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     if (input$normalize_per_input_resistance_RM){
       
       if (grepl("/pA",current_unit)==TRUE){
@@ -1310,29 +1168,37 @@ server <- function(session,input, output) {
   output$Normality_test_table <- renderTable({
     req(input$import_files)
     file_import <- import_csv_files()
+    subset_filter_dict <- subset_filter()
     full_data_frame_Anova <- create_full_df_RM_ANOVA(file_import,
                                                      input$Feature_to_analyse_RM,
-                                                     input$Factor_of_analysis_RM,
-                                                     'Response_Duration',
+                                                     subset_filter_dict,
                                                      input$Selected_Response_Type,
-                                                     First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
+    
+    
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-   
+    
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
+    
+    
     if ('Linear_Values' %in% names(file_import)){
-      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor, -"Input_Resistance_MOhms") %>%
+      population_class_list <- colnames(file_import$Population_Class)
+      col_list <- colnames(full_data_frame_Anova)
+      col_list_to_remove <- c(population_class_list,"Input_Resistance_MOhms")
+      
+      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -col_list_to_remove) %>%
         convert_as_factor(Cell_id, Response_Duration)
+      
     }
     else{
       full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor) %>%
         convert_as_factor(Cell_id, Response_Duration)
     }
-    colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     
+    colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     if (input$normalize_per_input_resistance_RM){
       
       if (grepl("/pA",current_unit)==TRUE){
@@ -1345,6 +1211,7 @@ server <- function(session,input, output) {
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+   
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     
     normality_table=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "Normality_table")
@@ -1355,29 +1222,37 @@ server <- function(session,input, output) {
   output$Variance_test_table <- renderTable({
     req(input$import_files)
     file_import <- import_csv_files()
+    subset_filter_dict <- subset_filter()
     full_data_frame_Anova <- create_full_df_RM_ANOVA(file_import,
                                                      input$Feature_to_analyse_RM,
-                                                     input$Factor_of_analysis_RM,
-                                                     'Response_Duration',
+                                                     subset_filter_dict,
                                                      input$Selected_Response_Type,
-                                                     First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
+    
+    
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-   
+    
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
+    
+    
     if ('Linear_Values' %in% names(file_import)){
-      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor, -"Input_Resistance_MOhms") %>%
+      population_class_list <- colnames(file_import$Population_Class)
+      col_list <- colnames(full_data_frame_Anova)
+      col_list_to_remove <- c(population_class_list,"Input_Resistance_MOhms")
+      
+      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -col_list_to_remove) %>%
         convert_as_factor(Cell_id, Response_Duration)
+      
     }
     else{
       full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor) %>%
         convert_as_factor(Cell_id, Response_Duration)
     }
-    colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     
+    colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     if (input$normalize_per_input_resistance_RM){
       
       if (grepl("/pA",current_unit)==TRUE){
@@ -1390,6 +1265,7 @@ server <- function(session,input, output) {
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+    
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     
     Variance_test_table=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "Variance_test")
@@ -1401,29 +1277,37 @@ server <- function(session,input, output) {
   output$PWC_test_table <- renderTable({
     req(input$import_files)
     file_import <- import_csv_files()
+    subset_filter_dict <- subset_filter()
     full_data_frame_Anova <- create_full_df_RM_ANOVA(file_import,
                                                      input$Feature_to_analyse_RM,
-                                                     input$Factor_of_analysis_RM,
-                                                     'Response_Duration',
+                                                     subset_filter_dict,
                                                      input$Selected_Response_Type,
-                                                     First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
+    
+    
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-   
+    
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
+    
+    
     if ('Linear_Values' %in% names(file_import)){
-      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor, -"Input_Resistance_MOhms") %>%
+      population_class_list <- colnames(file_import$Population_Class)
+      col_list <- colnames(full_data_frame_Anova)
+      col_list_to_remove <- c(population_class_list,"Input_Resistance_MOhms")
+      
+      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -col_list_to_remove) %>%
         convert_as_factor(Cell_id, Response_Duration)
+      
     }
     else{
       full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor) %>%
         convert_as_factor(Cell_id, Response_Duration)
     }
-    colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     
+    colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     if (input$normalize_per_input_resistance_RM){
       
       if (grepl("/pA",current_unit)==TRUE){
@@ -1436,6 +1320,7 @@ server <- function(session,input, output) {
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+    
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     
     PWC_test_table=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "PWC_without_position")
@@ -1449,30 +1334,37 @@ server <- function(session,input, output) {
   output$PWC_test_Plot <- renderPlot({
     req(input$import_files)
     file_import <- import_csv_files()
+    subset_filter_dict <- subset_filter()
     full_data_frame_Anova <- create_full_df_RM_ANOVA(file_import,
                                                      input$Feature_to_analyse_RM,
-                                                     input$Factor_of_analysis_RM,
-                                                     'Response_Duration',
+                                                     subset_filter_dict,
                                                      input$Selected_Response_Type,
-                                                     First_factor_subset=input$Subset_population_RM,
                                                      keep_na=FALSE)
+    
     
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_RM]
-   
+    
     factor=input$Factor_of_analysis_RM
     Ind_Var='Response_Duration'
     value=as.character(input$Feature_to_analyse_RM)
+    
+    
     if ('Linear_Values' %in% names(file_import)){
-      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor, -"Input_Resistance_MOhms") %>%
+      population_class_list <- colnames(file_import$Population_Class)
+      col_list <- colnames(full_data_frame_Anova)
+      col_list_to_remove <- c(population_class_list,"Input_Resistance_MOhms")
+      
+      full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -col_list_to_remove) %>%
         convert_as_factor(Cell_id, Response_Duration)
+      
     }
     else{
       full_data_frame_Anova=full_data_frame_Anova%>%gather(key = "Response_Duration", value =value , -"Cell_id", -factor) %>%
         convert_as_factor(Cell_id, Response_Duration)
     }
-    colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     
+    colnames(full_data_frame_Anova)[colnames(full_data_frame_Anova) == "value"] =value
     if (input$normalize_per_input_resistance_RM){
       
       if (grepl("/pA",current_unit)==TRUE){
@@ -1481,12 +1373,11 @@ server <- function(session,input, output) {
       }
       
       else if (grepl("pA",current_unit)==TRUE){
-        
-        
         full_data_frame_Anova[,input$Feature_to_analyse_RM]=full_data_frame_Anova[,input$Feature_to_analyse_RM]*((full_data_frame_Anova[,'Input_Resistance_MOhms']*1e-3))
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+   
     full_data_frame_Anova$Response_Duration <- factor(full_data_frame_Anova$Response_Duration,levels=mixedsort(levels(full_data_frame_Anova$Response_Duration)))
     original_dataframe=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "DF_without_outliers")
     Variance_test_table=perform_repeated_measure_one_way_ANOVA(full_data_frame_Anova,feature_col = value,factor = Ind_Var,remove_outliers = input$select_outliers_to_remove,what_to_return = "Variance_test_original_table")
@@ -1517,12 +1408,11 @@ server <- function(session,input, output) {
 output$Original_Variance_Data_Plot <- renderPlotly({
   req(input$import_files)
   file_import <- import_csv_files()
+  subset_filter_dict <- subset_filter()
   full_data_frame_Anova <- create_full_df_ANOVA(file_import,
                                                    input$Feature_to_analyse_Variance,
-                                                   input$Factor_of_analysis_Variance,
                                                    input$File_to_select_Var,
-                                                   Factor_Second=NULL,
-                                                   First_factor_subset=input$Subset_population_Variance,
+                                                   subset_filter=subset_filter_dict,
                                                    keep_na=FALSE)
   Unit_list=file_import$Unit_File
   current_unit=Unit_list[,input$Feature_to_analyse_Variance]
@@ -1584,12 +1474,11 @@ output$Original_Variance_Data_Plot <- renderPlotly({
 output$Variance_Data_without_outliers_Plot <- renderPlotly({
   req(input$import_files)
   file_import <- import_csv_files()
+  subset_filter_dict <- subset_filter()
   full_data_frame_Anova <- create_full_df_ANOVA(file_import,
                                                 input$Feature_to_analyse_Variance,
-                                                input$Factor_of_analysis_Variance,
                                                 input$File_to_select_Var,
-                                                Factor_Second=NULL,
-                                                First_factor_subset=input$Subset_population_Variance,
+                                                subset_filter=subset_filter_dict,
                                                 keep_na=FALSE)
   Unit_list=file_import$Unit_File
   current_unit=Unit_list[,input$Feature_to_analyse_Variance]
@@ -1624,12 +1513,11 @@ output$Variance_Data_without_outliers_Plot <- renderPlotly({
 output$category_count_table_Variance <- renderTable({
   req(input$import_files)
   file_import <- import_csv_files()
+  subset_filter_dict <- subset_filter()
   full_data_frame_Anova <- create_full_df_ANOVA(file_import,
                                                 input$Feature_to_analyse_Variance,
-                                                input$Factor_of_analysis_Variance,
                                                 input$File_to_select_Var,
-                                                Factor_Second=NULL,
-                                                First_factor_subset=input$Subset_population_Variance,
+                                                subset_filter=subset_filter_dict,
                                                 keep_na=FALSE)
   Unit_list=file_import$Unit_File
   current_unit=Unit_list[,input$Feature_to_analyse_Variance]
@@ -1658,12 +1546,11 @@ output$category_count_table_Variance <- renderTable({
 output$Normality_test_table_Variance <- renderTable({
   req(input$import_files)
   file_import <- import_csv_files()
+  subset_filter_dict <- subset_filter()
   full_data_frame_Anova <- create_full_df_ANOVA(file_import,
                                                 input$Feature_to_analyse_Variance,
-                                                input$Factor_of_analysis_Variance,
                                                 input$File_to_select_Var,
-                                                Factor_Second=NULL,
-                                                First_factor_subset=input$Subset_population_Variance,
+                                                subset_filter=subset_filter_dict,
                                                 keep_na=FALSE)
   Unit_list=file_import$Unit_File
   current_unit=Unit_list[,input$Feature_to_analyse_Variance]
@@ -1693,12 +1580,11 @@ output$Normality_test_table_Variance <- renderTable({
 output$Var_homogen_test_table_Variance <- renderTable({
   req(input$import_files)
   file_import <- import_csv_files()
+  subset_filter_dict <- subset_filter()
   full_data_frame_Anova <- create_full_df_ANOVA(file_import,
                                                 input$Feature_to_analyse_Variance,
-                                                input$Factor_of_analysis_Variance,
                                                 input$File_to_select_Var,
-                                                Factor_Second=NULL,
-                                                First_factor_subset=input$Subset_population_Variance,
+                                                subset_filter=subset_filter_dict,
                                                 keep_na=FALSE)
   Unit_list=file_import$Unit_File
   current_unit=Unit_list[,input$Feature_to_analyse_Variance]
@@ -1728,12 +1614,11 @@ output$Var_homogen_test_table_Variance <- renderTable({
 output$Variance_test_table_Variance <- renderTable({
   req(input$import_files)
   file_import <- import_csv_files()
+  subset_filter_dict <- subset_filter()
   full_data_frame_Anova <- create_full_df_ANOVA(file_import,
                                                 input$Feature_to_analyse_Variance,
-                                                input$Factor_of_analysis_Variance,
                                                 input$File_to_select_Var,
-                                                Factor_Second=NULL,
-                                                First_factor_subset=input$Subset_population_Variance,
+                                                subset_filter=subset_filter_dict,
                                                 keep_na=FALSE)
   Unit_list=file_import$Unit_File
   current_unit=Unit_list[,input$Feature_to_analyse_Variance]
@@ -1763,12 +1648,11 @@ output$Variance_test_table_Variance <- renderTable({
 output$PWC_test_table_Variance <- renderTable({
   req(input$import_files)
   file_import <- import_csv_files()
+  subset_filter_dict <- subset_filter()
   full_data_frame_Anova <- create_full_df_ANOVA(file_import,
                                                 input$Feature_to_analyse_Variance,
-                                                input$Factor_of_analysis_Variance,
                                                 input$File_to_select_Var,
-                                                Factor_Second=NULL,
-                                                First_factor_subset=input$Subset_population_Variance,
+                                                subset_filter=subset_filter_dict,
                                                 keep_na=FALSE)
   Unit_list=file_import$Unit_File
   current_unit=Unit_list[,input$Feature_to_analyse_Variance]
@@ -1798,12 +1682,11 @@ output$PWC_test_table_Variance <- renderTable({
 output$PWC_test_Plot_Variance <- renderPlot({
   req(input$import_files)
   file_import <- import_csv_files()
+  subset_filter_dict <- subset_filter()
   full_data_frame_Anova <- create_full_df_ANOVA(file_import,
                                                 input$Feature_to_analyse_Variance,
-                                                input$Factor_of_analysis_Variance,
                                                 input$File_to_select_Var,
-                                                Factor_Second=NULL,
-                                                First_factor_subset=input$Subset_population_Variance,
+                                                subset_filter=subset_filter_dict,
                                                 keep_na=FALSE)
   Unit_list=file_import$Unit_File
   current_unit=Unit_list[,input$Feature_to_analyse_Variance]
@@ -1851,18 +1734,101 @@ output$PWC_test_Plot_Variance <- renderPlot({
   
 
 ##### DISTRIBUTION #####
-  output$Skew_Gauss <- renderPlot({
+
+observeEvent(c(input$File_to_select_Distrib,
+               input$Feature_to_analyse_Distrib,
+               input$normalize_per_input_resistance_Distrib,
+               input$Factor_of_analysis_Distrib,
+               input$select_outliers_to_remove_Distrib,
+               input$bin_estim_rule),{
+                 file_import <- import_csv_files()
+                 subset_filter_dict <- subset_filter()
+                 full_data_frame_distrib <- create_full_df_ANOVA(file_import,
+                                                               input$Feature_to_analyse_Distrib,
+                                                               input$File_to_select_Distrib,
+                                                               subset_filter=subset_filter_dict,
+                                                               keep_na=FALSE)
+                 
+                 Unit_list=file_import$Unit_File
+                 current_unit=Unit_list[,input$Feature_to_analyse_Distrib]
+                 if (input$normalize_per_input_resistance_Distrib){
+                   
+                   if (grepl("/pA",current_unit)==TRUE){
+                     full_data_frame_distrib[,input$Feature_to_analyse_Distrib]=full_data_frame_distrib[,input$Feature_to_analyse_Distrib]*(1/(full_data_frame_distrib[,'Input_Resistance_MOhms']*1e-3))
+                     current_unit=chartr('pA','mV',current_unit)
+                   }
+                   
+                   else if (grepl("pA",current_unit)==TRUE){
+                     full_data_frame_distrib[,input$Feature_to_analyse_Distrib]=full_data_frame_distrib[,input$Feature_to_analyse_Distrib]*((full_data_frame_distrib[,'Input_Resistance_MOhms']*1e-3))
+                     current_unit=chartr('pA','mV',current_unit)
+                   }
+                 }
+                 factor=input$Factor_of_analysis_Distrib
+                 value=as.character(input$Feature_to_analyse_Distrib)
+                 outliers_df=full_data_frame_distrib %>%
+                   identify_outliers(value)
+                 
+                 full_data_frame_distrib=merge(full_data_frame_distrib,outliers_df[,c("Cell_id",factor,'is.outlier','is.extreme')],by.x = c('Cell_id',factor), by.y =c('Cell_id',factor),all.x=T)
+                 
+                 full_data_frame_distrib[is.na(full_data_frame_distrib)] <- FALSE
+                 if (input$select_outliers_to_remove_Distrib != 'None'){
+                   if (input$select_outliers_to_remove_Distrib == 'Outliers (Q1/Q3 ± 1.5*IQ)'){
+                     cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.outlier == TRUE),'Cell_id']
+                   }
+                   if (input$select_outliers_to_remove_Distrib == 'Extreme outliers (Q1/Q3 ± 3*IQ)'){
+                     cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.extreme == TRUE),'Cell_id']
+                   }
+                   
+                   if (length(cell_id_to_remove)!=0){
+                     full_data_frame_distrib=full_data_frame_distrib[-which(full_data_frame_distrib$Cell_id %in% cell_id_to_remove), ]
+                   }
+                 }
+                 
+                 
+                 distribution_array=array(full_data_frame_distrib[,value])
+                 nb_obs=length(distribution_array)
+                 
+                 if (input$bin_estim_rule == 'Sturge'){
+                   bin_nb = 1 + 3.322*log2(nb_obs) 
+                   bin_nb = as.integer(round(bin_nb,0))
+                   updateNumericInput(session, 'distribution_bin_width','Number of bins:', bin_nb)
+                 }
+                 
+                 if (input$bin_estim_rule == 'Freedman-Diaconis'){
+                   bin_width = 2*IQR(distribution_array)/(nb_obs**(1/3))
+                   bin_width = round(bin_width,2)
+                   updateNumericInput(session, 'distribution_bin_width','Width of bins:', bin_width)
+                 }
+                 
+                 if (input$bin_estim_rule == 'Doane'){
+                   skewness = 3*(mean(distribution_array)-median(distribution_array))/std(distribution_array)
+                   sigma=sqrt((6*(nb_obs-2))/((nb_obs+1)*(nb_obs+3)))
+                   bin_nb = 1 + log2(nb_obs) + log2(1+(skewness/sigma))
+                   bin_nb = as.integer(round(bin_nb,0))
+                   updateNumericInput(session, 'distribution_bin_width','Number of bins:', bin_nb)
+                   
+                 }
+                 
+                 if (input$bin_estim_rule == 'Scott'){
+                   bin_width = (3.49*std(distribution_array))/(nb_obs**(1/3))
+                   bin_width=round(bin_width,2)
+                   updateNumericInput(session, 'distribution_bin_width','Width of bins:', bin_width)
+                   
+                 }
+                 
+                 
+                 
+                 
+               })
+  output$fit_distribution_plot <- renderPlot({
     req(input$import_files)
     file_import <- import_csv_files()
 
-
-
+    subset_filter_dict <- subset_filter()
     full_data_frame_distrib <- create_full_df_ANOVA(file_import,
                                                   input$Feature_to_analyse_Distrib,
-                                                  input$Factor_of_analysis_Distrib,
                                                   input$File_to_select_Distrib,
-                                                  Factor_Second=NULL,
-                                                  First_factor_subset=input$Subset_population_Distrib,
+                                                  subset_filter=subset_filter_dict,
                                                   keep_na=FALSE)
     
     Unit_list=file_import$Unit_File
@@ -1875,71 +1841,158 @@ output$PWC_test_Plot_Variance <- renderPlot({
       }
 
       else if (grepl("pA",current_unit)==TRUE){
+        
         full_data_frame_distrib[,input$Feature_to_analyse_Distrib]=full_data_frame_distrib[,input$Feature_to_analyse_Distrib]*((full_data_frame_distrib[,'Input_Resistance_MOhms']*1e-3))
         current_unit=chartr('pA','mV',current_unit)
       }
     }
     factor=input$Factor_of_analysis_Distrib
-
     value=as.character(input$Feature_to_analyse_Distrib)
+    outliers_df=full_data_frame_distrib %>%
+      identify_outliers(value)
     
+    full_data_frame_distrib=merge(full_data_frame_distrib,outliers_df[,c("Cell_id",factor,'is.outlier','is.extreme')],by.x = c('Cell_id',factor), by.y =c('Cell_id',factor),all.x=T)
     
-    original_dataframe_distrib=perform_ANOVA(full_data_frame_distrib,feature_col = value,factor = factor,remove_outliers = input$select_outliers_to_remove_Distrib,what_to_return =  "DF_without_removed_levels")
+    full_data_frame_distrib[is.na(full_data_frame_distrib)] <- FALSE
+    if (input$select_outliers_to_remove_Distrib != 'None'){
+      if (input$select_outliers_to_remove_Distrib == 'Outliers (Q1/Q3 ± 1.5*IQ)'){
+        cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.outlier == TRUE),'Cell_id']
+      }
+      if (input$select_outliers_to_remove_Distrib == 'Extreme outliers (Q1/Q3 ± 3*IQ)'){
+        cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.extreme == TRUE),'Cell_id']
+      }
+      
+      if (length(cell_id_to_remove)!=0){
+        full_data_frame_distrib=full_data_frame_distrib[-which(full_data_frame_distrib$Cell_id %in% cell_id_to_remove), ]
+      }
+    }
+    distribution_array=array(full_data_frame_distrib[,value])
+    
+    if ((input$bin_estim_rule == "Sturge") | (input$bin_estim_rule == "Doane")){
+      nb_bins=as.integer(input$distribution_bin_width)
+      bin_df=get_data_bin_df(distribution_array,nb_bins,'Number')
+    }
+    if ((input$bin_estim_rule == "Freedman-Diaconis") | (input$bin_estim_rule == "Scott")){
+      bin_width=input$distribution_bin_width
+      bin_df=get_data_bin_df(distribution_array,bin_width,'Width')
+      nb_bins=nrow(bin_df)
+    }
+   
 
-    distribution_array=array(original_dataframe_distrib[,value])
-
-    bin_width=input$distribution_bin_width
-
-    nb_bins=as.integer((max(distribution_array)-min(distribution_array))/bin_width)
-    #nb_bins=input$distribution_bins
-    bin_df=reticulate_data_distribution(distribution_array,nb_bins)
+    
+    data_x_array=array(seq(min(distribution_array),max(distribution_array),.01))
     if (input$fit_distribution == TRUE){
-      
+     
+      full_fit_df = data.frame(feature_value = numeric(),
+                                Count = numeric(),
+                                Model= character())
       # bin_df --> center of each bins
-      # if (input$distrib_fit_function == "Skewed Gaussian"){
-      #   
-      # }
-      parameters_df=fit_distribution(distribution_array,nb_bins)
-      
-      A=parameters_df[1,"A"]
-      gamma=parameters_df[1,"gamma"]
-      mu=parameters_df[1,"mu"]
-      sigma=parameters_df[1,"sigma"]
-      data_x_array=array(seq(min(distribution_array),max(distribution_array),.01))
-      fitted_values=skewedgaussian(data_x_array, A, gamma, mu, sigma)
-      fit_df=data.frame(cbind(data_x_array,fitted_values))
-      colnames(fit_df) <- c(as.character(value),'Count')
+      if (input$fit_all_distribution == FALSE){
+      fit_result_table <- fit_population_distribution(distribution_array,bin_df,list(input$distribution_to_fit))
+      }
+      if (input$fit_all_distribution == TRUE){
+        fit_result_table <- fit_population_distribution(distribution_array,bin_df,list("Gaussian","Exponential",'LogNormal',"Skewed Gaussian"))
+      }
+      for (model in fit_result_table$Model){
+        parameters_df=fit_result_table[which(fit_result_table$Model==model),"best_fit_parameters"][[1]]
       
       
       
+      
+      
+      if (model == 'Gaussian'){
+        if (length(parameters_df)==1){
+          amplitude=parameters_df[1]
+          center = parameters_df[2]
+          sigma = parameters_df[3]}
+        else{
+          
+          amplitude=parameters_df[[1]]
+          center = parameters_df[[2]]
+          sigma = parameters_df[[3]]
+        }
+        fitted_values <- (amplitude/(sigma*sqrt(2*pi))) * exp((-(data_x_array - center)**2)/(2*(sigma**2)))
+      }
+      if (model == 'Exponential'){
+        if (length(parameters_df)==1){
+          amplitude = parameters_df[1]
+          tau=parameters_df[2]}
+        else{
+          amplitude = parameters_df[[1]]
+          tau=parameters_df[[2]]
+        }
+       
+        fitted_values <- amplitude*exp((-data_x_array)/(tau))
+      }
+      if (model == 'LogNormal'){
+        
+        if (length(parameters_df)==1){
+        amplitude=parameters_df[1]
+        center = parameters_df[2]
+        sigma = parameters_df[3]}
+        else{
+          amplitude=parameters_df[[1]]
+          center = parameters_df[[2]]
+          sigma = parameters_df[[3]]
+        }
+        fitted_values <- (amplitude/(sigma*sqrt(2*pi))) * (exp((-(log(data_x_array) - center)**2)/(2*(sigma**2))))/data_x_array
+      }
+      if (model == 'Skewed Gaussian'){
+        
+        
+        if (length(parameters_df)==1){
+          amplitude=parameters_df[1]
+          center = parameters_df[2]
+          sigma = parameters_df[3]
+          gamma = parameters_df[4]}
+        else{
+          amplitude=parameters_df[[1]]
+          center = parameters_df[[2]]
+          sigma = parameters_df[[3]]
+          gamma = parameters_df[[4]]
+        }
+        
+        fitted_values <- (amplitude/(sigma*sqrt(2*pi))) * exp((-(data_x_array - center)**2)/(2*(sigma**2))) * (1 + erf((gamma*(data_x_array-center)/(sigma*sqrt(2)))))
+      }
+      
+      fit_df=data.frame(cbind(data_x_array,fitted_values,as.character(model)))
+      colnames(fit_df) <- c("feature_value",'Count','Model')
+      full_fit_df <- rbind(full_fit_df,fit_df)
+      
+      }
+      full_fit_df$feature_value=as.numeric(full_fit_df$feature_value)
+      colnames(full_fit_df) <- c(value,'Count','Model')
+      full_fit_df$Model=as.factor(full_fit_df$Model)
+      full_fit_df$Count=as.numeric(full_fit_df$Count)
       
     }
     bin_edges <- bin_df
     
     bin_edges['Feature']=bin_edges['Feature']-(bin_edges[2,"Feature"]-bin_edges[1,"Feature"])/2
-    #bin_edges['Feature']=bin_edges['Feature']-bin_edges[1,"Feature"]
     colnames(bin_edges) <- c(as.character(value),"Count")
     colnames(bin_df) <- c(as.character(value),'Count')
     
-    
-    
-
-
-
-    distribution_plot=ggplot2::ggplot(original_dataframe_distrib,mapping=aes_string(x=as.character(value)))+
+    distribution_plot=ggplot2::ggplot(full_data_frame_distrib,mapping=aes_string(x=as.character(value)))+
       ggplot2::geom_histogram(breaks=unlist(bin_edges[as.character(value)]),fill='darkgrey')+#ggplot2::geom_point(bin_df,mapping=aes(x=unlist(bin_df[,as.character(value)]),y=unlist(bin_df[,"Count"])))+
       ggplot2::geom_point(bin_df,mapping=aes_string(x=as.character(value),y="Count"))+
       ggplot2::labs(y='Nb_of_observation',x=as.character(value))+
       ggplot2::ggtitle(paste0(as.character(value),' distribution fit'))
     if (input$fit_distribution == TRUE){
+      if (input$fit_all_distribution == TRUE){
       distribution_plot=distribution_plot+ #ggplot2::geom_line(fit_df,mapping=aes_string(x=unlist(fit_df[,as.character(value)]),y=unlist(fit_df[,"Count"])))
-        ggplot2::geom_line(fit_df,mapping=aes_string(x=as.character(value),y="Count"))
+        ggplot2::geom_line(full_fit_df,mapping=aes_string(x=as.character(value),y="Count",color="Model"),size=.8)}
+      else{
+        distribution_plot=distribution_plot+ #ggplot2::geom_line(fit_df,mapping=aes_string(x=unlist(fit_df[,as.character(value)]),y=unlist(fit_df[,"Count"])))
+          ggplot2::geom_line(full_fit_df,mapping=aes_string(x=as.character(value),y="Count"),size=.8)
+      }
+      
+    
     
 
    
 
     
-    if (input$show_stats == TRUE){
+    if (input$show_stats == TRUE && input$fit_all_distribution == FALSE){
       distribution_stats <- data.frame(matrix(ncol = 4, nrow = 0))
       x <- c("Q1", "Med", "Q3","Mean")
       colnames(distribution_stats) <- x
@@ -1954,13 +2007,13 @@ output$PWC_test_Plot_Variance <- renderPlot({
 
 
         nb_to_match=distribution_stats[1,my_stat]
-        my_value=fit_df[which.min(abs(nb_to_match-fit_df[,value])),][,value]
+        my_value=full_fit_df[which.min(abs(nb_to_match-full_fit_df[,value])),][,value][1]
         ymin=0
-        ymax=fit_df[which.min(abs(nb_to_match-fit_df[,value])),][,'Count']
+        ymax=full_fit_df[which.min(abs(nb_to_match-full_fit_df[,value])),][,'Count'][1]
 
         stat_table[nrow(stat_table)+1,] <- c(my_value,my_value,ymin,ymax,my_stat)
 
-        print(my_stat)
+        
 
 
 
@@ -1977,28 +2030,151 @@ output$PWC_test_Plot_Variance <- renderPlot({
 
 
     }
-  }
+    }
+    
+    
     if (input$Distrib_custom_x_range == TRUE){
       distribution_plot=distribution_plot+ggplot2::xlim(input$Minimum_x_limit,input$Maximum_x_limit)+
         ggplot2::xlab(current_unit)
     }
-    
+    distribution_plot=distribution_plot+ggplot2::theme(text = element_text(size = 12),axis.text = element_text(size = 10))
     distribution_plot
   })
-
+  
+  
+  
+  output$distribution_plot_table <- renderTable({
+    req(input$import_files)
+    file_import <- import_csv_files()
+    
+    
+    subset_filter_dict <- subset_filter()
+    full_data_frame_distrib <- create_full_df_ANOVA(file_import,
+                                                  input$Feature_to_analyse_Distrib,
+                                                  input$File_to_select_Distrib,
+                                                  subset_filter=subset_filter_dict,
+                                                  keep_na=FALSE)
+    
+    Unit_list=file_import$Unit_File
+    current_unit=Unit_list[,input$Feature_to_analyse_Distrib]
+    if (input$normalize_per_input_resistance_Distrib){
+      
+      if (grepl("/pA",current_unit)==TRUE){
+        full_data_frame_distrib[,input$Feature_to_analyse_Distrib]=full_data_frame_distrib[,input$Feature_to_analyse_Distrib]*(1/(full_data_frame_distrib[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+      
+      else if (grepl("pA",current_unit)==TRUE){
+        full_data_frame_distrib[,input$Feature_to_analyse_Distrib]=full_data_frame_distrib[,input$Feature_to_analyse_Distrib]*((full_data_frame_distrib[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+    }
+    factor=input$Factor_of_analysis_Distrib
+    value=as.character(input$Feature_to_analyse_Distrib)
+    outliers_df=full_data_frame_distrib %>%
+      identify_outliers(value)
+    
+    full_data_frame_distrib=merge(full_data_frame_distrib,outliers_df[,c("Cell_id",factor,'is.outlier','is.extreme')],by.x = c('Cell_id',factor), by.y =c('Cell_id',factor),all.x=T)
+    
+    full_data_frame_distrib[is.na(full_data_frame_distrib)] <- FALSE
+    if (input$select_outliers_to_remove_Distrib != 'None'){
+      if (input$select_outliers_to_remove_Distrib == 'Outliers (Q1/Q3 ± 1.5*IQ)'){
+        cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.outlier == TRUE),'Cell_id']
+      }
+      if (input$select_outliers_to_remove_Distrib == 'Extreme outliers (Q1/Q3 ± 3*IQ)'){
+        cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.extreme == TRUE),'Cell_id']
+      }
+      
+      if (length(cell_id_to_remove)!=0){
+        full_data_frame_distrib=full_data_frame_distrib[-which(full_data_frame_distrib$Cell_id %in% cell_id_to_remove), ]
+      }
+    }
+    
+    distribution_array=array(full_data_frame_distrib[,value])
+    
+    if ((input$bin_estim_rule == "Sturge") | (input$bin_estim_rule == "Doane")){
+      nb_bins=as.integer(input$distribution_bin_width)
+      bin_df=get_data_bin_df(distribution_array,nb_bins,'Number')
+    }
+    if ((input$bin_estim_rule == "Freedman-Diaconis") | (input$bin_estim_rule == "Scott")){
+      bin_width=input$distribution_bin_width
+      bin_df=get_data_bin_df(distribution_array,bin_width,'Width')
+      nb_bins=nrow(bin_df)
+    }
+    
+    
+    fit_list=list('Gaussian','Exponential','LogNormal','Skewed Gaussian')
+    
+    # bin_df --> center of each bins
+    
+    fit_result_table <- fit_population_distribution(distribution_array,bin_df,fit_list)
+    fit_result_table <- select(fit_result_table, -c("best_fit_parameters"))
+    fit_result_table
+    
+  })
+  
+ 
+  
+  output$QQPlot <- renderPlot({
+    file_import <- import_csv_files()
+    subset_filter_dict <- subset_filter()
+    full_data_frame_distrib <- create_full_df_ANOVA(file_import,
+                                                  input$Feature_to_analyse_Distrib,
+                                                  input$File_to_select_Distrib,
+                                                  subset_filter=subset_filter_dict,
+                                                  keep_na=FALSE)
+    Unit_list=file_import$Unit_File
+    current_unit=Unit_list[,input$Feature_to_analyse_Distrib]
+    if (input$normalize_per_input_resistance_Distrib){
+      
+      if (grepl("/pA",current_unit)==TRUE){
+        full_data_frame_distrib[,input$Feature_to_analyse_Distrib]=full_data_frame_distrib[,input$Feature_to_analyse_Distrib]*(1/(full_data_frame_distrib[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+      
+      else if (grepl("pA",current_unit)==TRUE){
+        full_data_frame_distrib[,input$Feature_to_analyse_Distrib]=full_data_frame_distrib[,input$Feature_to_analyse_Distrib]*((full_data_frame_distrib[,'Input_Resistance_MOhms']*1e-3))
+        current_unit=chartr('pA','mV',current_unit)
+      }
+    }
+    factor=input$Factor_of_analysis_Distrib
+    value=as.character(input$Feature_to_analyse_Distrib)
+    outliers_df=full_data_frame_distrib %>%
+      identify_outliers(value)
+    
+    full_data_frame_distrib=merge(full_data_frame_distrib,outliers_df[,c("Cell_id",factor,'is.outlier','is.extreme')],by.x = c('Cell_id',factor), by.y =c('Cell_id',factor),all.x=T)
+    
+    full_data_frame_distrib[is.na(full_data_frame_distrib)] <- FALSE
+    if (input$select_outliers_to_remove_Distrib != 'None'){
+      if (input$select_outliers_to_remove_Distrib == 'Outliers (Q1/Q3 ± 1.5*IQ)'){
+        cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.outlier == TRUE),'Cell_id']
+      }
+      if (input$select_outliers_to_remove_Distrib == 'Extreme outliers (Q1/Q3 ± 3*IQ)'){
+        cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.extreme == TRUE),'Cell_id']
+      }
+      
+      if (length(cell_id_to_remove)!=0){
+        full_data_frame_distrib=full_data_frame_distrib[-which(full_data_frame_distrib$Cell_id %in% cell_id_to_remove), ]
+      }
+    }
+    distribution_array=array(full_data_frame_distrib[,value])
+    nb_obs=length(distribution_array)
+    df <- data.frame(y=distribution_array)
+    p <- ggplot2::ggplot(full_data_frame_distrib, mapping=ggplot2::aes_string(sample = as.character(value)))
+    p <- p + ggplot2::stat_qq() + ggplot2::stat_qq_line()
+    p
+  })
 
   output$distrib_fit_parameters <- renderTable({
     req(input$import_files)
     file_import <- import_csv_files()
 
 
-
+    subset_filter_dict <- subset_filter()
     full_data_frame_distrib <- create_full_df_ANOVA(file_import,
                                                   input$Feature_to_analyse_Distrib,
-                                                  input$Factor_of_analysis_Distrib,
                                                   input$File_to_select_Distrib,
-                                                  Factor_Second=NULL,
-                                                  First_factor_subset=input$Subset_population_Distrib,
+                                                  subset_filter=subset_filter_dict,
                                                   keep_na=FALSE)
     Unit_list=file_import$Unit_File
     current_unit=Unit_list[,input$Feature_to_analyse_Distrib]
@@ -2014,20 +2190,35 @@ output$PWC_test_Plot_Variance <- renderPlot({
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+   
+    
     factor=input$Factor_of_analysis_Distrib
-
-    value=input$Feature_to_analyse_Distrib
-    original_dataframe_distrib=perform_ANOVA(full_data_frame_distrib,feature_col = value,factor = factor,remove_outliers = input$select_outliers_to_remove_Distrib,what_to_return =  "DF_without_removed_levels")
-
-    distribution_array=array(original_dataframe_distrib[,value])
+    value=as.character(input$Feature_to_analyse_Distrib)
+    outliers_df=full_data_frame_distrib %>%
+      identify_outliers(value)
+    
+    full_data_frame_distrib=merge(full_data_frame_distrib,outliers_df[,c("Cell_id",factor,'is.outlier','is.extreme')],by.x = c('Cell_id',factor), by.y =c('Cell_id',factor),all.x=T)
+    
+    full_data_frame_distrib[is.na(full_data_frame_distrib)] <- FALSE
+    if (input$select_outliers_to_remove_Distrib != 'None'){
+      if (input$select_outliers_to_remove_Distrib == 'Outliers (Q1/Q3 ± 1.5*IQ)'){
+        cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.outlier == TRUE),'Cell_id']
+      }
+      if (input$select_outliers_to_remove_Distrib == 'Extreme outliers (Q1/Q3 ± 3*IQ)'){
+        cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.extreme == TRUE),'Cell_id']
+      }
+      
+      if (length(cell_id_to_remove)!=0){
+        full_data_frame_distrib=full_data_frame_distrib[-which(full_data_frame_distrib$Cell_id %in% cell_id_to_remove), ]
+      }
+    }
+    distribution_array=array(full_data_frame_distrib[,value])
 
 
     bin_width=input$distribution_bin_width
 
     nb_bins=as.integer((max(distribution_array)-min(distribution_array))/bin_width)
-    print(distribution_array)
-    print(bin_width)
-    print(nb_bins)
+    
     bin_df=reticulate_data_distribution(distribution_array,nb_bins)
 
     parameters_df=fit_distribution(distribution_array,nb_bins)
@@ -2035,19 +2226,39 @@ output$PWC_test_Plot_Variance <- renderPlot({
     parameters_df
   })
 
-
+  output$bin_estimation_rule_explanation <- renderPrint({
+    if (input$bin_estim_rule == 'Sturge'){
+      description = cat(paste( "Thumb Rule \nEstimates number of bins, K=1 + 3.322*log2(n) "),"\n")
+    }
+    
+    if (input$bin_estim_rule == 'Freedman-Diaconis'){
+      description = cat(paste("Estimates bin width \nresilient to outliers \nh = 2*IQR(distribution_array)/(nb_obs**(1/3)) "),'\n')
+    }
+    
+    if (input$bin_estim_rule == 'Doane'){
+      description = cat(paste("Estimates number of bins 
+                              \ntakes into account the skewness of the data 
+                              \nK = 1 + log2(nb_obs) + log2(1+(skewness/sigma))  \nskewness = 3*(mean(distribution_array)-median(distribution_array))/std(distribution_array) \nsigma=sqrt((6*(nb_obs-2))/((nb_obs+1)*(nb_obs+3)))"),'\n')
+      
+      
+    }
+    
+    if (input$bin_estim_rule == 'Scott'){
+      description = cat(paste ("Estimates bin width, takes into account data variability and size. \nGood for large datasets
+                               \nh = (3.49*std(distribution_array))/(nb_obs**(1/3))"),'\n')
+      
+    }
+    description
+  })
   output$distrib_stats <- renderTable({
     req(input$import_files)
     file_import <- import_csv_files()
 
-
-
+    subset_filter_dict <- subset_filter()
     full_data_frame_distrib <- create_full_df_ANOVA(file_import,
                                                   input$Feature_to_analyse_Distrib,
-                                                  input$Factor_of_analysis_Distrib,
                                                   input$File_to_select_Distrib,
-                                                  Factor_Second=NULL,
-                                                  First_factor_subset=input$Subset_population_Distrib,
+                                                  subset_filter=subset_filter_dict,
                                                   keep_na=FALSE)
     
     Unit_list=file_import$Unit_File
@@ -2064,14 +2275,30 @@ output$PWC_test_Plot_Variance <- renderPlot({
         current_unit=chartr('pA','mV',current_unit)
       }
     }
+   
+    
     factor=input$Factor_of_analysis_Distrib
-
     value=as.character(input$Feature_to_analyse_Distrib)
-
-    original_dataframe_distrib=perform_ANOVA(full_data_frame_distrib,feature_col = value,factor = factor,remove_outliers = input$select_outliers_to_remove_Distrib,what_to_return =  "DF_without_removed_levels")
-
-
-    distribution_array=array(original_dataframe_distrib[,value])
+    outliers_df=full_data_frame_distrib %>%
+      identify_outliers(value)
+    
+    full_data_frame_distrib=merge(full_data_frame_distrib,outliers_df[,c("Cell_id",factor,'is.outlier','is.extreme')],by.x = c('Cell_id',factor), by.y =c('Cell_id',factor),all.x=T)
+    
+    full_data_frame_distrib[is.na(full_data_frame_distrib)] <- FALSE
+    if (input$select_outliers_to_remove_Distrib != 'None'){
+      if (input$select_outliers_to_remove_Distrib == 'Outliers (Q1/Q3 ± 1.5*IQ)'){
+        cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.outlier == TRUE),'Cell_id']
+      }
+      if (input$select_outliers_to_remove_Distrib == 'Extreme outliers (Q1/Q3 ± 3*IQ)'){
+        cell_id_to_remove =  full_data_frame_distrib[which(full_data_frame_distrib$is.extreme == TRUE),'Cell_id']
+      }
+      
+      if (length(cell_id_to_remove)!=0){
+        full_data_frame_distrib=full_data_frame_distrib[-which(full_data_frame_distrib$Cell_id %in% cell_id_to_remove), ]
+      }
+    }
+    
+    distribution_array=array(full_data_frame_distrib[,value])
 
     distribution_stats <- data.frame(matrix(ncol = 9, nrow = 0))
     x <- c("Min", "Q1", "Med", "Q3", "Max",'IQ',"Mean","SD",'Amplitude')
@@ -2468,30 +2695,61 @@ output$PWC_test_Plot_Variance <- renderPlot({
     TC_boxplotly <- ggplotly(TC_boxplot,dynamicTicks=TRUE)
     TC_boxplotly
   }))
+  
+  output$Input_resistance_plot <- renderPlotly({
+    cell_tables_list=get_cell_file()
+    cell_sweep_info_table=cell_tables_list$Sweep_info_table
+    IR_table <- cell_sweep_info_table[,c('Input_Resistance_MOhm','Sweep','Trace_id','Protocol_id')]
+    levels=unique(IR_table$Protocol_id)
+    IR_table$Protocol_id <- factor(IR_table$Protocol_id,levels=levels)
+    IR_plot=ggplot2::ggplot(IR_table,mapping=aes_string(x="Trace_id",y="Input_Resistance_MOhm",color="Protocol_id"))+
+      ggplot2::geom_line(aes_string(group="Protocol_id"))+
+      ggplot2::geom_point()
+    
+    IR_plotly <- ggplotly(IR_plot,dynamicTicks=TRUE)
+    IR_plotly
+  })
+  
+  output$Input_resistance_boxplot <- renderPlotly(({
+    cell_tables_list=get_cell_file()
+    cell_sweep_info_table=cell_tables_list$Sweep_info_table
+    IR_table <- cell_sweep_info_table[,c('Input_Resistance_MOhm','Sweep','Trace_id','Protocol_id')]
+    levels=unique(IR_table$Protocol_id)
+    IR_table$Protocol_id <- factor(IR_table$Protocol_id,levels=levels)
+    IR_boxplot=ggplot2::ggplot(IR_table,mapping=aes_string(x=factor(0),y='Input_Resistance_MOhm'))+
+      ggplot2::geom_boxplot()+
+      ggplot2::geom_jitter(color="black", size=0.9, alpha=0.9)+
+      ggplot2::theme(axis.title.x=element_blank(),
+                     axis.text.x=element_blank(),
+                     axis.ticks.x=element_blank())
+    IR_boxplotly <- ggplotly(IR_boxplot,dynamicTicks=TRUE)
+    IR_boxplotly
+  }))
+  
 
 
   ##### SINGLE SWEEP TRACES #####
 
   SF_plolty_test <- reactive({
-
+    
     cell_tables_list=get_cell_file()
-
+    
     sweep_info_table=cell_tables_list$Sweep_info_table
     sweep_list=sweep_info_table$Sweep
     selected_sweep=as.character(input$Sweep_to_analyse)
     sampling_freq=mean(sweep_info_table$Sampling_Rate_Hz)
     sweep_trace=data.frame(cell_tables_list$Full_TPC[[as.character(selected_sweep)]])
-
+    
     colnames(sweep_trace) <- cell_tables_list$Full_TPC$TPC_colnames
     filt_coeff = (5 * 1e3) / (sampling_freq / 2.)
     bf <- butter(2, filt_coeff)
     zi <- filter_zi(bf)
-
-
+    
+    
     filtered_potential_trace <- filter(bf, sweep_trace[,"Membrane_potential_mV"],zi)$y
     filtered_current_trace <-  filter(bf, sweep_trace[,"Input_current_pA"],zi)$y
-
-
+    
+    
     sweep_trace[,"Membrane_potential_mV"] <- filtered_potential_trace
     sweep_trace[,"Input_current_pA"] <- filtered_current_trace
     #sweep_trace[,"Membrane_potential_mV"] <- bwfilter(sweep_trace[,"Membrane_potential_mV"], f=sampling_freq, n=2, to=5000)
@@ -2499,23 +2757,23 @@ output$PWC_test_Plot_Variance <- renderPlot({
     stim_end=sweep_info_table[as.character(selected_sweep),"Stim_end_s"]
     sweep_trace=sweep_trace[which(sweep_trace$Time_s <= (stim_end+.05) & sweep_trace$Time_s >= (stim_start-.05) ),]
     SF_table=data.frame(cell_tables_list$Full_SF[[as.character(selected_sweep)]])
-
+    
     if (input$Apply_BE_correction_single_sweep == TRUE){
       BE=sweep_info_table[as.character(selected_sweep),"Bridge_Error_GOhms"]
       if (input$superimpose == TRUE && input$Apply_BE_correction_single_sweep == TRUE){
         raw_sweep_trace=sweep_trace
       }
       pre_stim_amp=mean(sweep_trace[which(sweep_trace$Time_s <= (stim_start-0.005) & sweep_trace$Time_s >= (stim_start-0.055)),"Input_current_pA"])
-
+      
       post_stim_amp=mean(sweep_trace[which(sweep_trace$Time_s <= (stim_end+0.055) & sweep_trace$Time_s >= (stim_end+0.005) ),"Input_current_pA"])
       sweep_trace[which(sweep_trace$Time_s < (stim_start)),"Membrane_potential_mV"]=sweep_trace[which(sweep_trace$Time_s < (stim_start)),"Membrane_potential_mV"]-BE*pre_stim_amp
       sweep_trace[which(sweep_trace$Time_s > (stim_end)),"Membrane_potential_mV"]=sweep_trace[which(sweep_trace$Time_s > (stim_end)),"Membrane_potential_mV"]-BE*post_stim_amp
       sweep_trace[which(sweep_trace$Time_s <= (stim_end) & sweep_trace$Time_s >= (stim_start) ),"Membrane_potential_mV"]=sweep_trace[which(sweep_trace$Time_s <= (stim_end) & sweep_trace$Time_s >= (stim_start) ),"Membrane_potential_mV"]-BE*sweep_info_table[as.character(selected_sweep),"Stim_amp_pA"]
-
+      
       SF_table[,"Membrane_potential_mV"]=SF_table[,"Membrane_potential_mV"]-BE*sweep_info_table[as.character(selected_sweep),"Stim_amp_pA"]
     }
     colnames(SF_table) <- cell_tables_list$Full_TPC$TPC_colnames
-
+    
     for (elt in colnames(sweep_trace)){
       sweep_trace[,elt]=as.numeric(sweep_trace[,elt])
     }
@@ -2523,12 +2781,12 @@ output$PWC_test_Plot_Variance <- renderPlot({
     full_table['Measure']='Membrane_potential_mV'
     full_table["Trace"]= "Raw_trace"
     colnames(full_table) <-  c("Time_s",'Value','Measure','Trace')
-
+    
     if (input$Apply_BE_correction_single_sweep == TRUE ){
       full_table["Trace"]= "BE_corrected"
-
+      
       if (input$superimpose == TRUE ){
-
+        
         raw_sweep_trace_table=raw_sweep_trace[,c('Time_s','Membrane_potential_mV')]
         raw_sweep_trace_table['Measure']='Membrane_potential_mV'
         raw_sweep_trace_table["Trace"]= "Raw_trace"
@@ -2536,13 +2794,13 @@ output$PWC_test_Plot_Variance <- renderPlot({
         full_table=rbind(full_table,raw_sweep_trace_table)
       }
     }
-
+    
     SF_Current_table=sweep_trace[,c('Time_s','Input_current_pA')]
     SF_Current_table['Measure']='Input_current_pA'
     SF_Current_table['Trace']='Raw_trace'
     colnames(SF_Current_table) <-  c("Time_s",'Value','Measure','Trace')
     full_table=rbind(full_table,SF_Current_table)
-
+    
     if ( "First_derivative" %in% input$Derivative_to_display){
       second_table=sweep_trace[,c('Time_s','Potential_first_time_derivative_mV/s')]
       second_table['Measure']="Potential_first_time_derivative_mV/s"
@@ -2550,72 +2808,113 @@ output$PWC_test_Plot_Variance <- renderPlot({
       colnames(second_table) <-  c("Time_s",'Value','Measure','Trace')
       full_table=rbind(full_table,second_table)
     }
-
     if ('Second_derivative' %in% input$Derivative_to_display){
       third_table=sweep_trace[,c('Time_s','Potential_second_time_derivative_mV/s/s')]
       third_table['Measure']="Potential_second_time_derivative_mV/s/s"
       third_table["Trace"]= "Raw_trace"
       colnames(third_table) <-  c("Time_s",'Value','Measure','Trace')
       full_table=rbind(full_table,third_table)
-
+      
     }
-
-
+    
+    
     # full_table=rbind(full_table,SF_Current_table,second_table,third_table)
     full_table$Measure=factor(full_table$Measure,levels=c('Membrane_potential_mV','Input_current_pA',"Potential_first_time_derivative_mV/s","Potential_second_time_derivative_mV/s/s"))
     full_table=as.data.frame(lapply(full_table, unlist))
-
-
+    
+    
     for (elt2 in colnames(SF_table)[-length(colnames(SF_table))]){
       SF_table[,elt2]=as.numeric(SF_table[,elt2])
     }
     colnames(SF_table) <- c(cell_tables_list$Full_TPC$TPC_colnames,'Feature')
-
-
+    
+    
     SF_plot=ggplot2::ggplot()+
       ggplot2::geom_line(full_table,mapping=aes_string(x="Time_s",y="Value",group="Trace",color="Trace"),size=.96)+
       ggplot2::facet_grid(Measure ~ .,scales = "free",space = 'free')+
       ggplot2::scale_colour_manual(values=c(BE_corrected="red",Raw_trace="black"))+
       force_panelsizes(rows=c(2,1))
-
+    
     if (dim(SF_table)[1] != 0){
       fullSF_table=SF_table[,c('Time_s','Membrane_potential_mV','Feature')]
       fullSF_table['Measure']='Membrane_potential_mV'
       colnames(fullSF_table) <-  c("Time_s",'Value','Feature','Measure')
-
-
+      
+      
       if ( "First_derivative" %in% input$Derivative_to_display){
         SF_Second_table=SF_table[,c('Time_s','Potential_first_time_derivative_mV/s','Feature')]
         SF_Second_table['Measure']='Potential_first_time_derivative_mV/s'
         colnames(SF_Second_table) <-  c("Time_s",'Value','Feature','Measure')
         fullSF_table=rbind(fullSF_table,SF_Second_table)
       }
-
+      
       if ('Second_derivative' %in% input$Derivative_to_display){
         SF_Third_table=SF_table[,c('Time_s','Potential_second_time_derivative_mV/s/s','Feature')]
         SF_Third_table['Measure']='Potential_second_time_derivative_mV/s/s'
         colnames(SF_Third_table) <-  c("Time_s",'Value','Feature','Measure')
         fullSF_table=rbind(fullSF_table,SF_Third_table)
       }
-
+      
       #fullSF_table=rbind(SF_First_table,SF_Second_table,SF_Third_table)
       fullSF_table$Measure=factor(fullSF_table$Measure,levels=c('Membrane_potential_mV',"Potential_first_time_derivative_mV/s","Potential_second_time_derivative_mV/s/s"))
       SF_plot=SF_plot+ggplot2::geom_point(fullSF_table,mapping = aes_string(x="Time_s",y="Value",fill="Feature"),stroke=0,size=2)
     }
-
+    
     SF_plotly <- ggplotly(SF_plot,dynamicTicks=TRUE)
     return (SF_plot)
-
+    
   })
-
+  
   output$Spike_feature_plot <- renderPlotly({
-
+    
     SF_plot <- SF_plolty_test()
     SF_plot=SF_plot+force_panelsizes(rows=c(2,1))+ ggplot2::theme(text = element_text(size = 15,face="bold"),axis.text = element_text(size = 16))
     SF_plolty_test_result <- ggplotly(SF_plot,dynamicTicks=TRUE)
     SF_plolty_test_result
   })
 
+  output$linear_properties_plot <- renderPlotly({
+    cell_tables_list=get_cell_file()
+    selected_sweep=as.character(input$Sweep_to_analyse)
+    
+    
+    sweep_info_table=cell_tables_list$Sweep_info_table
+    full_TPC_table=cell_tables_list$Full_TPC
+    full_TPC_table_nested <- nest_Full_DF(Full_SF = full_TPC_table,'TPC')
+    sub_TPC_filtered <- get_filtered_TPC_table(full_TPC_table_nested,selected_sweep)
+    stim_start_time <- sweep_info_table[selected_sweep,"Stim_start_s"]
+    time_cst_fit <- fit_membrane_time_cst(sub_TPC_filtered,stim_start_time,(stim_start_time+0.3))
+    best_A <- time_cst_fit[[1]]
+    best_tau <- time_cst_fit[[2]]
+    best_Response_SS <- time_cst_fit[[3]]
+    best_resting_potnetial <- time_cst_fit[[4]]
+    NRMSE <- time_cst_fit[[5]]
+    
+   
+    time_array=sub_TPC_filtered[which(sub_TPC_filtered$Time_s <= (stim_start_time+.3) & sub_TPC_filtered$Time_s >= (stim_start_time) ),]
+    time_array <- time_array$Time_s
+    time_cst_fit <- time_cst_model(array(time_array),best_A,best_tau,best_Response_SS)
+    time_cst_fit_table <- data.frame(cbind(time_array,time_cst_fit))
+    colnames(time_cst_fit_table) <- c('Time_s','Membrane_potential_mV')
+    time_cst_fit_table['Legend'] <- 'Exponential_Fit'
+    
+    resting_potential_time_array <- sub_TPC_filtered[which(sub_TPC_filtered$Time_s <= (stim_start_time)) ,]
+    resting_potential_time_array <- resting_potential_time_array$Time_s
+    resting_potential_table <- data.frame(cbind(resting_potential_time_array,rep(best_resting_potnetial,length(resting_potential_time_array)),rep("Resting_Potential",length(resting_potential_time_array))))
+    colnames(resting_potential_table) <- c('Time_s','Membrane_potential_mV','Legend')
+    full_time_cst_fit_table=rbind(time_cst_fit_table,resting_potential_table)
+    
+    full_time_cst_fit_table$Time_s=as.numeric(full_time_cst_fit_table$Time_s)
+    full_time_cst_fit_table$Membrane_potential_mV=as.numeric(full_time_cst_fit_table$Membrane_potential_mV)
+    full_time_cst_fit_table$Legend=as.factor(full_time_cst_fit_table$Legend)
+    
+    time_cst_plot = ggplot2::ggplot(sub_TPC_filtered,mapping=aes_string(x='Time_s',y="Membrane_potential_mV"))+
+    ggplot2::geom_line()+
+    ggplot2::geom_line(full_time_cst_fit_table,mapping=aes_string(x='Time_s',y="Membrane_potential_mV",group="Legend",color='Legend'))
+
+    time_cst_plotly <- ggplotly(time_cst_plot,dynamicTicks=TRUE)
+    time_cst_plotly
+  })
 
   ##### I/O #####
 
@@ -2706,13 +3005,28 @@ output$PWC_test_Plot_Variance <- renderPlot({
 
   output$Stim_freq_time_table <- renderTable({
     cell_tables_list=get_cell_file()
-
+    
+    original_SF_table=cell_tables_list$Full_SF
+    original_cell_sweep_info_table=cell_tables_list$Sweep_info_table
+    sweep_QC_table=cell_tables_list$Sweep_QC_table
+    
+    nested_full_SF_table=nest_Full_DF(original_SF_table,'SF')
+    test_stim_freq_table=get_stim_freq_table(nested_full_SF_table, original_cell_sweep_info_table,sweep_QC_table,response_duration=0.005, response_based="Time_based")
+    test_stim_freq_table['Output_duration']='5ms'
+    test_stim_freq_table=test_stim_freq_table[order(test_stim_freq_table$Stim_amp_pA, decreasing = FALSE), ]
+    for (current_time in c(0.010,0.025,0.05,0.1,0.25,0.5)){
+      new_stim_freq_table=get_stim_freq_table(nested_full_SF_table, original_cell_sweep_info_table,sweep_QC_table,response_duration=current_time, response_based="Time_based")
+      new_stim_freq_table['Output_duration']=paste0(as.character(as.integer(current_time*1000)),'ms')
+      new_stim_freq_table=new_stim_freq_table[order(new_stim_freq_table$Stim_amp_pA, decreasing = FALSE), ]
+      test_stim_freq_table=rbind(test_stim_freq_table,new_stim_freq_table)
+      }
+    #test_stim_freq_table=get_stim_freq_table(nested_full_SF_table, original_cell_sweep_info_table,sweep_QC_table,response_duration=0.5, response_based="Time_based")
     Sweep_QC_table=cell_tables_list$Sweep_QC_table
     stim_freq_table=get_stim_freq_table_R(cell_tables_list,'Time_based')
     stim_freq_table<- merge(x=stim_freq_table,y=Sweep_QC_table[,c('Passed_QC','Sweep')],
                             by=c("Sweep"))
 
-    stim_freq_table
+    test_stim_freq_table
 
   })
 
@@ -2759,7 +3073,7 @@ output$PWC_test_Plot_Variance <- renderPlot({
     Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Time_based' ),]
     lmthreshold = lm(Threshold~Output_Duration, data = Cell_feature_table)
 
-    threshold_time_plot=ggplot2::ggplot(Cell_feature_table,mapping=aes(x="Output_Duration",y="Threshold"))+
+    threshold_time_plot=ggplot2::ggplot(Cell_feature_table,mapping=aes_string(x="Output_Duration",y="Threshold"))+
       ggplot2::geom_point()+
       ggplot2::geom_abline(intercept=lmthreshold$coefficients[1],slope=lmthreshold$coefficients[2],color='red')
 
@@ -3156,7 +3470,8 @@ output$PWC_test_Plot_Variance <- renderPlot({
     Cell_feature_table = Cell_feature_table[which(Cell_feature_table$Response_type == 'Interval_based' ),]
     lmgain = lm(Gain~Output_Duration, data = Cell_feature_table)
 
-    gain_time_plot=ggplot2::ggplot(Cell_feature_table,mapping=aes_string(x="Output_Duration",y="Gain"))+geom_point()+
+    gain_time_plot=ggplot2::ggplot(Cell_feature_table,mapping=aes_string(x="Output_Duration",y="Gain"))+
+      ggplot2::geom_point()+
       ggplot2::geom_abline(intercept=lmgain$coefficients[1],slope=lmgain$coefficients[2],color='red')
 
 
@@ -3363,7 +3678,7 @@ output$PWC_test_Plot_Variance <- renderPlot({
 
       rownames(Inst_freq_table) <- Inst_freq_table$sweep_list
 
-      print(rownames(Inst_freq_table))
+      
       for (elt in new_columns){
         Inst_freq_table[elt]=NaN
       }
